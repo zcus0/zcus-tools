@@ -1,7 +1,6 @@
 <!DOCTYPE html><html lang="id"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ZCUS Tools — 120+ Developer & Productivity Suite</title>
-<meta name="description" content="120+ free developer tools, productivity apps, and utilities. Browser-based, no signup.">
+<title>ZCUS Tools — 129+ Developer & Productivity Suite</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#FF6B00">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -50,9 +49,9 @@ footer a{color:var(--accent);text-decoration:none}
 <button class="dark-toggle" onclick="toggleDark()" title="Toggle dark mode" id="darkBtn">🌙</button>
 <div class="hero">
   <h1>⚡ ZCUS Tools</h1>
-  <p>120+ developer tools, productivity apps & utilities. Free, fast, browser-based. No signup.</p>
+  <p>129+ developer tools, productivity apps & utilities. Free, fast, browser-based. No signup.</p>
   <div class="stats">
-    <div><span id="count">120</span><br>Tools</div>
+    <div><span id="count">129</span><br>Tools</div>
     <div><span>100%</span><br>Free</div>
     <div><span>0</span><br>Signups</div>
     <div><span>0</span><br>Tracking</div>
@@ -60,7 +59,7 @@ footer a{color:var(--accent);text-decoration:none}
 </div>
 <div class="search-wrap">
   <span class="search-icon">🔍</span>
-  <input type="text" class="search" id="search" placeholder="Search 120+ tools... (e.g. JSON, password, calculator)" oninput="filter()" autofocus>
+  <input type="text" class="search" id="search" placeholder="Search 129+ tools..." oninput="filter()" autofocus>
   <span class="search-hint">⌘K</span>
 </div>
 <div class="container" id="main">
@@ -72,7 +71,7 @@ footer a{color:var(--accent);text-decoration:none}
     <div class="section-title">🕐 Recently Used</div>
     <div class="grid" id="recentGrid"></div>
   </div>
-  <div class="section-title" id="allTitle">🛠️ All Tools <span class="badge" id="allCount">120</span></div>
+  <div class="section-title" id="allTitle">🛠️ All Tools <span class="badge" id="allCount">129</span></div>
   <div class="categories" id="cats"></div>
   <div class="grid" id="grid"></div>
   <div class="empty" id="empty" style="display:none"><div style="font-size:2.5rem;margin-bottom:8px">🔍</div><p>No tools match your search.</p></div>
@@ -80,185 +79,151 @@ footer a{color:var(--accent);text-decoration:none}
 <footer>Built with ⚡ by <a href="https://github.com/zcus0">ZCUS</a> · All tools run in your browser · <a href="https://panel.zcus.dev">Panel</a> · <a href="https://github.com/zcus0/zcus-tools">Source</a></footer>
 <script>
 var A=[
-{n:"JSON Formatter",i:"{ }",d:"Format, validate, minify JSON. CSV & YAML export.",p:"/json-formatter/",t:["dev"]},
-{n:"Regex Tester",i:".*",d:"Real-time regex testing with capture groups & flags.",p:"/regex-tester/",t:["dev"]},
-{n:"Base64 Tool",i:"B64",d:"Base64/URL/HTML entity encode & decode.",p:"/base64-tool/",t:["dev"]},
-{n:"Hash Generator",i:"#",d:"MD5, SHA-1/256/384/512 hash generation.",p:"/hash-generator/",t:["dev"]},
-{n:"Text Transform",i:"Aa",d:"camelCase, snake_case, kebab-case & more.",p:"/text-transform/",t:["dev"]},
-{n:"Markdown Editor",i:"M↓",d:"Live split-pane markdown editor & preview.",p:"/markdown-editor/",t:["dev"]},
-{n:"Markdown → PDF",i:"📄",d:"Convert markdown to PDF/HTML.",p:"/markdown-pdf/",t:["dev"]},
-{n:"Markdown Table",i:"📊",d:"CSV to markdown table converter.",p:"/markdown-table/",t:["dev"]},
-{n:"Timestamp Converter",i:"🕐",d:"Unix ↔ human readable, relative time.",p:"/timestamp-converter/",t:["dev"]},
-{n:"UUID Generator",i:"🆔",d:"UUID v4 batch generation.",p:"/uuid-generator/",t:["dev"]},
-{n:"JWT Decoder",i:"🔑",d:"Decode JWT tokens with expiry check.",p:"/jwt-decoder/",t:["dev"]},
-{n:"JWT Builder",i:"🔨",d:"Build JWT tokens with custom claims.",p:"/jwt-builder/",t:["dev"]},
-{n:"HTML Preview",i:"🌐",d:"Live HTML/CSS/JS editor with preview.",p:"/html-preview/",t:["dev"]},
-{n:"CSS Playground",i:"🎨",d:"Interactive CSS property playground.",p:"/css-playground/",t:["dev"]},
-{n:"CSS Grid Builder",i:"🔳",d:"Visual CSS Grid layout builder.",p:"/css-grid-gen/",t:["dev","design"]},
-{n:"Text Diff",i:"📝",d:"Line-level text comparison.",p:"/diff-viewer/",t:["dev"]},
-{n:"HTML Entity",i:"&",d:"HTML entity encode/decode & reference.",p:"/html-entity/",t:["dev"]},
-{n:"HTML Escape",i:"\\",d:"HTML escape/unescape tool.",p:"/html-escape/",t:["dev"]},
-{n:"Lorem Generator",i:"📰",d:"Placeholder text in EN/LN/ID.",p:"/lorem-generator/",t:["dev"]},
-{n:"HTML Minifier",i:"🗜️",d:"Minify HTML, remove whitespace.",p:"/html-minifier/",t:["dev"]},
-{n:"CSS Minifier",i:"🗜️",d:"Minify CSS, shorten properties.",p:"/css-minifier/",t:["dev"]},
-{n:"JS Minifier",i:"🗜️",d:"Minify JavaScript code.",p:"/js-minifier/",t:["dev"]},
-{n:"Code Beautifier",i:"✨",d:"Beautify HTML/CSS/JS code.",p:"/code-beautifier/",t:["dev"]},
-{n:"JS Console",i:"▶️",d:"JavaScript REPL / console.",p:"/js-console/",t:["dev"]},
-{n:"Number Base",i:"🔢",d:"Number base converter (bin/oct/dec/hex).",p:"/number-base/",t:["dev"]},
-{n:"Binary Converter",i:"💻",d:"Binary/text converter.",p:"/binary-converter/",t:["dev"]},
-{n:"Binary Text",i:"💾",d:"Binary ↔ text converter.",p:"/binary-text/",t:["dev"]},
-{n:"JSON Visualizer",i:"🌳",d:"JSON tree viewer with expand/collapse.",p:"/json-visualizer/",t:["dev"]},
-{n:"QR Generator",i:"📱",d:"QR codes with custom colors.",p:"/qr-generator/",t:["util"]},
-{n:"QR Scanner",i:"📷",d:"Scan QR codes from camera.",p:"/qr-scanner/",t:["util"]},
-{n:"Color Palette",i:"🎨",d:"Random color palette generator.",p:"/color-palette/",t:["design"]},
-{n:"Color Converter",i:"🎨",d:"HEX/RGB/HSL/CMYK converter.",p:"/color-convert/",t:["util","design"]},
-{n:"Color Blindness",i:"👁️",d:"Color blindness simulator.",p:"/color-blindness/",t:["design"]},
-{n:"Favicon Generator",i:"⭐",d:"Generate favicons from text/emoji.",p:"/favicon-gen/",t:["design"]},
-{n:"Gradient Generator",i:"🌈",d:"CSS gradient builder.",p:"/gradient-gen/",t:["design"]},
-{n:"Box Shadow",i:"🔲",d:"CSS box-shadow generator.",p:"/box-shadow-gen/",t:["design"]},
-{n:"Text Shadow",i:"🔤",d:"CSS text-shadow generator.",p:"/text-shadow-gen/",t:["design"]},
-{n:"Pattern Generator",i:"🔳",d:"CSS/SVG pattern generator.",p:"/pattern-gen/",t:["design"]},
-{n:"SVG Editor",i:"✏️",d:"Simple SVG shape editor.",p:"/svg-editor/",t:["design"]},
-{n:"Icon Search",i:"🔍",d:"Icon library with SVG copy.",p:"/icon-search/",t:["design"]},
-{n:"Contrast Checker",i:"👁️",d:"WCAG color contrast checker.",p:"/contrast-checker/",t:["design"]},
-{n:"Font Pair",i:"🔤",d:"Google Fonts pairing generator.",p:"/font-pair/",t:["design"]},
-{n:"Avatar Generator",i:"👤",d:"Profile picture generator.",p:"/avatar-gen/",t:["design"]},
-{n:"Image Placeholder",i:"🖼️",d:"Placeholder image generator.",p:"/image-placeholder/",t:["design"]},
-{n:"Image Compressor",i:"🖼️",d:"Compress images in-browser.",p:"/image-compressor/",t:["util"]},
-{n:"CSV Viewer",i:"📊",d:"View, sort, filter CSV data.",p:"/csv-viewer/",t:["data"]},
-{n:"JSON Diff",i:"⚡",d:"Compare JSON objects visually.",p:"/json-diff/",t:["data"]},
-{n:"Chart Generator",i:"📈",d:"Bar/line/pie charts from data.",p:"/chart-gen/",t:["data"]},
-{n:"Mock Data Gen",i:"🎲",d:"Generate fake data for testing.",p:"/mock-data-gen/",t:["data"]},
-{n:"Data Cleaner",i:"🧹",d:"Clean messy CSV/JSON data.",p:"/data-cleaner/",t:["data"]},
-{n:"Table Editor",i:"📋",d:"Interactive spreadsheet editor.",p:"/table-editor/",t:["data"]},
-{n:"SQL Formatter",i:"💾",d:"Format & beautify SQL queries.",p:"/sql-formatter/",t:["data"]},
-{n:"SQL Editor",i:"💻",d:"SQL editor with syntax highlighting.",p:"/sql-editor/",t:["data"]},
-{n:"Schema Visualizer",i:"📐",d:"Database ER diagram generator.",p:"/schema-visualizer/",t:["data"]},
-{n:"Query Builder",i:"🔧",d:"Visual SQL query builder.",p:"/query-builder/",t:["data"]},
-{n:"DNS Lookup",i:"🌍",d:"DNS record lookup via DoH.",p:"/dns-lookup/",t:["network"]},
-{n:"DNS Propagation",i:"📡",d:"Check DNS across servers.",p:"/dns-propagation/",t:["network"]},
-{n:"API Health",i:"🏥",d:"Monitor API endpoints.",p:"/api-health/",t:["network","util"]},
-{n:"API Playground",i:"🧪",d:"Test APIs with custom requests.",p:"/api-playground/",t:["network"]},
-{n:"WebSocket Tester",i:"🔌",d:"Test WebSocket connections.",p:"/ws-tester/",t:["network"]},
-{n:"SSL Checker",i:"🔒",d:"SSL certificate information.",p:"/ssl-checker/",t:["network"]},
-{n:"HTTP Headers",i:"📋",d:"HTTP headers analyzer & reference.",p:"/http-headers/",t:["network"]},
-{n:"User Agent Parse",i:"🔎",d:"Parse user agent strings.",p:"/user-agent-parse/",t:["network"]},
-{n:"IP Calculator",i:"🖧",d:"IP/subnet calculator.",p:"/ip-calc/",t:["network"]},
-{n:"CIDR Calculator",i:"🖧",d:"CIDR/subnet calculator.",p:"/cidr-calc/",t:["network"]},
-{n:"MAC Lookup",i:"🖧",d:"MAC address vendor lookup.",p:"/mac-lookup/",t:["network"]},
-{n:"Port Reference",i:"🚪",d:"Well-known ports reference.",p:"/port-reference/",t:["network"]},
-{n:"Bandwidth Calc",i:"📶",d:"Download time & speed calculator.",p:"/bandwidth-calc/",t:["network"]},
-{n:"Log Parser",i:"📜",d:"Apache/Nginx log analyzer.",p:"/log-parser/",t:["network"]},
-{n:"Curl Builder",i:"🔧",d:"Build cURL commands visually.",p:"/curl-builder/",t:["devops"]},
-{n:"SSH Config Gen",i:"🔑",d:"SSH config file generator.",p:"/ssh-gen/",t:["devops"]},
-{n:"Cron Builder",i:"⏰",d:"Visual cron expression builder.",p:"/cron-builder/",t:["devops"]},
-{n:"Cron Cheatsheet",i:"📋",d:"Cron expressions reference & builder.",p:"/cron-cheatsheet/",t:["devops"]},
-{n:"Systemd Gen",i:"⚙️",d:"Systemd unit file generator.",p:"/systemd-gen/",t:["devops"]},
-{n:"Nginx Gen",i:"🌐",d:"Nginx config generator.",p:"/nginx-gen/",t:["devops"]},
-{n:"Docker Compose",i:"🐳",d:"Docker Compose YAML generator.",p:"/docker-compose-gen/",t:["devops"]},
-{n:"K8s Generator",i:"☸️",d:"Kubernetes YAML generator.",p:"/k8s-gen/",t:["devops"]},
-{n:"iptables Builder",i:"🔥",d:"iptables rule builder.",p:"/iptables-gen/",t:["devops"]},
-{n:"UFW Builder",i:"🛡️",d:"UFW firewall rule builder.",p:"/ufw-gen/",t:["devops"]},
-{n:"Password Generator",i:"🔐",d:"Secure passwords with strength meter.",p:"/password-gen/",t:["util","security"]},
-{n:"Password Strength",i:"💪",d:"Password strength analyzer.",p:"/password-strength/",t:["security"]},
-{n:"Encryption Tool",i:"🔒",d:"AES encrypt/decrypt text.",p:"/encryption-tool/",t:["security"]},
-{n:"XSS Tester",i:"⚠️",d:"XSS payload reference & tester.",p:"/xss-tester/",t:["security"]},
-{n:"ROT13",i:"🔄",d:"ROT13/ROT47 encoder/decoder.",p:"/rot13/",t:["security","dev"]},
-{n:"Caesar Cipher",i:"🏛️",d:"Caesar cipher with brute force.",p:"/caesar-cipher/",t:["security","dev"]},
-{n:"ASCII Table",i:"📜",d:"ASCII character reference.",p:"/ascii-table/",t:["dev"]},
-{n:"Unicode Table",i:"📜",d:"Unicode character reference.",p:"/unicode-table/",t:["dev"]},
-{n:"URL Encode",i:"🔗",d:"URL encoder/decoder.",p:"/url-encode/",t:["dev"]},
-{n:"Prompt Builder",i:"🤖",d:"LLM prompt templates & builder.",p:"/prompt-builder/",t:["ai"]},
-{n:"Chat Playground",i:"💬",d:"LLM chat playground.",p:"/chat-playground/",t:["ai"]},
-{n:"Model Compare",i:"⚖️",d:"Compare LLM models side-by-side.",p:"/model-compare/",t:["ai"]},
-{n:"AI Cost Calculator",i:"💰",d:"AI API cost calculator.",p:"/ai-cost-calc/",t:["ai"]},
-{n:"Word Counter",i:"📝",d:"Advanced word/character counter.",p:"/word-counter/",t:["writing"]},
-{n:"Sentence Case",i:"Aa",d:"Text case converter.",p:"/sentence-case/",t:["writing"]},
-{n:"Text Statistics",i:"📊",d:"Text analysis & readability.",p:"/text-stats/",t:["writing"]},
-{n:"Social Counter",i:"📱",d:"Character counter per platform.",p:"/social-counter/",t:["writing"]},
-{n:"Hashtag Generator",i:"#️⃣",d:"Social media hashtag generator.",p:"/hashtag-gen/",t:["writing"]},
-{n:"Morse Code",i:"📡",d:"Morse code translator with audio.",p:"/morse-code/",t:["writing"]},
-{n:"Pig Latin",i:"🐷",d:"Pig Latin translator.",p:"/pig-latin/",t:["writing"]},
-{n:"Emoji Translate",i:"😀",d:"Text to emoji translator.",p:"/emoji-translate/",t:["writing"]},
-{n:"Keyboard Shortcuts",i:"⌨️",d:"Keyboard shortcuts reference.",p:"/keyboard-shortcuts/",t:["util"]},
-{n:"Expense Tracker",i:"💰",d:"Income/expense tracking & charts.",p:"/expense-tracker/",t:["prod"]},
-{n:"Todo Kanban",i:"📋",d:"Kanban board with drag & drop.",p:"/todo-kanban/",t:["prod"]},
-{n:"Notes App",i:"📝",d:"Rich text notes with search.",p:"/notes-app/",t:["prod"]},
-{n:"Bookmark Manager",i:"🔖",d:"Organize bookmarks with categories.",p:"/bookmark-manager/",t:["prod"]},
-{n:"Calculator",i:"🔢",d:"Scientific calculator.",p:"/calculator/",t:["prod","util"]},
-{n:"Pomodoro",i:"🍅",d:"Pomodoro focus timer.",p:"/pomodoro/",t:["prod"]},
-{n:"Countdown Timer",i:"⏳",d:"Visual countdown timer.",p:"/countdown-timer/",t:["prod"]},
-{n:"Stopwatch",i:"⏱️",d:"Stopwatch with lap times.",p:"/stopwatch/",t:["prod"]},
-{n:"World Clock",i:"🌍",d:"Multi-timezone clock dashboard.",p:"/world-clock/",t:["prod"]},
-{n:"Timezone Converter",i:"🕐",d:"Timezone converter tool.",p:"/timezone-converter/",t:["prod"]},
-{n:"Calendar Gen",i:"📅",d:"Printable calendar generator.",p:"/calendar-gen/",t:["prod"]},
-{n:"Gantt Chart",i:"📊",d:"Simple Gantt chart builder.",p:"/gantt-chart/",t:["prod"]},
-{n:"Habit Tracker",i:"✅",d:"Daily habit tracker with heatmap.",p:"/habit-tracker/",t:["prod"]},
-{n:"Habit Calendar",i:"🟩",d:"GitHub-style contribution heatmap.",p:"/habit-calendar/",t:["prod"]},
-{n:"Goal Tracker",i:"🎯",d:"Goal & milestone tracker.",p:"/goal-tracker/",t:["prod"]},
-{n:"Reading List",i:"📚",d:"Book/article reading list.",p:"/reading-list/",t:["prod"]},
-{n:"Invoice Generator",i:"🧾",d:"Professional invoice builder.",p:"/invoice-gen/",t:["prod","finance"]},
-{n:"Receipt Generator",i:"🧾",d:"Receipt builder & printer.",p:"/receipt-gen/",t:["prod","finance"]},
-{n:"Tip Calculator",i:"💸",d:"Tip & bill splitter.",p:"/tip-calc/",t:["util","finance"]},
-{n:"BMI Calculator",i:"⚖️",d:"Body mass index calculator.",p:"/bmi-calc/",t:["util"]},
-{n:"Age Calculator",i:"🎂",d:"Exact age calculator.",p:"/age-calc/",t:["util"]},
-{n:"Date Difference",i:"📆",d:"Date difference calculator.",p:"/date-diff/",t:["util"]},
-{n:"PDF Viewer",i:"📕",d:"Upload & view PDF files.",p:"/pdf-viewer/",t:["util"]},
-{n:"Audio Recorder",i:"🎤",d:"Record audio with waveform.",p:"/audio-recorder/",t:["util"]},
-{n:"Responsive Tester",i:"📱",d:"Multi viewport preview.",p:"/responsive-tester/",t:["util"]},
+{n:"Age Calculator",i:"🎂",d:"Exact age in years/months/days + zodiac",p:"/age-calc/",t:["prod","util"]},
+{n:"AI Cost Calculator",i:"💰",d:"AI API cost calculator",p:"/ai-cost-calc/",t:["ai"]},
+{n:"API Health Monitor",i:"🏥",d:"Monitor API endpoints uptime",p:"/api-health/",t:["network"]},
+{n:"API Playground",i:"🧪",d:"Test APIs with custom requests",p:"/api-playground/",t:["network"]},
+{n:"ASCII Table",i:"📜",d:"ASCII character reference",p:"/ascii-table/",t:["dev"]},
+{n:"Audio Recorder",i:"🎤",d:"Record audio with waveform",p:"/audio-recorder/",t:["util"]},
+{n:"Avatar Generator",i:"👤",d:"Profile picture from initials",p:"/avatar-gen/",t:["design"]},
+{n:"Bandwidth Calculator",i:"📶",d:"Download time & speed calc",p:"/bandwidth-calc/",t:["network"]},
+{n:"Base64 Tool",i:"B64",d:"Base64/URL/HTML entity encode decode",p:"/base64-tool/",t:["dev"]},
+{n:"Binary Converter",i:"💻",d:"Binary/text converter",p:"/binary-converter/",t:["dev"]},
+{n:"Binary Text",i:"💾",d:"Binary ↔ text converter",p:"/binary-text/",t:["dev"]},
+{n:"BMI Calculator",i:"⚖️",d:"BMI calc with visual scale",p:"/bmi-calc/",t:["prod"]},
+{n:"Bookmark Manager",i:"🔖",d:"Organize bookmarks",p:"/bookmark-manager/",t:["prod"]},
+{n:"Box Shadow",i:"🔲",d:"CSS box-shadow builder",p:"/box-shadow-gen/",t:["design"]},
+{n:"Caesar Cipher",i:"🏛️",d:"Caesar cipher + brute force",p:"/caesar-cipher/",t:["security"]},
+{n:"Calculator",i:"🔢",d:"Scientific calculator",p:"/calculator/",t:["prod"]},
+{n:"Calendar Generator",i:"📅",d:"Printable calendar",p:"/calendar-gen/",t:["prod"]},
+{n:"Chart Generator",i:"📈",d:"Bar/line/pie charts",p:"/chart-gen/",t:["data"]},
+{n:"Chat Playground",i:"💬",d:"LLM chat playground",p:"/chat-playground/",t:["ai"]},
+{n:"CIDR Calculator",i:"🖧",d:"CIDR ↔ subnet converter",p:"/cidr-calc/",t:["network"]},
+{n:"Code Beautifier",i:"✨",d:"Beautify HTML/CSS/JS",p:"/code-beautifier/",t:["dev"]},
+{n:"Color Blindness",i:"👁️",d:"Color blindness simulator",p:"/color-blindness/",t:["design"]},
+{n:"Color Converter",i:"🎨",d:"HEX/RGB/HSL/CMYK converter",p:"/color-convert/",t:["design"]},
+{n:"Color Palette",i:"🎨",d:"Random color palette",p:"/color-palette/",t:["design"]},
+{n:"Contrast Checker",i:"👁️",d:"WCAG contrast checker",p:"/contrast-checker/",t:["design"]},
+{n:"Countdown Timer",i:"⏳",d:"Visual countdown timer",p:"/countdown-timer/",t:["prod"]},
+{n:"Cron Builder",i:"⏰",d:"Visual cron expression builder",p:"/cron-builder/",t:["devops"]},
+{n:"Cron Cheatsheet",i:"📋",d:"Cron reference + patterns",p:"/cron-cheatsheet/",t:["devops"]},
+{n:"CSS Grid Builder",i:"🔳",d:"Visual CSS Grid builder",p:"/css-grid-gen/",t:["dev"]},
+{n:"CSS Minifier",i:"🗜️",d:"Minify CSS",p:"/css-minifier/",t:["dev"]},
+{n:"CSS Playground",i:"🎨",d:"Interactive CSS playground",p:"/css-playground/",t:["dev"]},
+{n:"CSV Viewer",i:"📊",d:"View/sort/filter CSV",p:"/csv-viewer/",t:["data"]},
+{n:"cURL Builder",i:"🔧",d:"Build cURL commands",p:"/curl-builder/",t:["devops"]},
+{n:"Data Cleaner",i:"🧹",d:"Clean messy CSV/JSON",p:"/data-cleaner/",t:["data"]},
+{n:"Date Difference",i:"📆",d:"Date difference calculator",p:"/date-diff/",t:["util"]},
+{n:"Text Diff",i:"📝",d:"Line-level text comparison",p:"/diff-viewer/",t:["dev"]},
+{n:"DNS Lookup",i:"🌍",d:"DNS record lookup via DoH",p:"/dns-lookup/",t:["network"]},
+{n:"DNS Propagation",i:"📡",d:"DNS propagation checker",p:"/dns-propagation/",t:["network"]},
+{n:"Docker Compose",i:"🐳",d:"Docker Compose YAML gen",p:"/docker-compose-gen/",t:["devops"]},
+{n:"Email Template",i:"📧",d:"HTML email template builder",p:"/email-template/",t:["dev"]},
+{n:"Emoji Translate",i:"😀",d:"Text → emoji translator",p:"/emoji-translate/",t:["writing"]},
+{n:"Encryption Tool",i:"🔒",d:"AES-GCM encrypt/decrypt",p:"/encryption-tool/",t:["security"]},
+{n:"Expense Tracker",i:"💰",d:"Income/expense tracking",p:"/expense-tracker/",t:["prod"]},
+{n:"Favicon Generator",i:"⭐",d:"Generate favicons",p:"/favicon-gen/",t:["design"]},
+{n:"Font Pair",i:"🔤",d:"Google Fonts pairing",p:"/font-pair/",t:["design"]},
+{n:"Gantt Chart",i:"📊",d:"Gantt chart builder",p:"/gantt-chart/",t:["prod"]},
+{n:"Goal Tracker",i:"🎯",d:"Goal tracker + milestones",p:"/goal-tracker/",t:["prod"]},
+{n:"Gradient Generator",i:"🌈",d:"CSS gradient builder",p:"/gradient-gen/",t:["design"]},
+{n:"Habit Calendar",i:"🟩",d:"GitHub-style heatmap",p:"/habit-calendar/",t:["prod"]},
+{n:"Habit Tracker",i:"✅",d:"Daily habit tracker",p:"/habit-tracker/",t:["prod"]},
+{n:"Hash Generator",i:"#",d:"MD5/SHA hash generation",p:"/hash-generator/",t:["dev"]},
+{n:"Hashtag Generator",i:"#️⃣",d:"Social hashtag generator",p:"/hashtag-gen/",t:["writing"]},
+{n:"HTML Entity",i:"&",d:"HTML entity encode/decode",p:"/html-entity/",t:["dev"]},
+{n:"HTML Escape",i:"Esc",d:"HTML escape/unescape",p:"/html-escape/",t:["dev"]},
+{n:"HTML Minifier",i:"🗜️",d:"Minify HTML",p:"/html-minifier/",t:["dev"]},
+{n:"HTML Preview",i:"🌐",d:"Live HTML/CSS/JS editor",p:"/html-preview/",t:["dev"]},
+{n:"HTTP Headers",i:"📋",d:"HTTP headers analyzer",p:"/http-headers/",t:["network"]},
+{n:"Icon Search",i:"🔍",d:"Icon library with SVG",p:"/icon-search/",t:["design"]},
+{n:"Image Compressor",i:"🖼️",d:"Compress images",p:"/image-compressor/",t:["util"]},
+{n:"Image Placeholder",i:"🖼️",d:"Placeholder image gen",p:"/image-placeholder/",t:["design"]},
+{n:"Invoice Generator",i:"🧾",d:"Professional invoice builder",p:"/invoice-gen/",t:["prod"]},
+{n:"IP Calculator",i:"🖧",d:"IP/subnet calculator",p:"/ip-calc/",t:["network"]},
+{n:"iptables Builder",i:"🔥",d:"iptables rule builder",p:"/iptables-gen/",t:["devops"]},
+{n:"JS Console",i:"▶️",d:"JavaScript REPL",p:"/js-console/",t:["dev"]},
+{n:"JS Minifier",i:"🗜️",d:"Minify JavaScript",p:"/js-minifier/",t:["dev"]},
+{n:"JSON Diff",i:"⚡",d:"Compare JSON objects",p:"/json-diff/",t:["data"]},
+{n:"JSON Formatter",i:"{ }",d:"Format/validate/minify JSON",p:"/json-formatter/",t:["dev"]},
+{n:"JSON Visualizer",i:"🌳",d:"JSON tree viewer",p:"/json-visualizer/",t:["dev"]},
+{n:"JWT Builder",i:"🔨",d:"Build JWT tokens",p:"/jwt-builder/",t:["dev"]},
+{n:"JWT Decoder",i:"🔑",d:"Decode JWT tokens",p:"/jwt-decoder/",t:["dev"]},
+{n:"K8s Generator",i:"☸️",d:"Kubernetes YAML generator",p:"/k8s-gen/",t:["devops"]},
+{n:"Kanban Board",i:"📋",d:"Kanban with drag & drop",p:"/kanban-board/",t:["prod"]},
+{n:"Keyboard Shortcuts",i:"⌨️",d:"Shortcuts reference",p:"/keyboard-shortcuts/",t:["util"]},
+{n:"Log Parser",i:"📜",d:"Apache/Nginx log analyzer",p:"/log-parser/",t:["network"]},
+{n:"Lorem Generator",i:"📰",d:"Placeholder text gen",p:"/lorem-generator/",t:["dev"]},
+{n:"MAC Lookup",i:"🖧",d:"MAC vendor lookup",p:"/mac-lookup/",t:["network"]},
+{n:"Markdown Editor",i:"M↓",d:"Live split-pane editor",p:"/markdown-editor/",t:["dev"]},
+{n:"Markdown → PDF",i:"📄",d:"Convert markdown to PDF",p:"/markdown-pdf/",t:["dev"]},
+{n:"Markdown Table",i:"📊",d:"CSV to markdown table",p:"/markdown-table/",t:["dev"]},
+{n:"Meta Tags",i:"🏷️",d:"HTML meta tag SEO gen",p:"/meta-tags/",t:["dev"]},
+{n:"Mock Data Gen",i:"🎲",d:"Generate fake data",p:"/mock-data-gen/",t:["data"]},
+{n:"Model Compare",i:"⚖️",d:"Compare LLM models",p:"/model-compare/",t:["ai"]},
+{n:"Morse Code",i:"📡",d:"Morse translator + audio",p:"/morse-code/",t:["writing"]},
+{n:"Nginx Generator",i:"🌐",d:"Nginx config generator",p:"/nginx-gen/",t:["devops"]},
+{n:"Notes App",i:"📝",d:"Rich text notes",p:"/notes-app/",t:["prod"]},
+{n:"Number Base",i:"🔢",d:"Base converter (bin/oct/dec/hex)",p:"/number-base/",t:["dev"]},
+{n:"Password Generator",i:"🔐",d:"Secure password gen",p:"/password-gen/",t:["security"]},
+{n:"Password Strength",i:"💪",d:"Password strength analyzer",p:"/password-strength/",t:["security"]},
+{n:"Pattern Generator",i:"🔳",d:"CSS/SVG pattern gen",p:"/pattern-gen/",t:["design"]},
+{n:"PDF Viewer",i:"📕",d:"Upload & view PDFs",p:"/pdf-viewer/",t:["util"]},
+{n:"Pig Latin",i:"🐷",d:"English → Pig Latin",p:"/pig-latin/",t:["writing"]},
+{n:"Pomodoro Timer",i:"🍅",d:"Pomodoro focus timer",p:"/pomodoro/",t:["prod"]},
+{n:"Port Reference",i:"🚪",d:"Well-known ports ref",p:"/port-reference/",t:["network"]},
+{n:"Prompt Builder",i:"🤖",d:"LLM prompt builder",p:"/prompt-builder/",t:["ai"]},
+{n:"QR Generator",i:"📱",d:"QR codes with colors",p:"/qr-generator/",t:["util"]},
+{n:"QR Scanner",i:"📷",d:"Scan QR from camera",p:"/qr-scanner/",t:["util"]},
+{n:"Query Builder",i:"🔧",d:"Visual SQL query builder",p:"/query-builder/",t:["data"]},
+{n:"Reading List",i:"📚",d:"Book/article organizer",p:"/reading-list/",t:["prod"]},
+{n:"Receipt Generator",i:"🧾",d:"Receipt builder",p:"/receipt-gen/",t:["prod"]},
+{n:"Regex Tester",i:".*",d:"Real-time regex testing",p:"/regex-tester/",t:["dev"]},
+{n:"Responsive Tester",i:"📱",d:"Multi viewport preview",p:"/responsive-tester/",t:["util"]},
+{n:"ROT13",i:"🔄",d:"ROT13/ROT47 encoder",p:"/rot13/",t:["security"]},
+{n:"Schema Visualizer",i:"📐",d:"DB ER diagram generator",p:"/schema-visualizer/",t:["data"]},
+{n:"Sentence Case",i:"Aa",d:"7 text case conversions",p:"/sentence-case/",t:["writing"]},
+{n:"Social Counter",i:"📱",d:"Char counter per platform",p:"/social-counter/",t:["writing"]},
+{n:"SQL Editor",i:"💻",d:"SQL editor + SQLite WASM",p:"/sql-editor/",t:["data"]},
+{n:"SQL Formatter",i:"💾",d:"Format SQL queries",p:"/sql-formatter/",t:["data"]},
+{n:"SSH Config",i:"🔑",d:"SSH config generator",p:"/ssh-gen/",t:["devops"]},
+{n:"SSL Checker",i:"🔒",d:"SSL certificate info",p:"/ssl-checker/",t:["network"]},
+{n:"Stopwatch",i:"⏱️",d:"Stopwatch + lap times",p:"/stopwatch/",t:["prod"]},
+{n:"SVG Editor",i:"✏️",d:"SVG shape editor",p:"/svg-editor/",t:["design"]},
+{n:"Systemd Generator",i:"⚙️",d:"Systemd unit file gen",p:"/systemd-gen/",t:["devops"]},
+{n:"Table Editor",i:"📋",d:"Spreadsheet editor",p:"/table-editor/",t:["data"]},
+{n:"Text Shadow",i:"🔤",d:"CSS text-shadow gen",p:"/text-shadow-gen/",t:["design"]},
+{n:"Text Statistics",i:"📊",d:"Text analysis + readability",p:"/text-stats/",t:["writing"]},
+{n:"Text Transform",i:"Aa",d:"camelCase/snake_case/etc",p:"/text-transform/",t:["dev"]},
+{n:"Timestamp Converter",i:"🕐",d:"Unix ↔ human readable",p:"/timestamp-converter/",t:["dev"]},
+{n:"Timezone Converter",i:"🕐",d:"Timezone converter",p:"/timezone-converter/",t:["prod"]},
+{n:"Tip Calculator",i:"💸",d:"Tip calc + bill splitter",p:"/tip-calc/",t:["util"]},
+{n:"Todo Kanban",i:"📋",d:"Kanban board",p:"/todo-kanban/",t:["prod"]},
+{n:"UFW Builder",i:"🛡️",d:"UFW firewall rule builder",p:"/ufw-gen/",t:["devops"]},
+{n:"Unicode Table",i:"📜",d:"Unicode character ref",p:"/unicode-table/",t:["dev"]},
+{n:"URL Encode",i:"🔗",d:"URL encoder/decoder",p:"/url-encode/",t:["dev"]},
+{n:"User Agent Parse",i:"🔎",d:"Parse user agent strings",p:"/user-agent-parse/",t:["network"]},
+{n:"UUID Generator",i:"🆔",d:"UUID v4 batch gen",p:"/uuid-generator/",t:["dev"]},
+{n:"Word Counter",i:"📝",d:"Word/char counter",p:"/word-counter/",t:["writing"]},
+{n:"World Clock",i:"🌍",d:"Multi-timezone clock",p:"/world-clock/",t:["prod"]},
+{n:"WebSocket Tester",i:"🔌",d:"WebSocket connection test",p:"/ws-tester/",t:["network"]},
+{n:"XSS Tester",i:"⚠️",d:"XSS payload reference",p:"/xss-tester/",t:["security"]}
 ];
 var activeCat='all';
-// Dark mode
 function getDark(){return localStorage.getItem('zcus_dark')==='true'}
 function setDark(v){localStorage.setItem('zcus_dark',v);applyDark()}
 function toggleDark(){setDark(!getDark())}
 function applyDark(){var d=getDark();document.documentElement.setAttribute('data-theme',d?'dark':'light');document.getElementById('darkBtn').textContent=d?'☀️':'🌙'}
 applyDark();
-// Favorites
-function getFavs(){try{return JSON.parse(localStorage.getItem('zcus_favs')||'[]')}catch{return[]}}
-function toggleFav(p,e){
-  e&&e.stopPropagation();e&&e.preventDefault();
-  var favs=getFavs();var idx=favs.indexOf(p);
-  if(idx>=0)favs.splice(idx,1);else favs.push(p);
-  localStorage.setItem('zcus_favs',JSON.stringify(favs));render();
-}
-// Recently used
+function getFavs(){try{return JSON.parse(localStorage.getItem('zcus_favs')||'[]')}catch(e){return[]}}
+function toggleFav(p,e){e&&e.stopPropagation();e&&e.preventDefault();var favs=getFavs();var idx=favs.indexOf(p);if(idx>=0)favs.splice(idx,1);else favs.push(p);localStorage.setItem('zcus_favs',JSON.stringify(favs));render()}
 function addRecent(p){var r=getRecent();r=r.filter(function(x){return x!==p});r.unshift(p);if(r.length>12)r.pop();localStorage.setItem('zcus_recent',JSON.stringify(r))}
-function getRecent(){try{return JSON.parse(localStorage.getItem('zcus_recent')||'[]')}catch{return[]}}
-function renderCard(a){
-  var favs=getFavs();var isFav=favs.indexOf(a.p)>=0;
-  return '<a class="app-card" href="'+a.p+'" onclick="addRecent(\\''+a.p+'\\')"><div class="app-icon">'+a.i+'</div><div class="app-body"><div class="app-name">'+a.n+'</div><div class="app-desc">'+a.d+'</div>'+a.t.map(function(t){return '<span class="app-tag tag-'+t+'">'+t.toUpperCase()+'</span>'}).join(' ')+'</div><button class="app-fav '+(isFav?'active':'')+'" onclick="toggleFav(\\''+a.p+'\\',event)" title="Toggle favorite">'+(isFav?'⭐':'☆')+'</button></a>';
-}
-function filter(){
-  var q=document.getElementById('search').value.toLowerCase();
-  var favs=getFavs();var recent=getRecent();
-  var allFav=A.filter(function(a){return favs.indexOf(a.p)>=0});
-  var allRecent=A.filter(function(a){return recent.indexOf(a.p)>=0});
-  var filtered=A.filter(function(a){
-    var ms=!q||a.n.toLowerCase().indexOf(q)>=0||a.d.toLowerCase().indexOf(q)>=0||a.t.some(function(t){return t.indexOf(q)>=0});
-    var mc=activeCat==='all'||a.t.indexOf(activeCat)>=0;
-    return ms&&mc;
-  });
-  // Fav section
-  var favSection=document.getElementById('favSection');
-  if(favs.length&&!q&&activeCat==='all'){favSection.style.display='block';document.getElementById('favGrid').innerHTML=allFav.map(renderCard).join('');document.getElementById('favCount').textContent=allFav.length}else favSection.style.display='none';
-  // Recent section
-  var recSection=document.getElementById('recentSection');
-  if(recent.length&&!q&&activeCat==='all'){recSection.style.display='block';document.getElementById('recentGrid').innerHTML=allRecent.slice(0,6).map(renderCard).join('')}else recSection.style.display='none';
-  // All
-  document.getElementById('grid').innerHTML=filtered.map(renderCard).join('');
-  document.getElementById('allCount').textContent=filtered.length;
-  document.getElementById('empty').style.display=filtered.length?'none':'block';
-  document.getElementById('allTitle').style.display=(q||activeCat!=='all')?'flex':'none';
-}
+function getRecent(){try{return JSON.parse(localStorage.getItem('zcus_recent')||'[]')}catch(e){return[]}}
+function renderCard(a){var favs=getFavs();var isFav=favs.indexOf(a.p)>=0;return '<a class="app-card" href="'+a.p+'" onclick="addRecent(\''+a.p+'\')"><div class="app-icon">'+a.i+'</div><div class="app-body"><div class="app-name">'+a.n+'</div><div class="app-desc">'+a.d+'</div>'+a.t.map(function(t){return '<span class="app-tag tag-'+t+'">'+t.toUpperCase()+'</span>'}).join(' ')+'</div><button class="app-fav '+(isFav?'active':'')+'" onclick="toggleFav(\''+a.p+'\',event)" title="Toggle favorite">'+(isFav?'⭐':'☆')+'</button></a>'}
+function filter(){var q=document.getElementById('search').value.toLowerCase();var favs=getFavs();var recent=getRecent();var allFav=A.filter(function(a){return favs.indexOf(a.p)>=0});var allRecent=A.filter(function(a){return recent.indexOf(a.p)>=0});var filtered=A.filter(function(a){var ms=!q||a.n.toLowerCase().indexOf(q)>=0||a.d.toLowerCase().indexOf(q)>=0||a.t.some(function(t){return t.indexOf(q)>=0});var mc=activeCat==='all'||a.t.indexOf(activeCat)>=0;return ms&&mc});var favS=document.getElementById('favSection');if(favs.length&&!q&&activeCat==='all'){favS.style.display='block';document.getElementById('favGrid').innerHTML=allFav.map(renderCard).join('');document.getElementById('favCount').textContent=allFav.length}else favS.style.display='none';var recS=document.getElementById('recentSection');if(recent.length&&!q&&activeCat==='all'){recS.style.display='block';document.getElementById('recentGrid').innerHTML=allRecent.slice(0,6).map(renderCard).join('')}else recS.style.display='none';document.getElementById('grid').innerHTML=filtered.map(renderCard).join('');document.getElementById('allCount').textContent=filtered.length;document.getElementById('empty').style.display=filtered.length?'none':'block';document.getElementById('allTitle').style.display=(q||activeCat!=='all')?'flex':'none'}
 var cats={all:'All',dev:'Developer',design:'Design',data:'Data',network:'Network',devops:'DevOps',security:'Security',ai:'AI/LLM',writing:'Writing',prod:'Productivity',util:'Utility',finance:'Finance'};
-Object.keys(cats).forEach(function(c){
-  var b=document.createElement('button');b.className='cat-btn'+(c==='all'?' active':'');b.textContent=cats[c];
-  b.onclick=function(){activeCat=c;document.querySelectorAll('.cat-btn').forEach(function(x){x.classList.remove('active')});b.classList.add('active');filter()};
-  document.getElementById('cats').appendChild(b);
-});
+Object.keys(cats).forEach(function(c){var b=document.createElement('button');b.className='cat-btn'+(c==='all'?' active':'');b.textContent=cats[c];b.onclick=function(){activeCat=c;document.querySelectorAll('.cat-btn').forEach(function(x){x.classList.remove('active')});b.classList.add('active');filter()};document.getElementById('cats').appendChild(b)});
 document.getElementById('count').textContent=A.length;
 filter();
-// Keyboard shortcut: Cmd/Ctrl+K to focus search
 document.addEventListener('keydown',function(e){if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();document.getElementById('search').focus()}if(e.key==='Escape')document.getElementById('search').blur()});
 </script></body></html>
