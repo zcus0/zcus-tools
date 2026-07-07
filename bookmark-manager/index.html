@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bookmark Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#e0e0e0;min-height:100vh}
+.header{background:#16213e;padding:1rem 2rem;display:flex;align-items:center;gap:1rem;border-bottom:2px solid #FF6B00;position:sticky;top:0;z-index:100}
+.header h1{font-size:1.5rem;font-weight:600}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;margin-left:auto;padding:.5rem 1rem;border:1px solid #FF6B00;border-radius:6px;transition:all .2s}
+.header a:hover{background:#FF6B00;color:#fff}
+.header .icon{font-size:1.8rem}
+.app-layout{display:flex;min-height:calc(100vh - 60px)}
+.sidebar{width:220px;background:#16213e;border-right:1px solid #333;padding:1.5rem 1rem;flex-shrink:0}
+.sidebar h3{font-size:.85rem;text-transform:uppercase;letter-spacing:.1em;color:#666;margin-bottom:1rem}
+.sidebar-item{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;border-radius:8px;cursor:pointer;transition:all .2s;font-size:.9rem;margin-bottom:.25rem}
+.sidebar-item:hover,.sidebar-item.active{background:#FF6B0022;color:#FF6B00}
+.sidebar-item .count{margin-left:auto;background:#333;padding:.1rem .45rem;border-radius:10px;font-size:.7rem;color:#aaa}
+.main{flex:1;padding:1.5rem 2rem;overflow-y:auto}
+.toolbar{display:flex;gap:.75rem;margin-bottom:1.5rem;flex-wrap:wrap;align-items:center}
+.toolbar input{background:#16213e;border:1px solid #333;color:#e0e0e0;padding:.6rem 1rem;border-radius:8px;font-family:'Inter',sans-serif;font-size:.9rem;flex:1;min-width:200px}
+.toolbar input:focus{outline:none;border-color:#FF6B00}
+.btn{background:#FF6B00;color:#fff;border:none;padding:.6rem 1.2rem;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-weight:500;transition:all .2s;font-size:.9rem}
+.btn:hover{background:#e55e00;transform:translateY(-1px)}
+.btn-outline{background:transparent;border:1px solid #FF6B00;color:#FF6B00}
+.btn-outline:hover{background:#FF6B00;color:#fff}
+.btn-sm{padding:.35rem .7rem;font-size:.8rem}
+.btn-danger{background:#e74c3c}
+.btn-danger:hover{background:#c0392b}
+.bookmarks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem}
+.bookmark-card{background:#16213e;border-radius:12px;padding:1.2rem;border:1px solid #333;transition:all .3s;cursor:grab}
+.bookmark-card:active{cursor:grabbing}
+.bookmark-card.dragging{opacity:.5;border-color:#FF6B00}
+.bookmark-card:hover{border-color:#FF6B00;transform:translateY(-2px);box-shadow:0 4px 20px rgba(255,107,0,0.15)}
+.bookmark-header{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem}
+.bookmark-header img{width:24px;height:24px;border-radius:4px}
+.bookmark-header h3{font-size:1rem;font-weight:600;color:#fff;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bookmark-header a{color:#FF6B00;text-decoration:none;font-size:.8rem;white-space:nowrap}
+.bookmark-desc{font-size:.85rem;color:#aaa;line-height:1.5;margin-bottom:.75rem}
+.bookmark-meta{display:flex;justify-content:space-between;align-items:center;font-size:.75rem;color:#666}
+.bookmark-actions{display:flex;gap:.5rem;margin-top:.75rem}
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:200;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.active{display:flex}
+.modal{background:#16213e;border-radius:16px;padding:2rem;width:100%;max-width:500px;border:1px solid #333}
+.modal h2{margin-bottom:1.25rem;color:#fff}
+.modal label{display:block;margin-bottom:.4rem;font-size:.85rem;color:#aaa;font-weight:500}
+.modal input,.modal select,.modal textarea{width:100%;background:#1a1a2e;border:1px solid #333;color:#e0e0e0;padding:.6rem 1rem;border-radius:8px;font-family:'Inter',sans-serif;font-size:.9rem;margin-bottom:1rem}
+.modal input:focus,.modal select:focus,.modal textarea:focus{outline:none;border-color:#FF6B00}
+.modal-actions{display:flex;gap:.75rem;justify-content:flex-end}
+.toast{position:fixed;bottom:2rem;right:2rem;background:#16213e;color:#fff;padding:1rem 1.5rem;border-radius:10px;border-left:4px solid #FF6B00;box-shadow:0 4px 20px rgba(0,0,0,0.4);z-index:300;transform:translateX(120%);transition:transform .3s ease;font-size:.9rem}
+.toast.show{transform:translateX(0)}
+.toast.error{border-left-color:#e74c3c}
+.toast.success{border-left-color:#27ae60}
+.empty{text-align:center;padding:3rem;color:#666;font-size:1.1rem}
+.empty .icon{font-size:3rem;margin-bottom:1rem;display:block}
+@media(max-width:768px){
+.sidebar{display:none}
+.main{padding:1rem}
+.bookmarks-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<header class="header">
+<span class="icon">🔖</span>
+<h1>Bookmark Manager</h1>
+<a href="../index.html">← Home</a>
+</header>
+<div class="app-layout">
+<aside class="sidebar">
+<h3>Categories</h3>
+<div id="categoriesList"></div>
+</aside>
+<main class="main">
+<div class="toolbar">
+<input type="text" id="searchInput" placeholder="Search bookmarks...">
+<button class="btn" onclick="openModal()">+ Add Bookmark</button>
+<button class="btn btn-outline" onclick="exportJSON()">Export JSON</button>
+<button class="btn btn-outline" onclick="importJSON()">Import JSON</button>
+<input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(event)">
+</div>
+<div class="bookmarks-grid" id="bookmarksGrid"></div>
+</main>
+</div>
+<div class="modal-overlay" id="modalOverlay">
+<div class="modal">
+<h2 id="modalTitle">Add Bookmark</h2>
+<label>Title</label>
+<input type="text" id="bmTitle" placeholder="My Website">
+<label>URL</label>
+<input type="url" id="bmUrl" placeholder="https://example.com">
+<label>Description</label>
+<textarea id="bmDesc" rows="3" placeholder="A short description..."></textarea>
+<label>Category</label>
+<select id="bmCategory">
+<option value="General">General</option>
+<option value="Development">Development</option>
+<option value="Design">Design</option>
+<option value="News">News</option>
+<option value="Tools">Tools</option>
+<option value="Reference">Reference</option>
+</select>
+<div class="modal-actions">
+<button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+<button class="btn" onclick="saveBookmark()">Save</button>
+</div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let bookmarks=JSON.parse(localStorage.getItem('zcus-bookmarks')||'[]');
+let editingId=null;
+let activeCategory='';
+let dragItem=null;
+
+function getDomain(url){try{return new URL(url).hostname;}catch(e){return '';}}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+function getFavicon(url){const d=getDomain(url);return d?`https://www.google.com/s2/favicons?domain=${d}&sz=32`:'';}
+
+function openModal(id){
+  editingId=id||null;
+  if(id){
+    const b=bookmarks.find(x=>x.id===id);
+    document.getElementById('modalTitle').textContent='Edit Bookmark';
+    document.getElementById('bmTitle').value=b.title;
+    document.getElementById('bmUrl').value=b.url;
+    document.getElementById('bmDesc').value=b.desc||'';
+    document.getElementById('bmCategory').value=b.category;
+  }else{
+    document.getElementById('modalTitle').textContent='Add Bookmark';
+    document.getElementById('bmTitle').value='';
+    document.getElementById('bmUrl').value='';
+    document.getElementById('bmDesc').value='';
+    document.getElementById('bmCategory').value='General';
+  }
+  document.getElementById('modalOverlay').classList.add('active');
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('active');editingId=null;}
+
+function saveBookmark(){
+  const title=document.getElementById('bmTitle').value.trim();
+  const url=document.getElementById('bmUrl').value.trim();
+  const desc=document.getElementById('bmDesc').value.trim();
+  const category=document.getElementById('bmCategory').value;
+  if(!title||!url){showToast('Title and URL required','error');return;}
+  if(editingId){
+    const idx=bookmarks.findIndex(x=>x.id===editingId);
+    bookmarks[idx]={...bookmarks[idx],title,url,desc,category,updatedAt:Date.now()};
+    showToast('Bookmark updated','success');
+  }else{
+    bookmarks.unshift({id:Date.now().toString(),title,url,desc,category,createdAt:Date.now(),updatedAt:Date.now()});
+    showToast('Bookmark added','success');
+  }
+  save();render();closeModal();
+}
+
+function deleteBookmark(id){
+  if(!confirm('Delete this bookmark?'))return;
+  bookmarks=bookmarks.filter(b=>b.id!==id);
+  save();render();showToast('Bookmark deleted','error');
+}
+
+function save(){localStorage.setItem('zcus-bookmarks',JSON.stringify(bookmarks));}
+
+function render(){
+  const search=document.getElementById('searchInput').value.toLowerCase();
+  let filtered=bookmarks.filter(b=>{
+    const ms=!search||b.title.toLowerCase().includes(search)||b.url.toLowerCase().includes(search)||(b.desc||'').toLowerCase().includes(search);
+    const mc=!activeCategory||b.category===activeCategory;
+    return ms&&mc;
+  });
+  const grid=document.getElementById('bookmarksGrid');
+  if(!filtered.length){grid.innerHTML='<div class="empty"><span class="icon">🔖</span>No bookmarks found</div>';return;}
+  grid.innerHTML=filtered.map((b,i)=>`
+    <div class="bookmark-card" draggable="true" data-id="${b.id}" data-idx="${i}"
+      ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondrop="onDrop(event)" ondragend="onDragEnd(event)">
+      <div class="bookmark-header">
+        <img src="${getFavicon(b.url)}" alt="" onerror="this.style.display='none'">
+        <h3>${esc(b.title)}</h3>
+      </div>
+      <div class="bookmark-desc">${esc(b.desc||'No description')}</div>
+      <div class="bookmark-meta">
+        <span>${b.category}</span>
+        <a href="${esc(b.url)}" target="_blank" rel="noopener">${getDomain(b.url)} ↗</a>
+      </div>
+      <div class="bookmark-actions">
+        <button class="btn btn-sm btn-outline" onclick="openModal('${b.id}')">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteBookmark('${b.id}')">Delete</button>
+        <a class="btn btn-sm" href="${esc(b.url)}" target="_blank" rel="noopener">Open</a>
+      </div>
+    </div>
+  `).join('');
+  renderCategories();
+}
+
+function renderCategories(){
+  const cats={};
+  bookmarks.forEach(b=>{cats[b.category]=(cats[b.category]||0)+1;});
+  const list=document.getElementById('categoriesList');
+  let html=`<div class="sidebar-item ${!activeCategory?'active':''}" onclick="filterCategory('')">📁 All <span class="count">${bookmarks.length}</span></div>`;
+  Object.keys(cats).sort().forEach(c=>{
+    html+=`<div class="sidebar-item ${activeCategory===c?'active':''}" onclick="filterCategory('${esc(c)}')">${esc(c)} <span class="count">${cats[c]}</span></div>`;
+  });
+  list.innerHTML=html;
+}
+
+function filterCategory(cat){activeCategory=cat;render();}
+
+function onDragStart(e){dragItem=e.target.dataset.id;e.target.classList.add('dragging');e.dataTransfer.effectAllowed='move';}
+function onDragOver(e){e.preventDefault();e.dataTransfer.dropEffect='move';}
+function onDrop(e){
+  e.preventDefault();
+  const target=e.target.closest('.bookmark-card');
+  if(!target||target.dataset.id===dragItem)return;
+  const fromIdx=bookmarks.findIndex(b=>b.id===dragItem);
+  const toIdx=bookmarks.findIndex(b=>b.id===target.dataset.id);
+  const [item]=bookmarks.splice(fromIdx,1);
+  bookmarks.splice(toIdx,0,item);
+  save();render();
+}
+function onDragEnd(e){e.target.classList.remove('dragging');dragItem=null;}
+
+function exportJSON(){
+  if(!bookmarks.length){showToast('No bookmarks','error');return;}
+  const b=new Blob([JSON.stringify(bookmarks,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download='bookmarks-export.json';a.click();
+  showToast('Bookmarks exported','success');
+}
+function importJSON(){document.getElementById('importFile').click();}
+function handleImport(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const data=JSON.parse(ev.target.result);
+      if(Array.isArray(data)){
+        data.forEach(b=>{
+          if(!bookmarks.find(x=>x.url===b.url)){
+            bookmarks.push({...b,id:b.id||Date.now().toString()+Math.random().toString(36).slice(2,6),createdAt:b.createdAt||Date.now(),updatedAt:Date.now()});
+          }
+        });
+        save();render();showToast('Bookmarks imported','success');
+      }else{showToast('Invalid JSON format','error');}
+    }catch(err){showToast('Error reading file','error');}
+  };
+  reader.readAsText(file);e.target.value='';
+}
+
+document.getElementById('searchInput').addEventListener('input',render);
+document.getElementById('modalOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+render();
+</script>
+</body>
+</html>

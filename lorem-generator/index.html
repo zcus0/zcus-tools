@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lorem Ipsum Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--accent:#FF6B00;--bg:#0f0f0f;--card:#1a1a1a;--border:#2a2a2a;--text:#e0e0e0;--muted:#888}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{background:var(--card);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;gap:16px}
+header a{color:var(--accent);text-decoration:none;font-size:14px}
+header h1{font-size:18px;font-weight:600}
+header .icon{font-size:24px}
+.container{max-width:800px;margin:0 auto;padding:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:500}
+select,input[type=number],textarea{width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px}
+select:focus,input:focus,textarea:focus{outline:none;border-color:var(--accent)}
+textarea{min-height:200px;resize:vertical;font-family:monospace;font-size:13px;line-height:1.7}
+.btn{background:var(--accent);color:#fff;border:none;padding:12px 24px;border-radius:8px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+.btn:hover{opacity:.85}
+.btn-outline{background:transparent;border:1px solid var(--accent);color:var(--accent)}
+.btn-outline:hover{background:var(--accent);color:#fff}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:600px){.row{grid-template-columns:1fr}}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+.output{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:20px;line-height:1.8;font-size:14px;max-height:400px;overflow-y:auto;white-space:pre-wrap}
+.word-count{font-size:13px;color:var(--muted);margin-top:8px}
+.toggle-group{display:flex;gap:8px;margin-bottom:12px}
+.toggle{padding:8px 16px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;font-size:13px;font-family:'Inter',sans-serif}
+.toggle.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.custom-words{display:none;margin-top:12px}
+.custom-words textarea{height:80px;font-size:12px}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--accent);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;opacity:0;transform:translateY(20px);transition:all .3s;z-index:9999;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+<header>
+  <a href="/"><span class="icon">🏠</span> ← Home</a>
+  <h1><span class="icon">📝</span> Lorem Ipsum Generator</h1>
+</header>
+<div class="container">
+  <div class="card">
+    <div class="row" style="margin-bottom:16px">
+      <div>
+        <label>Generate by</label>
+        <div class="toggle-group" id="unitToggle">
+          <button class="toggle active" onclick="setUnit('paragraphs',this)">Paragraphs</button>
+          <button class="toggle" onclick="setUnit('sentences',this)">Sentences</button>
+          <button class="toggle" onclick="setUnit('words',this)">Words</button>
+        </div>
+      </div>
+      <div>
+        <label>Count</label>
+        <input type="number" id="count" value="5" min="1" max="100">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Language</label>
+        <select id="language">
+          <option value="latin">Latin</option>
+          <option value="english">English</option>
+          <option value="indonesian">Indonesian</option>
+        </select>
+      </div>
+      <div>
+        <label>Start with</label>
+        <select id="startWith">
+          <option value="lorem">Lorem ipsum dolor sit amet</option>
+          <option value="random">Random start</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:12px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="customToggle" onchange="document.getElementById('customWords').style.display=this.checked?'block':'none'" style="accent-color:var(--accent)">
+        Use custom word list
+      </label>
+      <div class="custom-words" id="customWords">
+        <label>Custom words (one per line)</label>
+        <textarea id="customWordsInput" placeholder="hello&#10;world&#10;foo&#10;bar"></textarea>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" onclick="generate()">Generate</button>
+      <button class="btn btn-outline" onclick="copyOutput()">📋 Copy</button>
+    </div>
+  </div>
+  <div class="card" id="outputCard" style="display:none">
+    <div class="output" id="output"></div>
+    <div class="word-count" id="wordCount"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let unit='paragraphs';
+const WORDS={
+  latin:['lorem','ipsum','dolor','sit','amet','consectetur','adipiscing','elit','sed','do','eiusmod','tempor','incididunt','ut','labore','et','dolore','magna','aliqua','enim','ad','minim','veniam','quis','nostrud','exercitation','ullamco','laboris','nisi','aliquip','ex','ea','commodo','consequat','duis','aute','irure','in','reprehenderit','voluptate','velit','esse','cillum','fugiat','nulla','pariatur','excepteur','sint','occaecat','cupidatat','non','proident','sunt','culpa','qui','officia','deserunt','mollit','anim','id','est','laborum','perspiciatis','unde','omnis','iste','natus','error','voluptatem','accusantium','doloremque','laudantium','totam','rem','aperiam','eaque','ipsa','quae','ab','illo','inventore','veritatis','quasi','architecto','beatae','vitae','dicta','explicabo','nemo','ipsam','quia','voluptas','aspernatur','aut','odit','fugit','consequuntur','magni','dolores','ratione','sequi','nesciunt','neque','porro','quisquam','nihil','impedit','quo','minus','maxime','placeat','facere','possimus','occaecati','cupiditate','pariatur'],
+  english:['the','quick','brown','fox','jumps','over','lazy','dog','a','an','is','are','was','were','been','being','have','has','had','do','does','did','will','would','could','should','may','might','shall','can','need','dare','to','of','in','for','on','with','at','by','from','as','into','through','during','before','after','above','below','between','out','off','over','under','again','further','then','once','here','there','when','where','why','how','all','both','each','few','more','most','other','some','such','no','nor','not','only','own','same','so','than','too','very','just','because','but','and','if','or','while','that','this','these','those','it','he','she','they','we','you','I','my','your','his','her','its','our','their','me','him','them','us','what','which','who','whom'],
+  indonesian:['saya','anda','kami','mereka','dia','itu','ini','adalah','yang','dan','di','ke','dari','untuk','dengan','pada','akan','dalam','tidak','bisa','ada','juga','lebih','sudah','belum','sedang','telah','hanya','karena','oleh','bagi','serta','atau','tetapi','namun','jika','maka','karena','sehingga','sebagai','menjadi','seperti','antara','tentang','hal','kata','orang','hari','tahun','bulan','minggu','waktu','jam','menit','sekarang','besok','kemarin','rumah','jalan','kota','desa','tanah','air','langit','matahari','bulan','bintang','warna','merah','biru','hijau','kuning','hitam','putih','besar','kecil','panjang','pendek','tinggi','rendah','baru','lama','baik','buruk']
+};
+let unit_='paragraphs';
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function setUnit(u,btn){
+  unit=u;
+  document.querySelectorAll('#unitToggle .toggle').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function getWordPool(){
+  if(document.getElementById('customToggle').checked){
+    const w=document.getElementById('customWordsInput').value.split('\n').map(s=>s.trim()).filter(Boolean);
+    if(w.length>0)return w;
+  }
+  return WORDS[document.getElementById('language').value];
+}
+function randWord(pool){return pool[Math.floor(Math.random()*pool.length)]}
+function capitalize(s){return s.charAt(0).toUpperCase()+s.slice(1)}
+function genSentence(pool,startWithRandom){
+  const len=Math.floor(Math.random()*12)+6;
+  let words=[];
+  if(!startWithRandom&&WORDS.latin.includes('lorem')){
+    words=['Lorem','ipsum','dolor','sit','amet'];
+    while(words.length<len)words.push(capitalize(randWord(pool)));
+  } else {
+    while(words.length<len)words.push(capitalize(randWord(pool)));
+  }
+  return words.join(' ')+'.';
+}
+function genParagraph(pool,startWithRandom){
+  const sentences=Math.floor(Math.random()*6)+3;
+  return Array.from({length:sentences},()=>genSentence(pool,startWithRandom)).join(' ');
+}
+function generate(){
+  const count=parseInt(document.getElementById('count').value)||5;
+  const pool=getWordPool();
+  const startWithRandom=document.getElementById('startWith').value==='random';
+  let result='';
+  if(unit==='paragraphs'){
+    result=Array.from({length:count},()=>genParagraph(pool,startWithRandom)).join('\n\n');
+  } else if(unit==='sentences'){
+    result=Array.from({length:count},()=>genSentence(pool,startWithRandom)).join(' ');
+  } else {
+    const words=Array.from({length:count},()=>randWord(pool));
+    result=words.join(' ');
+    result=capitalize(result[0])+result.slice(1)+'.';
+  }
+  document.getElementById('output').textContent=result;
+  document.getElementById('outputCard').style.display='block';
+  const wc=result.split(/\s+/).length;
+  document.getElementById('wordCount').textContent=`${wc} words · ${result.length} characters`;
+  toast('Generated!');
+}
+function copyOutput(){
+  const text=document.getElementById('output').textContent;
+  navigator.clipboard.writeText(text).then(()=>toast('Copied!')).catch(()=>toast('Copy failed'));
+}
+generate();
+</script>
+</body>
+</html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kanban Board</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#e0e0e0;min-height:100vh}
+.header{background:#16213e;padding:1rem 2rem;display:flex;align-items:center;gap:1rem;border-bottom:2px solid #FF6B00;position:sticky;top:0;z-index:100}
+.header h1{font-size:1.5rem;font-weight:600}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;margin-left:auto;padding:.5rem 1rem;border:1px solid #FF6B00;border-radius:6px;transition:all .2s}
+.header a:hover{background:#FF6B00;color:#fff}
+.header .icon{font-size:1.8rem}
+.toolbar{padding:1rem 2rem;display:flex;gap:.75rem;flex-wrap:wrap;align-items:center}
+.toolbar input{background:#16213e;border:1px solid #333;color:#e0e0e0;padding:.5rem 1rem;border-radius:8px;font-family:'Inter',sans-serif;font-size:.85rem;width:250px}
+.toolbar input:focus{outline:none;border-color:#FF6B00}
+.btn{background:#FF6B00;color:#fff;border:none;padding:.5rem 1rem;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-weight:500;transition:all .2s;font-size:.85rem}
+.btn:hover{background:#e55e00;transform:translateY(-1px)}
+.btn-outline{background:transparent;border:1px solid #FF6B00;color:#FF6B00}
+.btn-outline:hover{background:#FF6B00;color:#fff}
+.btn-sm{padding:.3rem .6rem;font-size:.75rem}
+.btn-danger{background:#e74c3c}
+.btn-danger:hover{background:#c0392b}
+.board{display:flex;gap:1rem;padding:0 2rem 2rem;overflow-x:auto;min-height:calc(100vh - 140px)}
+.column{background:#16213e;border-radius:12px;min-width:280px;width:280px;flex-shrink:0;border:1px solid #333;display:flex;flex-direction:column}
+.column.drag-over{border-color:#FF6B00;background:#FF6B0011}
+.column-header{padding:1rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #333}
+.column-title{font-weight:600;font-size:.95rem;display:flex;align-items:center;gap:.5rem}
+.column-title .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.column-count{background:#333;padding:.15rem .5rem;border-radius:10px;font-size:.75rem;color:#aaa}
+.column-body{padding:.75rem;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:.5rem;min-height:100px}
+.column-footer{padding:.75rem}
+.column-footer .btn{width:100%;text-align:center;background:#1a1a2e;border:1px dashed #444}
+.column-footer .btn:hover{border-color:#FF6B00;background:#FF6B0011}
+.task-card{background:#1a1a2e;border-radius:8px;padding:.85rem;border:1px solid #333;cursor:grab;transition:all .2s}
+.task-card:active{cursor:grabbing}
+.task-card.dragging{opacity:.5;transform:rotate(2deg)}
+.task-card:hover{border-color:#FF6B00}
+.task-card .task-title{font-size:.9rem;font-weight:500;margin-bottom:.4rem;color:#fff}
+.task-card .task-desc{font-size:.8rem;color:#888;margin-bottom:.5rem;line-height:1.4}
+.task-card .task-meta{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.task-card .due-date{font-size:.75rem;color:#888;display:flex;align-items:center;gap:.25rem}
+.task-card .due-date.overdue{color:#e74c3c}
+.task-card .due-date.due-soon{color:#f39c12}
+.task-label{display:inline-block;padding:.1rem .45rem;border-radius:4px;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.03rem}
+.task-actions{display:flex;gap:.25rem;margin-top:.5rem;opacity:0;transition:opacity .2s}
+.task-card:hover .task-actions{opacity:1}
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:200;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.active{display:flex}
+.modal{background:#16213e;border-radius:16px;padding:2rem;width:100%;max-width:500px;border:1px solid #333}
+.modal h2{margin-bottom:1.25rem;color:#fff}
+.modal label{display:block;margin-bottom:.4rem;font-size:.85rem;color:#aaa;font-weight:500}
+.modal input,.modal select,.modal textarea{width:100%;background:#1a1a2e;border:1px solid #333;color:#e0e0e0;padding:.6rem 1rem;border-radius:8px;font-family:'Inter',sans-serif;font-size:.9rem;margin-bottom:1rem}
+.modal input:focus,.modal select:focus,.modal textarea:focus{outline:none;border-color:#FF6B00}
+.label-picker{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}
+.label-option{padding:.35rem .75rem;border-radius:6px;cursor:pointer;font-size:.8rem;font-weight:500;border:2px solid transparent;transition:all .2s;user-select:none}
+.label-option.selected{border-color:#fff;transform:scale(1.05)}
+.modal-actions{display:flex;gap:.75rem;justify-content:flex-end}
+.toast{position:fixed;bottom:2rem;right:2rem;background:#16213e;color:#fff;padding:1rem 1.5rem;border-radius:10px;border-left:4px solid #FF6B00;box-shadow:0 4px 20px rgba(0,0,0,0.4);z-index:300;transform:translateX(120%);transition:transform .3s ease;font-size:.9rem}
+.toast.show{transform:translateX(0)}
+.toast.error{border-left-color:#e74c3c}
+.toast.success{border-left-color:#27ae60}
+.shortcut-hint{position:fixed;bottom:1rem;left:1rem;font-size:.75rem;color:#555;background:#16213e;padding:.5rem 1rem;border-radius:8px;border:1px solid #333}
+.shortcut-hint kbd{background:#333;padding:.1rem .35rem;border-radius:3px;font-size:.7rem;font-family:'Inter',sans-serif}
+@media(max-width:768px){.board{padding:0 1rem 1rem}.column{min-width:260px;width:260px}}
+</style>
+</head>
+<body>
+<header class="header">
+<span class="icon">📋</span>
+<h1>Kanban Board</h1>
+<a href="../index.html">← Home</a>
+</header>
+<div class="toolbar">
+<input type="text" id="searchInput" placeholder="Search tasks... (Ctrl+K)" oninput="render()">
+<button class="btn" onclick="openModal()">+ Add Task (N)</button>
+<button class="btn btn-outline" onclick="clearArchive()">Clear Archive</button>
+</div>
+<div class="board" id="board"></div>
+<div class="modal-overlay" id="modalOverlay">
+<div class="modal">
+<h2 id="modalTitle">New Task</h2>
+<label>Title</label>
+<input type="text" id="taskTitle" placeholder="Task title...">
+<label>Description</label>
+<textarea id="taskDesc" rows="3" placeholder="Description..."></textarea>
+<label>Due Date</label>
+<input type="date" id="taskDue">
+<label>Labels</label>
+<div class="label-picker" id="labelPicker"></div>
+<label>Column</label>
+<select id="taskColumn">
+<option value="todo">To Do</option>
+<option value="progress">In Progress</option>
+<option value="review">Review</option>
+<option value="done">Done</option>
+<option value="archive">Archive</option>
+</select>
+<div class="modal-actions">
+<button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+<button class="btn" onclick="saveTask()" id="saveTaskBtn">Save</button>
+</div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="shortcut-hint"><kbd>N</kbd> New task · <kbd>Del</kbd> Delete selected · <kbd>Esc</kbd> Close</div>
+<script>
+const COLUMNS=[
+  {id:'todo',name:'To Do',color:'#FF6B00'},
+  {id:'progress',name:'In Progress',color:'#3498db'},
+  {id:'review',name:'Review',color:'#f39c12'},
+  {id:'done',name:'Done',color:'#27ae60'},
+  {id:'archive',name:'Archive',color:'#666'}
+];
+const LABELS=[
+  {id:'urgent',name:'Urgent',bg:'#e74c3c'},
+  {id:'feature',name:'Feature',bg:'#3498db'},
+  {id:'bug',name:'Bug',bg:'#e74c3c'},
+  {id:'improvement',name:'Improvement',bg:'#2ecc71'},
+  {id:'docs',name:'Docs',bg:'#9b59b6'},
+  {id:'design',name:'Design',bg:'#e67e22'}
+];
+
+let tasks=JSON.parse(localStorage.getItem('zcus-kanban')||'[]');
+let editingId=null;
+let selectedLabels=[];
+let dragTaskId=null;
+
+function save(){localStorage.setItem('zcus-kanban',JSON.stringify(tasks));}
+
+function openModal(col,id){
+  editingId=id||null;
+  selectedLabels=[];
+  if(id){
+    const t=tasks.find(x=>x.id===id);
+    document.getElementById('modalTitle').textContent='Edit Task';
+    document.getElementById('taskTitle').value=t.title;
+    document.getElementById('taskDesc').value=t.desc||'';
+    document.getElementById('taskDue').value=t.due||'';
+    document.getElementById('taskColumn').value=t.column;
+    selectedLabels=[...(t.labels||[])];
+    document.getElementById('saveTaskBtn').textContent='Update';
+  }else{
+    document.getElementById('modalTitle').textContent='New Task';
+    document.getElementById('taskTitle').value='';
+    document.getElementById('taskDesc').value='';
+    document.getElementById('taskDue').value='';
+    document.getElementById('taskColumn').value=col||'todo';
+    document.getElementById('saveTaskBtn').textContent='Save';
+  }
+  renderLabels();
+  document.getElementById('modalOverlay').classList.add('active');
+  setTimeout(()=>document.getElementById('taskTitle').focus(),100);
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('active');editingId=null;}
+
+function renderLabels(){
+  document.getElementById('labelPicker').innerHTML=LABELS.map(l=>`
+    <div class="label-option ${selectedLabels.includes(l.id)?'selected':''}"
+      style="background:${l.bg}22;color:${l.bg};border-color:${l.bg}44"
+      onclick="toggleLabel('${l.id}')">${l.name}</div>`).join('');
+}
+function toggleLabel(id){
+  const i=selectedLabels.indexOf(id);
+  if(i>=0)selectedLabels.splice(i,1);else selectedLabels.push(id);
+  renderLabels();
+}
+
+function saveTask(){
+  const title=document.getElementById('taskTitle').value.trim();
+  if(!title){showToast('Title required','error');return;}
+  const data={
+    title,
+    desc:document.getElementById('taskDesc').value.trim(),
+    due:document.getElementById('taskDue').value,
+    column:document.getElementById('taskColumn').value,
+    labels:[...selectedLabels]
+  };
+  if(editingId){
+    const idx=tasks.findIndex(x=>x.id===editingId);
+    tasks[idx]={...tasks[idx],...data,updatedAt:Date.now()};
+    showToast('Task updated','success');
+  }else{
+    tasks.push({id:Date.now().toString(),...data,createdAt:Date.now(),updatedAt:Date.now()});
+    showToast('Task added','success');
+  }
+  save();render();closeModal();
+}
+
+function deleteTask(id){
+  tasks=tasks.filter(t=>t.id!==id);
+  save();render();showToast('Task deleted','error');
+}
+
+function moveTask(id,col){
+  const t=tasks.find(x=>x.id===id);
+  t.column=col;t.updatedAt=Date.now();
+  save();render();
+}
+
+function clearArchive(){
+  if(!confirm('Clear all archived tasks?'))return;
+  tasks=tasks.filter(t=>t.column!=='archive');
+  save();render();showToast('Archive cleared','success');
+}
+
+function render(){
+  const search=document.getElementById('searchInput').value.toLowerCase();
+  const board=document.getElementById('board');
+  board.innerHTML=COLUMNS.map(col=>{
+    const colTasks=tasks.filter(t=>t.column===col.id);
+    const filtered=search?colTasks.filter(t=>t.title.toLowerCase().includes(search)||(t.desc||'').toLowerCase().includes(search)):colTasks;
+    return `
+    <div class="column" data-col="${col.id}"
+      ondragover="onDragOver(event)" ondrop="onDrop(event,'${col.id}')" ondragleave="onDragLeave(event)">
+      <div class="column-header">
+        <span class="column-title"><span class="dot" style="background:${col.color}"></span>${col.name}</span>
+        <span class="column-count">${filtered.length}</span>
+      </div>
+      <div class="column-body" data-col="${col.id}">
+        ${filtered.map(t=>renderTask(t,col)).join('')}
+      </div>
+      ${col.id!=='archive'?`<div class="column-footer"><button class="btn btn-outline btn-sm" onclick="openModal('${col.id}')" style="width:100%;text-align:center">+ Add</button></div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function renderTask(t){
+  const dueClass=t.due?(new Date(t.due)<new Date()?'overdue':new Date(t.due)-new Date()<86400000*2?'due-soon':''):'';
+  const labels=(t.labels||[]).map(lid=>{const l=LABELS.find(x=>x.id===lid);return l?`<span class="task-label" style="background:${l.bg}22;color:${l.bg}">${l.name}</span>`:'';}).join('');
+  return `
+  <div class="task-card" draggable="true" data-id="${t.id}"
+    ondragstart="onDragStart(event,'${t.id}')" ondragend="onDragEnd(event)">
+    <div class="task-title">${esc(t.title)}</div>
+    ${t.desc?`<div class="task-desc">${esc(t.desc)}</div>`:''}
+    <div class="task-meta">
+      ${labels}
+      ${t.due?`<span class="due-date ${dueClass}">📅 ${new Date(t.due).toLocaleDateString()}</span>`:''}
+    </div>
+    <div class="task-actions">
+      <button class="btn btn-sm btn-outline" onclick="event.stopPropagation();openModal(null,'${t.id}')">Edit</button>
+      ${t.column!=='archive'?`<button class="btn btn-sm btn-outline" onclick="event.stopPropagation();moveTask('${t.id}','archive')">Archive</button>`:''}
+      <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteTask('${t.id}')">×</button>
+    </div>
+  </div>`;
+}
+
+function onDragStart(e,id){dragTaskId=id;e.target.classList.add('dragging');e.dataTransfer.effectAllowed='move';}
+function onDragEnd(e){e.target.classList.remove('dragging');dragTaskId=null;document.querySelectorAll('.column').forEach(c=>c.classList.remove('drag-over'));}
+function onDragOver(e){e.preventDefault();e.currentTarget.closest('.column').classList.add('drag-over');}
+function onDragLeave(e){e.currentTarget.closest('.column').classList.remove('drag-over');}
+function onDrop(e,col){
+  e.preventDefault();
+  document.querySelectorAll('.column').forEach(c=>c.classList.remove('drag-over'));
+  if(!dragTaskId)return;
+  moveTask(dragTaskId,col);dragTaskId=null;
+}
+
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+document.getElementById('modalOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape')closeModal();
+  if(e.key==='n'&&!e.ctrlKey&&!e.metaKey&&document.activeElement.tagName!=='INPUT'&&document.activeElement.tagName!=='TEXTAREA'){
+    e.preventDefault();openModal();
+  }
+});
+
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+render();
+</script>
+</body>
+</html>

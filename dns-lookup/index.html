@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DNS Lookup</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#e0e0e0;min-height:100vh}
+.header{background:#16213e;padding:1rem 2rem;display:flex;align-items:center;gap:1rem;border-bottom:2px solid #FF6B00;position:sticky;top:0;z-index:100}
+.header h1{font-size:1.5rem;font-weight:600}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;margin-left:auto;padding:.5rem 1rem;border:1px solid #FF6B00;border-radius:6px;transition:all .2s}
+.header a:hover{background:#FF6B00;color:#fff}
+.header .icon{font-size:1.8rem}
+.container{max-width:900px;margin:0 auto;padding:1.5rem}
+.card{background:#16213e;border-radius:12px;padding:1.5rem;border:1px solid #333;margin-bottom:1.5rem}
+.search-bar{display:flex;gap:.75rem;margin-bottom:1rem}
+.search-bar input{flex:1;background:#1a1a2e;border:1px solid #333;color:#e0e0e0;padding:.75rem 1rem;border-radius:8px;font-family:'Inter',sans-serif;font-size:1rem}
+.search-bar input:focus{outline:none;border-color:#FF6B00}
+.btn{background:#FF6B00;color:#fff;border:none;padding:.75rem 1.5rem;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-weight:500;transition:all .2s;font-size:.9rem;white-space:nowrap}
+.btn:hover{background:#e55e00;transform:translateY(-1px)}
+.btn-outline{background:transparent;border:1px solid #FF6B00;color:#FF6B00}
+.btn-outline:hover{background:#FF6B00;color:#fff}
+.btn-sm{padding:.4rem .8rem;font-size:.8rem}
+.quick-lookups{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.5rem}
+.quick-lookups button{background:#16213e;border:1px solid #333;color:#aaa;padding:.4rem .75rem;border-radius:20px;cursor:pointer;font-family:'Inter',sans-serif;font-size:.8rem;transition:all .2s}
+.quick-lookups button:hover{border-color:#FF6B00;color:#FF6B00}
+.record-tabs{display:flex;gap:.25rem;margin-bottom:1rem;flex-wrap:wrap}
+.record-tab{padding:.5rem 1rem;border-radius:8px 8px 0 0;cursor:pointer;font-size:.85rem;font-weight:500;background:#1a1a2e;color:#888;border:1px solid #333;border-bottom:none;transition:all .2s;font-family:'Inter',sans-serif}
+.record-tab:hover,.record-tab.active{background:#FF6B0022;color:#FF6B00;border-color:#FF6B00}
+.record-tab .badge{background:#FF6B0033;color:#FF6B00;padding:.1rem .4rem;border-radius:10px;font-size:.7rem;margin-left:.35rem}
+.record-content{background:#0f0f23;border-radius:0 10px 10px 10px;padding:1.25rem;border:1px solid #333}
+.record-table{width:100%;border-collapse:collapse;font-size:.85rem}
+.record-table th{text-align:left;padding:.6rem .75rem;color:#888;font-weight:500;border-bottom:1px solid #333;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em}
+.record-table td{padding:.6rem .75rem;border-bottom:1px solid #222;word-break:break-all}
+.record-table tr:hover td{background:#16213e}
+.record-table .value{color:#e0e0e0;font-family:'Fira Code',monospace;font-size:.8rem}
+.no-data{color:#666;text-align:center;padding:2rem;font-size:.9rem}
+.loading{text-align:center;padding:2rem;color:#888}
+.loading::after{content:'';display:inline-block;width:20px;height:20px;border:2px solid #333;border-top-color:#FF6B00;border-radius:50%;animation:spin .8s linear infinite;margin-left:.5rem;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.info-box{background:#FF6B0011;border:1px solid #FF6B0033;border-radius:8px;padding:1rem;margin-bottom:1rem;font-size:.85rem;color:#ccc;line-height:1.6}
+.toast{position:fixed;bottom:2rem;right:2rem;background:#16213e;color:#fff;padding:1rem 1.5rem;border-radius:10px;border-left:4px solid #FF6B00;box-shadow:0 4px 20px rgba(0,0,0,0.4);z-index:300;transform:translateX(120%);transition:transform .3s ease;font-size:.9rem}
+.toast.show{transform:translateX(0)}
+.toast.error{border-left-color:#e74c3c}
+.toast.success{border-left-color:#27ae60}
+@media(max-width:768px){.search-bar{flex-direction:column}}
+</style>
+</head>
+<body>
+<header class="header">
+<span class="icon">🌐</span>
+<h1>DNS Lookup</h1>
+<a href="../index.html">← Home</a>
+</header>
+<div class="container">
+<div class="card">
+<div class="info-box">🔍 DNS records are fetched using Cloudflare's DNS-over-HTTPS API (1.1.1.1). Enter a domain to look up its DNS records.</div>
+<div class="search-bar">
+<input type="text" id="domainInput" placeholder="Enter domain (e.g. google.com)" onkeypress="if(event.key==='Enter')lookup()">
+<button class="btn" onclick="lookup()" id="lookupBtn">🔍 Lookup</button>
+</div>
+<div class="quick-lookups">
+<span style="color:#666;font-size:.8rem;line-height:2">Quick lookups:</span>
+<button onclick="quickLookup('google.com')">google.com</button>
+<button onclick="quickLookup('github.com')">github.com</button>
+<button onclick="quickLookup('cloudflare.com')">cloudflare.com</button>
+<button onclick="quickLookup('wikipedia.org')">wikipedia.org</button>
+<button onclick="quickLookup('amazon.com')">amazon.com</button>
+<button onclick="quickLookup('npmjs.com')">npmjs.com</button>
+</div>
+</div>
+<div id="resultsArea"></div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let dnsData={};
+
+const RECORD_TYPES=['A','AAAA','MX','NS','TXT','CNAME'];
+
+function quickLookup(domain){document.getElementById('domainInput').value=domain;lookup();}
+
+async function lookup(){
+  const domain=document.getElementById('domainInput').value.trim();
+  if(!domain){showToast('Enter a domain','error');return;}
+  const btn=document.getElementById('lookupBtn');
+  btn.textContent='Looking up...';btn.disabled=true;
+  document.getElementById('resultsArea').innerHTML='<div class="loading">Fetching DNS records</div>';
+  dnsData={};
+  try{
+    await Promise.all(RECORD_TYPES.map(type=>fetchRecord(domain,type)));
+    renderResults(domain);
+  }catch(err){
+    document.getElementById('resultsArea').innerHTML=`<div class="card"><div class="no-data">Error: ${esc(err.message)}</div></div>`;
+    showToast('Lookup failed','error');
+  }
+  btn.textContent='🔍 Lookup';btn.disabled=false;
+}
+
+async function fetchRecord(domain,type){
+  try{
+    const res=await fetch(`https://cloudflare-dns.com/dns-query?name=${domain}&type=${type}`,{headers:{'Accept':'application/dns-json'}});
+    const data=await res.json();
+    dnsData[type]=data.Answer?data.Answer.filter(a=>a.type===typeCode(type)):[];
+  }catch(e){
+    try{
+      const res=await fetch(`https://1.1.1.1/dns-query?name=${domain}&type=${type}`,{headers:{'Accept':'application/dns-json'}});
+      const data=await res.json();
+      dnsData[type]=data.Answer?data.Answer.filter(a=>a.type===typeCode(type)):[];
+    }catch(e2){dnsData[type]=[];}
+  }
+}
+
+function typeCode(t){return{A:1,AAAA:28,CNAME:5,MX:15,NS:2,TXT:16}[t]||1;}
+
+function renderResults(domain){
+  const area=document.getElementById('resultsArea');
+  let tabsHtml=`<div class="card"><div class="record-tabs" id="recordTabs">`;
+  RECORD_TYPES.forEach((type,i)=>{
+    const count=(dnsData[type]||[]).length;
+    tabsHtml+=`<div class="record-tab ${i===0?'active':''}" onclick="showTab('${type}')">${type}<span class="badge">${count}</span></div>`;
+  });
+  tabsHtml+=`</div><div class="record-content" id="recordContent"></div></div>`;
+  area.innerHTML=tabsHtml;
+  showTab(RECORD_TYPES.find(t=>(dnsData[t]||[]).length>0)||'A');
+}
+
+function showTab(type){
+  document.querySelectorAll('.record-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector(`.record-tab[onclick="showTab('${type}')"]`).classList.add('active');
+  const records=dnsData[type]||[];
+  const content=document.getElementById('recordContent');
+  if(!records.length){content.innerHTML='<div class="no-data">No '+type+' records found</div>';return;}
+  let tableHtml=`<table class="record-table"><thead><tr><th>Name</th><th>TTL</th><th>Type</th><th>Value</th></tr></thead><tbody>`;
+  records.forEach(r=>{
+    const val=type==='MX'?`${r.data.preference} ${r.data.exchange}`:type==='TXT'?`"${r.data}"`:r.data;
+    tableHtml+=`<tr><td class="value">${esc(r.name)}</td><td>${r.TTL}s</td><td>${type}</td><td class="value">${esc(String(val))}</td></tr>`;
+  });
+  tableHtml+=`</tbody></table>`;
+  content.innerHTML=tableHtml;
+}
+
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text Transform</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--accent:#FF6B00;--bg:#0f1117;--card:#1a1d27;--border:#2a2d3a;--text:#e4e4e7;--muted:#71717a;--input-bg:#12141c}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;gap:16px}
+.header .icon{font-size:24px}
+.header h1{font-size:18px;font-weight:600;flex:1}
+.container{max-width:1000px;margin:0 auto;padding:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px}
+.card h2{font-size:15px;font-weight:600;margin-bottom:12px;color:var(--accent)}
+textarea{width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:12px;color:var(--text);font-family:'Inter',monospace;font-size:13px;resize:vertical;min-height:100px;outline:none}
+textarea:focus{border-color:var(--accent)}
+.btn-grid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+button{background:var(--accent);color:#fff;border:none;padding:7px 14px;border-radius:6px;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;transition:opacity .15s}
+button:hover{opacity:.85}
+button.secondary{background:var(--border);color:var(--text)}
+.preview-box{background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:monospace;font-size:13px;white-space:pre-wrap;min-height:80px;max-height:300px;overflow:auto;line-height:1.5}
+.stats{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-top:8px}
+.find-replace{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.find-replace input{background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:inherit;font-size:13px;outline:none;flex:1;min-width:120px}
+.toast{position:fixed;bottom:24px;right:24px;background:#22c55e;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:500;opacity:0;transition:opacity .3s;z-index:9999;pointer-events:none}
+.toast.show{opacity:1}
+@media(max-width:600px){.container{padding:16px}.card{padding:16px}button{padding:5px 10px;font-size:11px}}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<header class="header">
+  <span class="icon">🔄</span>
+  <h1>Text Transform</h1>
+  <a href="/">← Home</a>
+</header>
+<div class="container">
+  <div class="card">
+    <h2>Input</h2>
+    <textarea id="input" placeholder="Type or paste text here..." oninput="update()"></textarea>
+  </div>
+  <div class="card">
+    <h2>Transformations</h2>
+    <div class="btn-grid" id="btns"></div>
+  </div>
+  <div class="card">
+    <h2>Result</h2>
+    <div class="preview-box" id="preview">Select a transformation above</div>
+    <div class="stats" id="stats"></div>
+    <div style="margin-top:10px"><button class="secondary" onclick="copyResult()">📋 Copy Result</button></div>
+  </div>
+  <div class="card">
+    <h2>Find & Replace</h2>
+    <div class="find-replace">
+      <input id="findInput" placeholder="Find...">
+      <input id="replaceInput" placeholder="Replace with...">
+      <button onclick="findReplace()">Replace All</button>
+    </div>
+  </div>
+</div>
+<script>
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+
+const transforms=[
+  {name:'UPPERCASE',fn:s=>s.toUpperCase()},
+  {name:'lowercase',fn:s=>s.toLowerCase()},
+  {name:'Title Case',fn:s=>s.replace(/\w\S*/g,w=>w[0].toUpperCase()+w.slice(1).toLowerCase())},
+  {name:'camelCase',fn:s=>{const w=s.toLowerCase().split(/\s+/);return w[0]+w.slice(1).map(x=>x[0]?.toUpperCase()+x.slice(1)).join('')}},
+  {name:'PascalCase',fn:s=>s.toLowerCase().split(/\s+/).map(w=>w[0]?.toUpperCase()+w.slice(1)).join('')},
+  {name:'snake_case',fn:s=>s.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'')},
+  {name:'kebab-case',fn:s=>s.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')},
+  {name:'CONSTANT_CASE',fn:s=>s.toUpperCase().replace(/\s+/g,'_').replace(/[^A-Z0-9_]/g,'')},
+  {name:'dot.case',fn:s=>s.toLowerCase().replace(/\s+/g,'.').replace(/[^a-z0-9.]/g,'')},
+  {name:'Reverse',fn:s=>[...s].reverse().join('')},
+  {name:'Sort Lines',fn:s=>s.split('\n').sort((a,b)=>a.localeCompare(b)).join('\n')},
+  {name:'Remove Duplicates',fn:s=>[...new Set(s.split('\n'))].join('\n')},
+  {name:'Remove Empty Lines',fn:s=>s.split('\n').filter(l=>l.trim()).join('\n')},
+  {name:'Word Count',fn:s=>{const w=s.trim().split(/\s+/).filter(Boolean).length;const l=s.split('\n').length;return `Words: ${w} | Lines: ${l} | Chars: ${s.length}`}},
+  {name:'Slugify',fn:s=>s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
+];
+
+let lastResult='';
+
+const btnContainer=document.getElementById('btns');
+transforms.forEach(t=>{
+  const btn=document.createElement('button');
+  btn.textContent=t.name;
+  btn.onclick=()=>applyTransform(t);
+  btnContainer.appendChild(btn);
+});
+
+function applyTransform(t){
+  const text=document.getElementById('input').value;
+  if(!text){toast('Enter text first');return}
+  lastResult=t.fn(text);
+  document.getElementById('preview').textContent=lastResult;
+  const words=lastResult.trim().split(/\s+/).filter(Boolean).length;
+  document.getElementById('stats').innerHTML=`<span>Words: ${words}</span><span>Chars: ${lastResult.length}</span><span>Lines: ${lastResult.split('\n').length}</span>`;
+}
+
+function update(){/* real-time preview placeholder */}
+
+function findReplace(){
+  const text=document.getElementById('input').value;
+  const find=document.getElementById('findInput').value;
+  const repl=document.getElementById('replaceInput').value;
+  if(!find){toast('Enter find text');return}
+  document.getElementById('input').value=text.split(find).join(repl);
+  toast('Replaced!');
+}
+
+function copyResult(){
+  if(!lastResult){toast('Nothing to copy');return}
+  navigator.clipboard.writeText(lastResult).then(()=>toast('Copied!'));
+}
+</script>
+</body>
+</html>

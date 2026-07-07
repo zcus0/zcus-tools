@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hash Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--accent:#FF6B00;--bg:#0f1117;--card:#1a1d27;--border:#2a2d3a;--text:#e4e4e7;--muted:#71717a;--input-bg:#12141c}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;gap:16px}
+.header .icon{font-size:24px}
+.header h1{font-size:18px;font-weight:600;flex:1}
+.container{max-width:900px;margin:0 auto;padding:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px}
+.card h2{font-size:15px;font-weight:600;margin-bottom:12px;color:var(--accent)}
+textarea{width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:12px;color:var(--text);font-family:'Inter',monospace;font-size:13px;resize:vertical;min-height:80px;outline:none}
+textarea:focus{border-color:var(--accent)}
+button{background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;transition:opacity .15s}
+button:hover{opacity:.85}
+.hash-card{background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px;cursor:pointer;transition:border-color .15s}
+.hash-card:hover{border-color:var(--accent)}
+.hash-card .label{font-size:12px;font-weight:600;color:var(--accent);margin-bottom:6px;text-transform:uppercase}
+.hash-card .value{font-family:monospace;font-size:12px;color:var(--text);word-break:break-all;line-height:1.5}
+.toast{position:fixed;bottom:24px;right:24px;background:#22c55e;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:500;opacity:0;transition:opacity .3s;z-index:9999;pointer-events:none}
+.toast.show{opacity:1}
+@media(max-width:600px){.container{padding:16px}.card{padding:16px}}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<header class="header">
+  <span class="icon">🔐</span>
+  <h1>Hash Generator</h1>
+  <a href="/">← Home</a>
+</header>
+<div class="container">
+  <div class="card">
+    <h2>Input Text</h2>
+    <textarea id="input" placeholder="Enter text to hash..." oninput="generateHashes()"></textarea>
+  </div>
+  <div class="card">
+    <h2>Hashes</h2>
+    <div id="hashes"></div>
+  </div>
+</div>
+<script>
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+
+// Simple MD5 implementation
+function md5(string){function L(k,d){return(k<<d)|(k>>>(32-d))}function K(G,k){var I,d,F,H,x;F=(G&2147483648);H=(k&2147483648);I=(G&1073741824);d=(k&1073741824);x=(G&1073741823)+(k&1073741823);if(I&d)return(x^2147483648^F^H);if(I|d){if(x&1073741824)return(x^3221225472^F^H);else return(x^1073741824^F^H)}else return(x^F^H)}function r(d,F,k){return(d&F)|((~d)&k)}function q(d,F,k){return(d&k)|(F&(~k))}function p(d,F,k){return(d^F^k)}function n(d,F,k){return(F^(d|(~k)))}function u(G,F,aa,Z,k,H,I){G=K(G,K(K(r(F,aa,Z),k),I));return K(L(G,H),F)}function f(G,F,aa,Z,k,H,I){G=K(G,K(K(q(F,aa,Z),k),I));return K(L(G,H),F)}function D(G,F,aa,Z,k,H,I){G=K(G,K(K(p(F,aa,Z),k),I));return K(L(G,H),F)}function t(G,F,aa,Z,k,H,I){G=K(G,K(K(n(F,aa,Z),k),I));return K(L(G,H),F)}function e(G){var k,F=G.length,x=F+8,z=(x-(x%64))/64,y=(z+1)*16,w=Array(y-1),d=0,H=0;while(H<F){k=(H-(H%4))/4;d=(H%4)*8;w[k]=(w[k]|(G.charCodeAt(H)<<d));H++}k=(H-(H%4))/4;d=(H%4)*8;w[k]=w[k]|(128<<d);w[y-2]=F<<3;w[y-1]=F>>>29;return w}function B(x){var k="",F="",G,d;for(d=0;d<=3;d++){G=(x>>>(d*8))&255;F="0"+G.toString(16);k=k+F.substr(F.length-2,2)}return k}var C=e(string),a=1732584193,b=4023233417,c=2562383102,d=271733878,AA,BB,CC,DD,E,G,F,v,w,y,A,z,x;for(G=0;G<C.length;G+=16){AA=a;BB=b;CC=c;DD=d;a=u(a,b,c,d,C[G],7,3614090360);d=u(d,a,b,c,C[G+1],12,3905402710);c=u(c,d,a,b,C[G+2],17,606105819);b=u(b,c,d,a,C[G+3],22,3250441966);a=u(a,b,c,d,C[G+4],7,4118548399);d=u(d,a,b,c,C[G+5],12,1200080426);c=u(c,d,a,b,C[G+6],17,2821735955);b=u(b,c,d,a,C[G+7],22,4249261313);a=u(a,b,c,d,C[G+8],7,1770035416);d=u(d,a,b,c,C[G+9],12,2336552879);c=u(c,d,a,b,C[G+10],17,4294925233);b=u(b,c,d,a,C[G+11],22,2304563134);a=u(a,b,c,d,C[G+12],7,1804603682);d=u(d,a,b,c,C[G+13],12,4254626195);c=u(c,d,a,b,C[G+14],17,2792965006);b=u(b,c,d,a,C[G+15],22,1236535329);a=f(a,b,c,d,C[G+1],5,4129170786);d=f(d,a,b,c,C[G+6],9,3225465664);c=f(c,d,a,b,C[G+11],14,643717713);b=f(b,c,d,a,C[G],20,3921069994);a=f(a,b,c,d,C[G+5],5,3593408605);d=f(d,a,b,c,C[G+10],9,38016083);c=f(c,d,a,b,C[G+15],14,3634590921);b=f(b,c,d,a,C[G+4],20,3889429448);a=f(a,b,c,d,C[G+9],5,568446438);d=f(d,a,b,c,C[G+14],9,3275163606);c=f(c,d,a,b,C[G+3],14,4107603335);b=f(b,c,d,a,C[G+8],20,1163531501);a=f(a,b,c,d,C[G+13],5,2850285829);d=f(d,a,b,c,C[G+2],9,4243563512);c=f(c,d,a,b,C[G+7],14,1735328473);b=f(b,c,d,a,C[G+12],20,2368359562);a=D(a,b,c,d,C[G+5],4,4294588738);d=D(d,a,b,c,C[G+8],11,2272392833);c=D(c,d,a,b,C[G+11],16,1839030562);b=D(b,c,d,a,C[G+14],23,4259657740);a=D(a,b,c,d,C[G+1],4,2763975236);d=D(d,a,b,c,C[G+4],11,1272893353);c=D(c,d,a,b,C[G+7],16,4139469664);b=D(b,c,d,a,C[G+10],23,3200236656);a=D(a,b,c,d,C[G+13],4,681279174);d=D(d,a,b,c,C[G],11,3936430074);c=D(c,d,a,b,C[G+3],16,3572445317);b=D(b,c,d,a,C[G+6],23,76029189);a=D(a,b,c,d,C[G+9],4,3654602809);d=D(d,a,b,c,C[G+12],11,3873151461);c=D(c,d,a,b,C[G+15],16,530742520);b=D(b,c,d,a,C[G+2],23,3299628645);a=t(a,b,c,d,C[G],6,4096336452);d=t(d,a,b,c,C[G+7],10,1126891415);c=t(c,d,a,b,C[G+14],15,2878612391);b=t(b,c,d,a,C[G+5],21,4237533241);a=t(a,b,c,d,C[G+12],6,1700485571);d=t(d,a,b,c,C[G+3],10,2399980690);c=t(c,d,a,b,C[G+10],15,4293915773);b=t(b,c,d,a,C[G+1],21,2240044497);a=t(a,b,c,d,C[G+8],6,1873313359);d=t(d,a,b,c,C[G+15],10,4264355552);c=t(c,d,a,b,C[G+6],15,2734768916);b=t(b,c,d,a,C[G+13],21,1309151649);a=t(a,b,c,d,C[G+4],6,4149444226);d=t(d,a,b,c,C[G+11],10,3174756917);c=t(c,d,a,b,C[G+2],15,718787259);b=t(b,c,d,a,C[G+9],21,3951481745);a=K(a,AA);b=K(b,BB);c=K(c,CC);d=K(d,DD)}return(B(a)+B(b)+B(c)+B(d)).toLowerCase()}
+
+async function sha(algo,text){
+  const enc=new TextEncoder().encode(text);
+  const hash=await crypto.subtle.digest(algo,enc);
+  return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+const hashTypes=[
+  {name:'MD5',fn:async(t)=>md5(t)},
+  {name:'SHA-1',fn:async(t)=>sha('SHA-1',t)},
+  {name:'SHA-256',fn:async(t)=>sha('SHA-256',t)},
+  {name:'SHA-384',fn:async(t)=>sha('SHA-384',t)},
+  {name:'SHA-512',fn:async(t)=>sha('SHA-512',t)}
+];
+
+let debounce;
+async function generateHashes(){
+  clearTimeout(debounce);
+  debounce=setTimeout(async()=>{
+    const text=document.getElementById('input').value;
+    const container=document.getElementById('hashes');
+    if(!text){container.innerHTML='<p style="color:var(--muted);font-size:13px">Enter text above to generate hashes</p>';return}
+    let html='';
+    for(const ht of hashTypes){
+      const hash=await ht.fn(text);
+      html+=`<div class="hash-card" onclick="copyHash('${hash}')" title="Click to copy">
+        <div class="label">${ht.name}</div>
+        <div class="value">${hash}</div>
+      </div>`;
+    }
+    container.innerHTML=html;
+  },200);
+}
+
+function copyHash(h){navigator.clipboard.writeText(h).then(()=>toast('Copied!')).catch(()=>toast('Copy failed'))}
+generateHashes();
+</script>
+</body>
+</html>

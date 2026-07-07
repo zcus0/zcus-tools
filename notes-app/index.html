@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notes App</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#e0e0e0;min-height:100vh}
+.header{background:#16213e;padding:1rem 2rem;display:flex;align-items:center;gap:1rem;border-bottom:2px solid #FF6B00;position:sticky;top:0;z-index:100}
+.header h1{font-size:1.5rem;font-weight:600}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;margin-left:auto;padding:.5rem 1rem;border:1px solid #FF6B00;border-radius:6px;transition:all .2s}
+.header a:hover{background:#FF6B00;color:#fff}
+.header .icon{font-size:1.8rem}
+.container{max-width:1200px;margin:0 auto;padding:1.5rem}
+.toolbar{display:flex;gap:.75rem;margin-bottom:1.5rem;flex-wrap:wrap;align-items:center}
+.toolbar input,.toolbar select{background:#16213e;border:1px solid #333;color:#e0e0e0;padding:.6rem 1rem;border-radius:8px;font-family:'Inter',sans-serif;font-size:.9rem}
+.toolbar input{flex:1;min-width:200px}
+.toolbar input:focus,.toolbar select:focus{outline:none;border-color:#FF6B00}
+.btn{background:#FF6B00;color:#fff;border:none;padding:.6rem 1.2rem;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-weight:500;transition:all .2s;font-size:.9rem}
+.btn:hover{background:#e55e00;transform:translateY(-1px)}
+.btn-outline{background:transparent;border:1px solid #FF6B00;color:#FF6B00}
+.btn-outline:hover{background:#FF6B00;color:#fff}
+.btn-sm{padding:.35rem .7rem;font-size:.8rem}
+.btn-danger{background:#e74c3c}
+.btn-danger:hover{background:#c0392b}
+.btn-success{background:#27ae60}
+.btn-success:hover{background:#219a52}
+.notes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem}
+.note-card{background:#16213e;border-radius:12px;padding:1.2rem;border:1px solid #333;transition:all .3s;position:relative;cursor:pointer}
+.note-card:hover{border-color:#FF6B00;transform:translateY(-2px);box-shadow:0 4px 20px rgba(255,107,0,0.15)}
+.note-card.pinned{border-color:#FF6B00;background:linear-gradient(135deg,#16213e 0%,#1a1a2e 100%);border-width:2px}
+.note-card .pin-btn{position:absolute;top:.75rem;right:.75rem;background:none;border:none;color:#666;cursor:pointer;font-size:1.2rem;transition:color .2s}
+.note-card .pin-btn:hover,.note-card .pin-btn.active{color:#FF6B00}
+.note-card h3{font-size:1rem;font-weight:600;margin-bottom:.5rem;color:#fff}
+.note-card .content{font-size:.85rem;color:#aaa;line-height:1.5;margin-bottom:.75rem;max-height:80px;overflow:hidden}
+.note-card .meta{display:flex;justify-content:space-between;align-items:center;font-size:.75rem;color:#666}
+.note-card .tags{display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.5rem}
+.tag{display:inline-block;padding:.15rem .5rem;border-radius:12px;font-size:.7rem;font-weight:500;background:#FF6B0022;color:#FF6B00;border:1px solid #FF6B0044}
+.note-card .actions{display:flex;gap:.5rem;margin-top:.75rem}
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:200;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.active{display:flex}
+.modal{background:#16213e;border-radius:16px;padding:2rem;width:100%;max-width:700px;max-height:90vh;overflow-y:auto;border:1px solid #333}
+.modal h2{margin-bottom:1.25rem;color:#fff}
+.modal label{display:block;margin-bottom:.4rem;font-size:.85rem;color:#aaa;font-weight:500}
+.modal input,.modal select,.modal textarea{width:100%;background:#1a1a2e;border:1px solid #333;color:#e0e0e0;padding:.6rem 1rem;border-radius:8px;font-family:'Inter',sans-serif;font-size:.9rem;margin-bottom:1rem}
+.modal input:focus,.modal select:focus,.modal textarea:focus{outline:none;border-color:#FF6B00}
+.rich-editor{background:#1a1a2e;border:1px solid #333;border-radius:8px;min-height:200px;padding:1rem;margin-bottom:1rem}
+.rich-editor:focus{border-color:#FF6B00;outline:none}
+.toolbar-format{display:flex;gap:.35rem;margin-bottom:.5rem;padding:.5rem;background:#0f0f23;border-radius:8px}
+.toolbar-format button{background:#16213e;border:1px solid #333;color:#e0e0e0;padding:.35rem .7rem;border-radius:6px;cursor:pointer;font-size:.85rem;transition:all .2s}
+.toolbar-format button:hover{border-color:#FF6B00;color:#FF6B00}
+.modal-actions{display:flex;gap:.75rem;justify-content:flex-end;margin-top:.5rem}
+.toast{position:fixed;bottom:2rem;right:2rem;background:#16213e;color:#fff;padding:1rem 1.5rem;border-radius:10px;border-left:4px solid #FF6B00;box-shadow:0 4px 20px rgba(0,0,0,0.4);z-index:300;transform:translateX(120%);transition:transform .3s ease;font-size:.9rem}
+.toast.show{transform:translateX(0)}
+.toast.error{border-left-color:#e74c3c}
+.toast.success{border-left-color:#27ae60}
+.empty{text-align:center;padding:3rem;color:#666;font-size:1.1rem}
+.empty .icon{font-size:3rem;margin-bottom:1rem;display:block}
+.autosave-indicator{font-size:.75rem;color:#27ae60;display:flex;align-items:center;gap:.35rem}
+@media(max-width:768px){
+.container{padding:1rem}
+.notes-grid{grid-template-columns:1fr}
+.modal{padding:1.25rem}
+}
+</style>
+</head>
+<body>
+<header class="header">
+<span class="icon">📝</span>
+<h1>Notes App</h1>
+<a href="../index.html">← Home</a>
+</header>
+<div class="container">
+<div class="toolbar">
+<input type="text" id="searchInput" placeholder="Search notes...">
+<select id="categoryFilter">
+<option value="">All Categories</option>
+<option value="Personal">Personal</option>
+<option value="Work">Work</option>
+<option value="Ideas">Ideas</option>
+<option value="Tasks">Tasks</option>
+<option value="Other">Other</option>
+</select>
+<button class="btn" onclick="openModal()">+ New Note</button>
+<button class="btn btn-outline" onclick="exportNotes()">Export TXT</button>
+<span class="autosave-indicator" id="saveIndicator" style="display:none">✓ Saved</span>
+</div>
+<div class="notes-grid" id="notesGrid"></div>
+</div>
+<div class="modal-overlay" id="modalOverlay">
+<div class="modal">
+<h2 id="modalTitle">New Note</h2>
+<label>Note Title</label>
+<input type="text" id="noteTitle" placeholder="Enter note title...">
+<label>Category</label>
+<select id="noteCategory">
+<option value="Personal">Personal</option>
+<option value="Work">Work</option>
+<option value="Ideas">Ideas</option>
+<option value="Tasks">Tasks</option>
+<option value="Other">Other</option>
+</select>
+<label>Tags (comma separated)</label>
+<input type="text" id="noteTags" placeholder="e.g. important, meeting, follow-up">
+<label>Content</label>
+<div class="toolbar-format">
+<button onclick="execCmd('bold')" title="Bold"><b>B</b></button>
+<button onclick="execCmd('italic')" title="Italic"><i>I</i></button>
+<button onclick="execCmd('underline')" title="Underline"><u>U</u></button>
+<button onclick="execCmd('strikeThrough')" title="Strikethrough"><s>S</s></button>
+<button onclick="execCmd('insertUnorderedList')" title="List">☰</button>
+<button onclick="execCmd('justifyLeft')" title="Align Left">⫷</button>
+<button onclick="execCmd('justifyCenter')" title="Align Center">☰</button>
+</div>
+<div class="rich-editor" id="noteEditor" contenteditable="true"></div>
+<div class="modal-actions">
+<button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+<button class="btn btn-success" onclick="saveNote()">Save Note</button>
+</div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let notes=JSON.parse(localStorage.getItem('zcus-notes')||'[]');
+let editingId=null;
+let autoSaveTimer=null;
+
+function execCmd(cmd){document.execCommand(cmd,false,null);document.getElementById('noteEditor').focus();}
+
+function openModal(id){
+  editingId=id||null;
+  const m=document.getElementById('modalOverlay');
+  if(id){
+    const n=notes.find(x=>x.id===id);
+    document.getElementById('modalTitle').textContent='Edit Note';
+    document.getElementById('noteTitle').value=n.title;
+    document.getElementById('noteCategory').value=n.category;
+    document.getElementById('noteTags').value=n.tags.join(', ');
+    document.getElementById('noteEditor').innerHTML=n.content;
+  }else{
+    document.getElementById('modalTitle').textContent='New Note';
+    document.getElementById('noteTitle').value='';
+    document.getElementById('noteCategory').value='Personal';
+    document.getElementById('noteTags').value='';
+    document.getElementById('noteEditor').innerHTML='';
+  }
+  m.classList.add('active');
+  setTimeout(()=>document.getElementById('noteTitle').focus(),100);
+}
+
+function closeModal(){
+  document.getElementById('modalOverlay').classList.remove('active');
+  editingId=null;
+}
+
+function saveNote(){
+  const title=document.getElementById('noteTitle').value.trim();
+  const category=document.getElementById('noteCategory').value;
+  const tags=document.getElementById('noteTags').value.split(',').map(t=>t.trim()).filter(Boolean);
+  const content=document.getElementById('noteEditor').innerHTML;
+  if(!title){showToast('Title required','error');return;}
+  if(editingId){
+    const idx=notes.findIndex(x=>x.id===editingId);
+    notes[idx]={...notes[idx],title,category,tags,content,updatedAt:Date.now()};
+    showToast('Note updated','success');
+  }else{
+    notes.unshift({id:Date.now().toString(),title,category,tags,content,pinned:false,createdAt:Date.now(),updatedAt:Date.now()});
+    showToast('Note created','success');
+  }
+  save();render();closeModal();
+}
+
+function deleteNote(id){
+  if(!confirm('Delete this note?'))return;
+  notes=notes.filter(n=>n.id!==id);
+  save();render();showToast('Note deleted','error');
+}
+
+function togglePin(id){
+  const n=notes.find(x=>x.id===id);
+  n.pinned=!n.pinned;
+  save();render();
+  showToast(n.pinned?'Note pinned':'Note unpinned','success');
+}
+
+function save(){
+  localStorage.setItem('zcus-notes',JSON.stringify(notes));
+  const ind=document.getElementById('saveIndicator');
+  ind.style.display='flex';
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer=setTimeout(()=>ind.style.display='none',2000);
+}
+
+function render(){
+  const search=document.getElementById('searchInput').value.toLowerCase();
+  const cat=document.getElementById('categoryFilter').value;
+  let filtered=notes.filter(n=>{
+    const matchSearch=!search||n.title.toLowerCase().includes(search)||n.tags.some(t=>t.toLowerCase().includes(search))||n.content.toLowerCase().includes(search);
+    const matchCat=!cat||n.category===cat;
+    return matchSearch&&matchCat;
+  });
+  filtered.sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0)||b.updatedAt-a.updatedAt);
+  const grid=document.getElementById('notesGrid');
+  if(!filtered.length){grid.innerHTML='<div class="empty"><span class="icon">📭</span>No notes found</div>';return;}
+  grid.innerHTML=filtered.map(n=>`
+    <div class="note-card ${n.pinned?'pinned':''}">
+      <button class="pin-btn ${n.pinned?'active':''}" onclick="event.stopPropagation();togglePin('${n.id}')" title="Pin">${n.pinned?'📌':'📍'}</button>
+      <h3>${esc(n.title)}</h3>
+      <div class="tags">${n.tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+      <div class="content">${n.content}</div>
+      <div class="meta">
+        <span>${n.category} · ${new Date(n.updatedAt).toLocaleDateString()}</span>
+      </div>
+      <div class="actions">
+        <button class="btn btn-sm btn-outline" onclick="event.stopPropagation();openModal('${n.id}')">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteNote('${n.id}')">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+function exportNotes(){
+  if(!notes.length){showToast('No notes to export','error');return;}
+  const text=notes.map(n=>`=== ${n.title} ===\nCategory: ${n.category}\nTags: ${n.tags.join(', ')}\nPinned: ${n.pinned?'Yes':'No'}\nDate: ${new Date(n.createdAt).toLocaleString()}\n\n${n.content.replace(/<[^>]+>/g,'')}\n`).join('\n---\n\n');
+  const b=new Blob([text],{type:'text/plain'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);
+  a.download='notes-export.txt';
+  a.click();
+  showToast('Notes exported','success');
+}
+
+document.getElementById('searchInput').addEventListener('input',render);
+document.getElementById('categoryFilter').addEventListener('change',render);
+document.getElementById('modalOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast '+type+' show';
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+render();
+</script>
+</body>
+</html>

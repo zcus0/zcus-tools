@@ -1,0 +1,127 @@
+<!DOCTYPE html><html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ZCUS Tools — Developer & Productivity Suite</title>
+<meta name="description" content="Free developer tools, productivity apps, and utilities. All browser-based, no signup required.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--accent:#FF6B00;--accent2:#ff8c33;--bg:#f8f9fc;--card:#fff;--text:#1a1a2e;--text2:#6b7280;--border:#e5e7eb;--radius:16px}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.hero{text-align:center;padding:60px 20px 40px;background:linear-gradient(135deg,#FF6B00 0%,#ff8c33 50%,#ffb366 100%);color:#fff}
+.hero h1{font-size:2.8rem;font-weight:800;margin-bottom:8px}
+.hero p{font-size:1.1rem;opacity:0.9;max-width:500px;margin:0 auto}
+.hero .stats{display:flex;justify-content:center;gap:32px;margin-top:24px;font-size:0.9rem;opacity:0.9}
+.hero .stats span{font-weight:700;font-size:1.4rem}
+.search-wrap{max-width:500px;margin:-24px auto 0;position:relative;padding:0 20px;z-index:1}
+.search{width:100%;padding:14px 20px 14px 44px;border:2px solid var(--border);border-radius:var(--radius);font-size:1rem;font-family:inherit;background:var(--card);box-shadow:0 4px 20px rgba(0,0,0,.08);outline:none}
+.search:focus{border-color:var(--accent)}
+.search-icon{position:absolute;left:36px;top:50%;transform:translateY(-50%);font-size:1.1rem;color:var(--text2)}
+.container{max-width:1200px;margin:0 auto;padding:32px 20px}
+.categories{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:32px}
+.cat-btn{padding:8px 16px;border-radius:20px;border:1px solid var(--border);background:var(--card);font-size:0.85rem;font-weight:500;cursor:pointer;transition:all .2s;font-family:inherit;color:var(--text)}
+.cat-btn:hover,.cat-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.app-card{background:var(--card);border-radius:var(--radius);padding:20px;border:1px solid var(--border);text-decoration:none;color:var(--text);transition:all .2s;display:block}
+.app-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.08);transform:translateY(-2px);border-color:var(--accent)}
+.app-icon{font-size:2rem;margin-bottom:8px}
+.app-name{font-weight:700;font-size:1rem;margin-bottom:4px}
+.app-desc{font-size:0.82rem;color:var(--text2);line-height:1.4}
+.app-tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.7rem;font-weight:600;margin-top:8px}
+.tag-dev{background:#dbeafe;color:#1d4ed8}.tag-util{background:#dcfce7;color:#166534}.tag-prod{background:#fef3c7;color:#92400e}.tag-data{background:#f3e8ff;color:#7c3aed}.tag-design{background:#fce7f3;color:#be185d}
+.empty{text-align:center;padding:60px 20px;color:var(--text2)}
+footer{text-align:center;padding:32px;color:var(--text2);font-size:0.8rem;border-top:1px solid var(--border);margin-top:40px}
+footer a{color:var(--accent);text-decoration:none}
+@media(max-width:640px){.hero h1{font-size:2rem}.hero .stats{flex-direction:column;gap:8px}.grid{grid-template-columns:1fr}}
+</style></head><body>
+<div class="hero">
+  <h1>⚡ ZCUS Tools</h1>
+  <p>30+ developer tools & productivity apps. Free, fast, browser-based. No signup needed.</p>
+  <div class="stats">
+    <div><span id="tool-count">30</span><br>Tools</div>
+    <div><span>100%</span><br>Free</div>
+    <div><span>0</span><br>Signups</div>
+  </div>
+</div>
+<div class="search-wrap">
+  <span class="search-icon">🔍</span>
+  <input type="text" class="search" id="search" placeholder="Search tools... (e.g. JSON, password, QR)" oninput="filterApps()">
+</div>
+<div class="container">
+  <div class="categories" id="categories"></div>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" style="display:none">
+    <div style="font-size:3rem;margin-bottom:8px">🔍</div>
+    <p>No tools found matching your search.</p>
+  </div>
+</div>
+<footer>
+  <p>Built with ⚡ by <a href="https://github.com/zcus0">ZCUS</a> · All tools run in your browser · <a href="https://panel.zcus.dev">Panel</a></p>
+</footer>
+<script>
+var apps=[
+  {name:'JSON Formatter',icon:'{ }',desc:'Format, validate, minify, convert JSON. Supports CSV & YAML export.',path:'/json-formatter/',tags:['dev']},
+  {name:'Regex Tester',icon:'.*',desc:'Test regular expressions with real-time highlighting, capture groups & flags.',path:'/regex-tester/',tags:['dev']},
+  {name:'Base64 Tool',icon:'B64',desc:'Encode/decode Base64, URL encode/decode, HTML entity encode.',path:'/base64-tool/',tags:['dev']},
+  {name:'Hash Generator',icon:'#',desc:'Generate MD5, SHA-1, SHA-256, SHA-384, SHA-512 hashes.',path:'/hash-generator/',tags:['dev']},
+  {name:'Password Generator',icon:'🔐',desc:'Secure password generator with strength meter & entropy calculation.',path:'/password-gen/',tags:['util']},
+  {name:'Text Transform',icon:'Aa',desc:'Transform text: camelCase, snake_case, kebab-case, title case & more.',path:'/text-transform/',tags:['dev']},
+  {name:'Markdown Editor',icon:'M↓',desc:'Live markdown editor with split-pane preview & export.',path:'/markdown-editor/',tags:['dev']},
+  {name:'Markdown → PDF',icon:'📄',desc:'Convert markdown to PDF or HTML with print-optimized styling.',path:'/markdown-pdf/',tags:['dev']},
+  {name:'Timestamp Converter',icon:'🕐',desc:'Unix timestamp ↔ human readable. Relative time & batch convert.',path:'/timestamp-converter/',tags:['dev']},
+  {name:'UUID Generator',icon:'🆔',desc:'Generate UUID v4 with batch mode & customizable format.',path:'/uuid-generator/',tags:['dev']},
+  {name:'JWT Decoder',icon:'🔑',desc:'Decode JWT tokens, view header/payload/signature & expiry status.',path:'/jwt-decoder/',tags:['dev']},
+  {name:'HTML Preview',icon:'🌐',desc:'Live HTML/CSS/JS editor with iframe preview & templates.',path:'/html-preview/',tags:['dev']},
+  {name:'CSS Playground',icon:'🎨',desc:'Interactive CSS property playground with live preview.',path:'/css-playground/',tags:['design']},
+  {name:'QR Generator',icon:'📱',desc:'Generate QR codes with custom colors & download as PNG.',path:'/qr-generator/',tags:['util']},
+  {name:'Color Palette',icon:'🎨',desc:'Generate random color palettes. Export as CSS vars or Tailwind.',path:'/color-palette/',tags:['design']},
+  {name:'Favicon Generator',icon:'⭐',desc:'Generate favicons from text/emoji. Export all required sizes.',path:'/favicon-gen/',tags:['design']},
+  {name:'CSV Viewer',icon:'📊',desc:'View, edit, sort & filter CSV data. Export as CSV or JSON.',path:'/csv-viewer/',tags:['data']},
+  {name:'JSON Diff',icon:'⚡',desc:'Compare two JSON objects. Visual diff with color coding.',path:'/json-diff/',tags:['dev']},
+  {name:'Text Diff',icon:'📝',desc:'Word-level and line-level text diff with split & unified views.',path:'/diff-viewer/',tags:['dev']},
+  {name:'Lorem Generator',icon:'📰',desc:'Generate placeholder text in English, Latin, or Indonesian.',path:'/lorem-generator/',tags:['util']},
+  {name:'HTML Entity',icon:'&#',desc:'Encode/decode HTML entities. Full entity reference table.',path:'/html-entity/',tags:['dev']},
+  {name:'SEO Meta Tags',icon:'🏷️',desc:'Generate OG tags, Twitter cards. Preview Google & social snippets.',path:'/meta-tags/',tags:['dev']},
+  {name:'Email Template',icon:'📧',desc:'Build email templates with sections. Export as HTML.',path:'/email-template/',tags:['design']},
+  {name:'DNS Lookup',icon:'🌍',desc:'DNS record lookup via Cloudflare DoH. A, AAAA, MX, NS, TXT records.',path:'/dns-lookup/',tags:['util']},
+  {name:'Expense Tracker',icon:'💰',desc:'Track income & expenses. Monthly charts & CSV export.',path:'/expense-tracker/',tags:['prod']},
+  {name:'Todo Kanban',icon:'📋',desc:'Kanban board with drag & drop. 3 columns: Todo, In Progress, Done.',path:'/todo-kanban/',tags:['prod']},
+  {name:'Notes App',icon:'📝',desc:'Rich text note-taking with search, pin, categories & auto-save.',path:'/notes-app/',tags:['prod']},
+  {name:'Bookmark Manager',icon:'🔖',desc:'Organize bookmarks with categories, search & favicon display.',path:'/bookmark-manager/',tags:['prod']},
+  {name:'API Health Check',icon:'🏥',desc:'Monitor API endpoints. Response time, status codes & auto-refresh.',path:'/api-health/',tags:['util']},
+  {name:'Image Compressor',icon:'🖼️',desc:'Compress images in-browser. Adjust quality & download.',path:'/image-compressor/',tags:['util']},
+];
+var activeFilter='all';
+function render(){
+  var q=document.getElementById('search').value.toLowerCase();
+  var filtered=apps.filter(function(a){
+    var matchSearch=!q||a.name.toLowerCase().includes(q)||a.desc.toLowerCase().includes(q)||a.tags.some(function(t){return t.includes(q)});
+    var matchCat=activeFilter==='all'||a.tags.includes(activeFilter);
+    return matchSearch&&matchCat;
+  });
+  var grid=document.getElementById('grid');
+  document.getElementById('empty').style.display=filtered.length?'none':'block';
+  grid.innerHTML=filtered.map(function(a){
+    var tagHTML=a.tags.map(function(t){return '<span class="app-tag tag-'+t+'">'+t.toUpperCase()+'</span>'}).join(' ');
+    return '<a class="app-card" href="'+a.path+'">'+
+      '<div class="app-icon">'+a.icon+'</div>'+
+      '<div class="app-name">'+a.name+'</div>'+
+      '<div class="app-desc">'+a.desc+'</div>'+
+      tagHTML+'</a>';
+  }).join('');
+}
+function filterApps(){render()}
+var catNames={all:'All',dev:'Developer',util:'Utility',prod:'Productivity',data:'Data',design:'Design'};
+Object.keys(catNames).forEach(function(c){
+  var btn=document.createElement('button');
+  btn.className='cat-btn'+(c==='all'?' active':'');
+  btn.textContent=catNames[c];
+  btn.onclick=function(){
+    activeFilter=c;
+    document.querySelectorAll('.cat-btn').forEach(function(b){b.classList.remove('active')});
+    btn.classList.add('active');render();
+  };
+  document.getElementById('categories').appendChild(btn);
+});
+document.getElementById('tool-count').textContent=apps.length;
+render();
+</script></body></html>

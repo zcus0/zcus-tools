@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Timestamp Converter</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--accent:#FF6B00;--bg:#0f1117;--card:#1a1d27;--border:#2a2d3a;--text:#e4e4e7;--muted:#71717a;--input-bg:#12141c}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;gap:16px}
+.header .icon{font-size:24px}
+.header h1{font-size:18px;font-weight:600;flex:1}
+.container{max-width:800px;margin:0 auto;padding:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px}
+.card h2{font-size:15px;font-weight:600;margin-bottom:12px;color:var(--accent)}
+.clock{font-size:32px;font-weight:700;font-family:monospace;color:var(--accent);text-align:center;margin:8px 0}
+.clock-sub{text-align:center;color:var(--muted);font-size:13px}
+input[type=text]{width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:12px;color:var(--text);font-family:monospace;font-size:14px;outline:none}
+input[type=text]:focus{border-color:var(--accent)}
+button{background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;transition:opacity .15s}
+button:hover{opacity:.85}
+button.secondary{background:var(--border);color:var(--text)}
+.result-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;font-size:13px;cursor:pointer}
+.result-row:hover{border-color:var(--accent)}
+.result-row .label{color:var(--muted);font-size:11px;text-transform:uppercase;font-weight:600}
+.result-row .value{font-family:monospace;font-size:13px}
+.batch-input{width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:12px;color:var(--text);font-family:monospace;font-size:12px;outline:none;min-height:80px;resize:vertical}
+.toast{position:fixed;bottom:24px;right:24px;background:#22c55e;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:500;opacity:0;transition:opacity .3s;z-index:9999;pointer-events:none}
+.toast.show{opacity:1}
+@media(max-width:600px){.container{padding:16px}.card{padding:16px}.clock{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<header class="header">
+  <span class="icon">⏱️</span>
+  <h1>Timestamp Converter</h1>
+  <a href="/">← Home</a>
+</header>
+<div class="container">
+  <div class="card">
+    <div class="clock" id="clock">--:--:--</div>
+    <div class="clock-sub" id="clockSub">Current Unix Timestamp: --</div>
+  </div>
+  <div class="card">
+    <h2>Convert Timestamp</h2>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input type="text" id="tsInput" placeholder="Enter Unix timestamp (e.g. 1700000000)">
+      <button onclick="convertTs()">Convert</button>
+      <button class="secondary" onclick="useNow()">Use Now</button>
+    </div>
+    <div id="tsResults"></div>
+  </div>
+  <div class="card">
+    <h2>Human → Timestamp</h2>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input type="text" id="humanInput" placeholder="e.g. 2024-01-15 10:30:00 or Jan 15 2024">
+      <button onclick="humanToTs()">Convert</button>
+    </div>
+    <div id="humanResult"></div>
+  </div>
+  <div class="card">
+    <h2>Batch Convert</h2>
+    <textarea class="batch-input" id="batchInput" placeholder="One timestamp per line (e.g. 1700000000)"></textarea>
+    <div style="margin-top:10px"><button onclick="batchConvert()">Convert All</button></div>
+    <div id="batchResults" style="margin-top:12px"></div>
+  </div>
+</div>
+<script>
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+
+function updateClock(){
+  const now=new Date();
+  const secs=Math.floor(now.getTime()/1000);
+  document.getElementById('clock').textContent=now.toLocaleTimeString();
+  document.getElementById('clockSub').textContent='Current Unix Timestamp: '+secs+' ('+secs*1000+'ms)';
+}
+setInterval(updateClock,1000);
+updateClock();
+
+function convertTs(){
+  const v=document.getElementById('tsInput').value.trim();
+  if(!v){toast('Enter a timestamp');return}
+  let d;
+  const num=parseInt(v);
+  if(num>1e12)d=new Date(num);else d=new Date(num*1000);
+  if(isNaN(d.getTime())){toast('Invalid timestamp');return}
+  
+  const relative=relativeTime(d);
+  const rows=[
+    {label:'ISO 8601',value:d.toISOString()},
+    {label:'UTC',value:d.toUTCString()},
+    {label:'Locale',value:d.toLocaleString()},
+    {label:'Date Only',value:d.toISOString().split('T')[0]},
+    {label:'Time Only',value:d.toTimeString().split(' ')[0]},
+    {label:'Relative',value:relative},
+    {label:'Unix (s)',value:Math.floor(d.getTime()/1000)},
+    {label:'Unix (ms)',value:d.getTime()}
+  ];
+  document.getElementById('tsResults').innerHTML=rows.map(r=>`<div class="result-row" onclick="copyVal('${esc(r.value)}')"><div><div class="label">${r.label}</div><div class="value">${r.value}</div></div><span style="color:var(--muted);font-size:11px">📋</span></div>`).join('');
+}
+
+function humanToTs(){
+  const v=document.getElementById('humanInput').value.trim();
+  if(!v){toast('Enter a date string');return}
+  const d=new Date(v);
+  if(isNaN(d.getTime())){toast('Invalid date string');return}
+  const secs=Math.floor(d.getTime()/1000);
+  document.getElementById('humanResult').innerHTML=`
+    <div class="result-row" onclick="copyVal('${secs}')"><div><div class="label">Unix (s)</div><div class="value">${secs}</div></div><span style="color:var(--muted);font-size:11px">📋</span></div>
+    <div class="result-row" onclick="copyVal('${d.getTime()}')"><div><div class="label">Unix (ms)</div><div class="value">${d.getTime()}</div></div><span style="color:var(--muted);font-size:11px">📋</span></div>
+    <div class="result-row"><div><div class="label">ISO 8601</div><div class="value">${d.toISOString()}</div></div></div>`;
+}
+
+function batchConvert(){
+  const lines=document.getElementById('batchInput').value.trim().split('\n').filter(Boolean);
+  if(!lines.length){toast('Enter timestamps');return}
+  document.getElementById('batchResults').innerHTML=lines.map(l=>{
+    const num=parseInt(l.trim());
+    const d=num>1e12?new Date(num):new Date(num*1000);
+    if(isNaN(d.getTime()))return `<div class="result-row" style="border-color:#ef4444"><div class="value">❌ "${l.trim()}" - Invalid</div></div>`;
+    return `<div class="result-row" onclick="copyVal('${d.toISOString()}')"><div><div class="label">${num}</div><div class="value">${d.toISOString()} (${relativeTime(d)})</div></div><span style="color:var(--muted);font-size:11px">📋</span></div>`;
+  }).join('');
+}
+
+function relativeTime(d){
+  const diff=Date.now()-d.getTime();
+  const abs=Math.abs(diff);
+  const future=diff<0;
+  let s;
+  if(abs<60000)s='just now';
+  else if(abs<3600000)s=Math.floor(abs/60000)+'m';
+  else if(abs<86400000)s=Math.floor(abs/3600000)+'h';
+  else if(abs<2592000000)s=Math.floor(abs/86400000)+'d';
+  else if(abs<31536000000)s=Math.floor(abs/2592000000)+'mo';
+  else s=Math.floor(abs/31536000000)+'y';
+  return future?`in ${s}`:`${s} ago`;
+}
+
+function useNow(){document.getElementById('tsInput').value=Math.floor(Date.now()/1000);convertTs()}
+function copyVal(v){navigator.clipboard.writeText(String(v)).then(()=>toast('Copied!'))}
+function esc(s){return String(s).replace(/'/g,"\\'")}
+</script>
+</body>
+</html>

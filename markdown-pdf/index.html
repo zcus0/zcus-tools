@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Markdown to PDF</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#e0e0e0;min-height:100vh}
+.header{background:#16213e;padding:1rem 2rem;display:flex;align-items:center;gap:1rem;border-bottom:2px solid #FF6B00;position:sticky;top:0;z-index:100}
+.header h1{font-size:1.5rem;font-weight:600}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;margin-left:auto;padding:.5rem 1rem;border:1px solid #FF6B00;border-radius:6px;transition:all .2s}
+.header a:hover{background:#FF6B00;color:#fff}
+.header .icon{font-size:1.8rem}
+.container{display:grid;grid-template-columns:1fr 1fr;gap:0;min-height:calc(100vh - 60px)}
+.editor-pane,.preview-pane{display:flex;flex-direction:column}
+.editor-pane{border-right:1px solid #333}
+.pane-header{padding:.75rem 1.5rem;background:#16213e;border-bottom:1px solid #333;display:flex;align-items:center;justify-content:space-between}
+.pane-header h2{font-size:.95rem;font-weight:500;color:#aaa}
+.pane-actions{display:flex;gap:.5rem}
+.btn{background:#FF6B00;color:#fff;border:none;padding:.5rem 1rem;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-weight:500;transition:all .2s;font-size:.85rem}
+.btn:hover{background:#e55e00;transform:translateY(-1px)}
+.btn-outline{background:transparent;border:1px solid #FF6B00;color:#FF6B00}
+.btn-outline:hover{background:#FF6B00;color:#fff}
+textarea{flex:1;width:100%;background:#1a1a2e;border:none;color:#e0e0e0;padding:1.5rem;font-family:'Fira Code','Courier New',monospace;font-size:.9rem;line-height:1.7;resize:none;outline:none}
+.preview-content{flex:1;padding:2rem;overflow-y:auto;background:#fff;color:#1a1a2e}
+.preview-content h1{font-size:2rem;margin:1rem 0 .75rem;border-bottom:2px solid #eee;padding-bottom:.5rem}
+.preview-content h2{font-size:1.5rem;margin:.85rem 0 .5rem;color:#333}
+.preview-content h3{font-size:1.25rem;margin:.75rem 0 .4rem;color:#333}
+.preview-content p{margin:.5rem 0;line-height:1.7}
+.preview-content code{background:#f0f0f0;padding:.15rem .4rem;border-radius:4px;font-size:.85rem;font-family:'Fira Code',monospace}
+.preview-content pre{background:#f5f5f5;padding:1rem;border-radius:8px;overflow-x:auto;margin:.75rem 0;border:1px solid #eee}
+.preview-content pre code{background:none;padding:0}
+.preview-content blockquote{border-left:4px solid #FF6B00;padding:.5rem 1rem;margin:.75rem 0;background:#fff8f0;color:#555}
+.preview-content ul,.preview-content ol{margin:.5rem 0;padding-left:2rem}
+.preview-content li{margin:.25rem 0;line-height:1.6}
+.preview-content a{color:#FF6B00;text-decoration:none}
+.preview-content img{max-width:100%;border-radius:8px}
+.preview-content table{border-collapse:collapse;margin:.75rem 0;width:100%}
+.preview-content th,.preview-content td{border:1px solid #ddd;padding:.5rem .75rem;text-align:left}
+.preview-content th{background:#f5f5f5;font-weight:600}
+.preview-content hr{border:none;border-top:2px solid #eee;margin:1rem 0}
+.toast{position:fixed;bottom:2rem;right:2rem;background:#16213e;color:#fff;padding:1rem 1.5rem;border-radius:10px;border-left:4px solid #FF6B00;box-shadow:0 4px 20px rgba(0,0,0,0.4);z-index:300;transform:translateX(120%);transition:transform .3s ease;font-size:.9rem}
+.toast.show{transform:translateX(0)}
+.toast.success{border-left-color:#27ae60}
+@media(max-width:768px){
+.container{grid-template-columns:1fr;grid-template-rows:1fr 1fr}
+.editor-pane{border-right:none;border-bottom:1px solid #333}
+}
+@media print{
+body{background:#fff;color:#000}
+.header,.pane-header,.toast{display:none}
+.container{display:block}
+.editor-pane{display:none}
+.preview-pane{display:block}
+.preview-content{padding:0;overflow:visible}
+}
+</style>
+</head>
+<body>
+<header class="header">
+<span class="icon">📄</span>
+<h1>Markdown to PDF</h1>
+<a href="../index.html">← Home</a>
+</header>
+<div class="container">
+<div class="editor-pane">
+<div class="pane-header">
+<h2>✏️ Markdown Editor</h2>
+</div>
+<textarea id="markdownInput" placeholder="Type your markdown here..." oninput="renderPreview()">
+# Welcome to Markdown to PDF
+
+## Features
+- **Bold**, *italic*, ~~strikethrough~~
+- Code blocks and inline code
+- Lists and tables
+- Links and images
+
+### Code Example
+```javascript
+function hello() {
+  console.log("Hello, World!");
+}
+```
+
+> Blockquote text goes here
+
+| Column 1 | Column 2 |
+|----------|----------|
+| Cell 1   | Cell 2   |
+
+---
+
+Start editing to see live preview! 🚀
+</textarea>
+</div>
+<div class="preview-pane">
+<div class="pane-header">
+<h2>👁️ Preview</h2>
+<div class="pane-actions">
+<button class="btn" onclick="exportPDF()">📥 Export PDF</button>
+<button class="btn btn-outline" onclick="exportHTML()">🌐 Export HTML</button>
+</div>
+</div>
+<div class="preview-content" id="previewContent"></div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+function parseMarkdown(md){
+  let html=md
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/```(\w*)\n([\s\S]*?)```/g,'<pre><code>$2</code></pre>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^# (.+)$/gm,'<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/~~(.+?)~~/g,'<del>$1</del>')
+    .replace(/^\> (.+)$/gm,'<blockquote>$1</blockquote>')
+    .replace(/^---$/gm,'<hr>')
+    .replace(/^\- (.+)$/gm,'<li>$1</li>')
+    .replace(/^\* (.+)$/gm,'<li>$1</li>')
+    .replace(/^\d+\. (.+)$/gm,'<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g,m=>'<ul>'+m+'</ul>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank">$1</a>')
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img src="$2" alt="$1">')
+    .replace(/\n{2,}/g,'</p><p>')
+    .replace(/\n/g,'<br>');
+  return '<p>'+html+'</p>';
+}
+
+function renderPreview(){
+  const md=document.getElementById('markdownInput').value;
+  document.getElementById('previewContent').innerHTML=parseMarkdown(md);
+}
+
+function exportPDF(){
+  showToast('Opening print dialog for PDF export...');
+  setTimeout(()=>window.print(),500);
+}
+
+function exportHTML(){
+  const content=document.getElementById('previewContent').innerHTML;
+  const fullHtml=`<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Exported Document</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{font-family:'Inter',sans-serif;max-width:800px;margin:2rem auto;padding:0 2rem;color:#1a1a2e;line-height:1.7}
+h1{font-size:2rem;margin:1rem 0 .75rem;border-bottom:2px solid #eee;padding-bottom:.5rem}
+h2{font-size:1.5rem;margin:.85rem 0 .5rem}
+h3{font-size:1.25rem;margin:.75rem 0 .4rem}
+code{background:#f0f0f0;padding:.15rem .4rem;border-radius:4px;font-size:.85rem}
+pre{background:#f5f5f5;padding:1rem;border-radius:8px;overflow-x:auto;margin:.75rem 0}
+pre code{background:none;padding:0}
+blockquote{border-left:4px solid #FF6B00;padding:.5rem 1rem;margin:.75rem 0;background:#fff8f0}
+a{color:#FF6B00}
+img{max-width:100%}
+table{border-collapse:collapse;margin:.75rem 0;width:100%}
+th,td{border:1px solid #ddd;padding:.5rem .75rem;text-align:left}
+th{background:#f5f5f5;font-weight:600}
+hr{border:none;border-top:2px solid #eee;margin:1rem 0}
+</style></head><body>${content}</body></html>`;
+  const b=new Blob([fullHtml],{type:'text/html'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download='document.html';a.click();
+  showToast('HTML exported','success');
+}
+
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+renderPreview();
+</script>
+</body>
+</html>

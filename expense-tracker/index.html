@@ -1,0 +1,138 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Expense Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}:root{--accent:#FF6B00;--bg:#f8f9fc;--card:#fff;--text:#1a1a2e;--text2:#6b7280;--border:#e5e7eb;--radius:12px}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.app{max-width:900px;margin:0 auto;padding:20px}
+.header{display:flex;align-items:center;gap:12px;padding:16px 0;border-bottom:2px solid var(--accent);margin-bottom:24px}
+.header h1{font-size:1.5rem;font-weight:700}.header a{color:var(--accent);text-decoration:none;font-size:0.85rem;margin-left:auto}
+.btn{background:var(--accent);color:#fff;border:none;padding:10px 20px;border-radius:var(--radius);font-weight:600;cursor:pointer;font-size:0.9rem}.btn:hover{opacity:.9}.btn-sm{padding:6px 14px;font-size:0.8rem}.btn-outline{background:transparent;color:var(--accent);border:2px solid var(--accent)}.btn-danger{background:#ef4444}
+.card{background:var(--card);border-radius:var(--radius);padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid var(--border)}
+input,select{padding:10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.9rem;background:var(--card);color:var(--text);outline:none}
+input:focus,select:focus{border-color:var(--accent)}
+.flex{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.mb-4{margin-bottom:16px}.mt-2{margin-top:8px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px}
+.stat{padding:16px;border-radius:var(--radius);text-align:center}
+.stat-income{background:#dcfce7;color:#166534}.stat-expense{background:#fee2e2;color:#991b1b}.stat-balance{background:#e0e7ff;color:#3730a3}
+.stat-value{font-size:1.8rem;font-weight:700}.stat-label{font-size:0.8rem;opacity:0.8}
+.item{display:flex;align-items:center;padding:12px;border-bottom:1px solid var(--border);gap:12px}
+.item:last-child{border-bottom:none}
+.item-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+.item-info{flex:1}.item-name{font-weight:600;font-size:0.9rem}.item-cat{font-size:0.75rem;color:var(--text2)}
+.item-amount{font-weight:700;font-size:0.95rem}.item-income{color:#16a34a}.item-expense{color:#ef4444}
+.item-date{font-size:0.75rem;color:var(--text2)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:12px 24px;border-radius:var(--radius);font-size:0.85rem;z-index:9999}
+footer{text-align:center;padding:24px;color:var(--text2);font-size:0.75rem}
+.empty{text-align:center;padding:40px;color:var(--text2)}.empty-icon{font-size:3rem;margin-bottom:8px}
+</style></head><body>
+<div class="app">
+  <div class="header"><span style="font-size:1.8rem">💰</span><h1>Expense Tracker</h1><a href="/">← Home</a></div>
+  <div id="stats" class="stats"></div>
+  <div class="card">
+    <div style="font-weight:600;margin-bottom:12px">Add Transaction</div>
+    <div class="flex mb-4" style="gap:8px">
+      <input type="text" id="desc" placeholder="Description" style="flex:2">
+      <input type="number" id="amount" placeholder="Amount" style="flex:1" step="0.01">
+      <select id="type"><option value="expense">Expense</option><option value="income">Income</option></select>
+      <select id="category">
+        <option value="🍔 Food">🍔 Food</option><option value="🚗 Transport">🚗 Transport</option>
+        <option value="🛒 Shopping">🛒 Shopping</option><option value="🎮 Entertainment">🎮 Entertainment</option>
+        <option value="📱 Bills">📱 Bills</option><option value="💰 Salary">💰 Salary</option>
+        <option value="💼 Business">💼 Business</option><option value="📦 Other">📦 Other</option>
+      </select>
+      <button class="btn" onclick="addTransaction()">Add</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="flex mb-4">
+      <span style="font-weight:600">Transactions</span>
+      <button class="btn btn-sm btn-outline" onclick="exportCSV()">📥 Export CSV</button>
+      <button class="btn btn-sm btn-danger" onclick="clearAll()">🗑 Clear All</button>
+    </div>
+    <div id="list"></div>
+  </div>
+  <div class="card">
+    <div style="font-weight:600;margin-bottom:8px">Monthly Summary</div>
+    <canvas id="chart" height="200"></canvas>
+  </div>
+</div><footer>ZCUS Tools — Expense Tracker</footer>
+<script>
+function toast(m){var t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(function(){t.remove()},2500)}
+function getTransactions(){try{return JSON.parse(localStorage.getItem('expense_tracker')||'[]')}catch{return[]}}
+function saveTransactions(t){localStorage.setItem('expense_tracker',JSON.stringify(t))}
+function addTransaction(){
+  var desc=document.getElementById('desc').value.trim();
+  var amount=parseFloat(document.getElementById('amount').value);
+  if(!desc||!amount||amount<=0){toast('Fill description and amount');return}
+  var txns=getTransactions();
+  txns.unshift({id:Date.now(),desc:desc,amount:amount,type:document.getElementById('type').value,category:document.getElementById('category').value,date:new Date().toISOString()});
+  saveTransactions(txns);
+  document.getElementById('desc').value='';document.getElementById('amount').value='';
+  render();toast('Transaction added');
+}
+function removeTxn(id){
+  var txns=getTransactions().filter(function(t){return t.id!==id});
+  saveTransactions(txns);render();toast('Removed');
+}
+function clearAll(){
+  if(!confirm('Delete all transactions?'))return;
+  saveTransactions([]);render();toast('All cleared');
+}
+function render(){
+  var txns=getTransactions();
+  var income=0,expense=0;
+  txns.forEach(function(t){if(t.type==='income')income+=t.amount;else expense+=t.amount});
+  document.getElementById('stats').innerHTML=
+    '<div class="stat stat-income"><div class="stat-value">Rp '+formatNum(income)+'</div><div class="stat-label">Income</div></div>'+
+    '<div class="stat stat-expense"><div class="stat-value">Rp '+formatNum(expense)+'</div><div class="stat-label">Expenses</div></div>'+
+    '<div class="stat stat-balance"><div class="stat-value">Rp '+formatNum(income-expense)+'</div><div class="stat-label">Balance</div></div>';
+  var list=document.getElementById('list');
+  if(!txns.length){list.innerHTML='<div class="empty"><div class="empty-icon">📝</div><p>No transactions yet</p></div>';return}
+  list.innerHTML=txns.map(function(t){
+    var dt=new Date(t.date);
+    return '<div class="item">'+
+      '<div class="item-icon" style="background:'+(t.type==='income'?'#dcfce7':'#fee2e2')+'">'+t.category.split(' ')[0]+'</div>'+
+      '<div class="item-info"><div class="item-name">'+escHtml(t.desc)+'</div><div class="item-cat">'+t.category+' · '+dt.toLocaleDateString('id')+'</div></div>'+
+      '<div class="item-amount '+(t.type==='income'?'item-income':'item-expense')+'">'+(t.type==='income'?'+':'-')+' Rp '+formatNum(t.amount)+'</div>'+
+      '<button onclick="removeTxn('+t.id+')" style="background:none;border:none;cursor:pointer;color:#999;font-size:1.1rem" title="Delete">✕</button></div>';
+  }).join('');
+  drawChart(txns);
+}
+function formatNum(n){return n.toLocaleString('id-ID')}
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+function drawChart(txns){
+  var canvas=document.getElementById('chart');var ctx=canvas.getContext('2d');
+  canvas.width=canvas.offsetWidth*2;canvas.height=400;ctx.scale(2,2);
+  var w=canvas.offsetWidth,h=200;
+  ctx.clearRect(0,0,w,h);
+  // Group by month
+  var months={};
+  txns.forEach(function(t){
+    var m=t.date.substring(0,7);
+    if(!months[m])months[m]={income:0,expense:0};
+    if(t.type==='income')months[m].income+=t.amount;else months[m].expense+=t.amount;
+  });
+  var keys=Object.keys(months).sort().slice(-6);
+  if(!keys.length)return;
+  var maxVal=Math.max.apply(null,keys.map(function(k){return Math.max(months[k].income,months[k].expense)}));
+  var barW=Math.min(40,(w-60)/keys.length/2-4);
+  var startX=50;
+  ctx.font='11px Inter';ctx.fillStyle='#6b7280';ctx.textAlign='right';
+  for(var i=0;i<=4;i++){var y=h-20-(h-40)*i/4;ctx.fillText('Rp '+formatNum(Math.round(maxVal*i/4)),45,y+4);ctx.beginPath();ctx.strokeStyle='#e5e7eb';ctx.moveTo(50,y);ctx.lineTo(w,y);ctx.stroke()}
+  keys.forEach(function(k,idx){
+    var x=startX+idx*(barW*2+20);
+    var ih=(months[k].income/maxVal)*(h-40);var eh=(months[k].expense/maxVal)*(h-40);
+    ctx.fillStyle='#22c55e';ctx.fillRect(x,h-20-ih,barW,ih);
+    ctx.fillStyle='#ef4444';ctx.fillRect(x+barW+2,h-20-eh,barW,eh);
+    ctx.fillStyle='#6b7280';ctx.textAlign='center';ctx.font='10px Inter';
+    ctx.fillText(k.substring(5),x+barW,h-4);
+  });
+}
+function exportCSV(){
+  var txns=getTransactions();if(!txns.length){toast('No data');return}
+  var csv='Date,Description,Type,Category,Amount\n';
+  txns.forEach(function(t){csv+='"'+t.date+'","'+t.desc+'","'+t.type+'","'+t.category+'",'+t.amount+'\n'});
+  var b=new Blob([csv],{type:'text/csv'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='expenses.csv';a.click();toast('CSV exported');
+}
+render();
+</script></body></html>

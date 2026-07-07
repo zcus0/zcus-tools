@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text Diff Viewer</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--accent:#FF6B00;--bg:#0f0f0f;--card:#1a1a1a;--border:#2a2a2a;--text:#e0e0e0;--muted:#888}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{background:var(--card);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;gap:16px}
+header a{color:var(--accent);text-decoration:none;font-size:14px}
+header h1{font-size:18px;font-weight:600}
+header .icon{font-size:24px}
+.container{max-width:1200px;margin:0 auto;padding:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:500}
+textarea{width:100%;height:180px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:monospace;font-size:13px;padding:12px;resize:vertical;line-height:1.6}
+textarea:focus{outline:none;border-color:var(--accent)}
+.btn{background:var(--accent);color:#fff;border:none;padding:12px 24px;border-radius:8px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+.btn:hover{opacity:.85}
+.btn-outline{background:transparent;border:1px solid var(--accent);color:var(--accent)}
+.btn-outline:hover{background:var(--accent);color:#fff}
+.btn-sm{padding:8px 16px;font-size:13px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:768px){.row{grid-template-columns:1fr}}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+.view-tabs{display:flex;gap:8px;margin-bottom:16px}
+.view-tab{padding:8px 16px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;font-size:13px;font-family:'Inter',sans-serif}
+.view-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.diff-unified{font-family:monospace;font-size:13px;line-height:1.8;border:1px solid var(--border);border-radius:8px;overflow:hidden;max-height:500px;overflow-y:auto}
+.diff-line{padding:2px 12px;border-bottom:1px solid rgba(42,42,42,.5);white-space:pre-wrap;word-break:break-all}
+.diff-line.added{background:rgba(34,197,94,.15)}
+.diff-line.removed{background:rgba(239,68,68,.15)}
+.diff-line.same{color:var(--muted)}
+.diff-split{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;max-height:500px;overflow-y:auto;font-family:monospace;font-size:13px;line-height:1.8}
+.diff-split .side{padding:0;overflow-y:auto}
+.diff-split .split-line{padding:2px 12px;border-bottom:1px solid rgba(42,42,42,.5);white-space:pre-wrap;word-break:break-all;min-height:22px}
+.diff-split .split-line.added{background:rgba(34,197,94,.15)}
+.diff-split .split-line.removed{background:rgba(239,68,68,.15)}
+.diff-split .split-line.empty{background:rgba(255,255,255,.02)}
+.stats{display:flex;gap:16px;font-size:13px;margin-top:12px}
+.stats span{padding:4px 10px;border-radius:4px;font-weight:500}
+.word-highlight{background:rgba(234,179,8,.3);border-radius:2px;padding:0 1px}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--accent);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;opacity:0;transform:translateY(20px);transition:all .3s;z-index:9999;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+<header>
+  <a href="/"><span class="icon">🏠</span> ← Home</a>
+  <h1><span class="icon">📝</span> Text Diff Viewer</h1>
+</header>
+<div class="container">
+  <div class="card">
+    <div class="row">
+      <div>
+        <label>Original Text</label>
+        <textarea id="text1" placeholder="Paste original text...">The quick brown fox jumps over the lazy dog.
+Lorem ipsum dolor sit amet.
+This line stays the same.
+Hello world from the original.
+Goodbye old text.</textarea>
+      </div>
+      <div>
+        <label>Modified Text</label>
+        <textarea id="text2" placeholder="Paste modified text...">The quick brown fox leaps over the lazy dog.
+Lorem ipsum dolor sit amet.
+This line stays the same.
+Hello world from the modified version.
+Goodbye old text!</textarea>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" onclick="diff()">Compare</button>
+      <button class="btn btn-outline" onclick="swap()">⇄ Swap</button>
+    </div>
+  </div>
+  <div class="card" id="resultCard" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+      <div class="view-tabs">
+        <button class="view-tab active" onclick="setView('unified',this)">Unified View</button>
+        <button class="view-tab" onclick="setView('split',this)">Split View</button>
+      </div>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div id="diffOutput"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let currentView='unified',lastResult=null;
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function swap(){
+  const a=document.getElementById('text1'),b=document.getElementById('text2');
+  [a.value,b.value]=[b.value,a.value];
+}
+function setView(v,btn){
+  currentView=v;
+  document.querySelectorAll('.view-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(lastResult)renderDiff(lastResult);
+}
+function lcs(a,b){
+  const m=a.length,n=b.length;
+  const dp=Array.from({length:m+1},()=>Array(n+1).fill(0));
+  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++){
+    dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]+1:Math.max(dp[i-1][j],dp[i][j-1]);
+  }
+  const result=[];
+  let i=m,j=n;
+  while(i>0&&j>0){
+    if(a[i-1]===b[j-1]){result.unshift({type:'same',old:a[i-1],new:b[j-1]});i--;j--}
+    else if(dp[i-1][j]>dp[i][j]){result.unshift({type:'removed',old:a[i-1]});i--}
+    else{result.unshift({type:'added',new:b[j-1]});j--}
+  }
+  while(i>0){result.unshift({type:'removed',old:a[--i]})}
+  while(j>0){result.unshift({type:'added',new:b[--j]})}
+  return result;
+}
+function diffLineWords(a,b){
+  const aw=a.split(/(\s+)/),bw=b.split(/(\s+)/);
+  return lcs(aw,bw).map(d=>{
+    if(d.type==='same')return esc(d.old);
+    if(d.type==='removed')return`<span style="background:rgba(239,68,68,.3);border-radius:2px">${esc(d.old)}</span>`;
+    if(d.type==='added')return`<span style="background:rgba(34,197,94,.3);border-radius:2px">${esc(d.new)}</span>`;
+    return'';
+  }).join('');
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function diff(){
+  const a=document.getElementById('text1').value.split('\n');
+  const b=document.getElementById('text2').value.split('\n');
+  const result=lcs(a,b);
+  lastResult=result;
+  renderDiff(result);
+  document.getElementById('resultCard').style.display='block';
+  toast('Comparison complete');
+}
+function renderDiff(result){
+  const el=document.getElementById('diffOutput');
+  let added=0,removed=0,changed=0;
+  result.forEach(d=>{if(d.type==='added')added++;else if(d.type==='removed')removed++});
+  document.getElementById('stats').innerHTML=`<span style="background:rgba(34,197,94,.15);color:#22c55e">+${added} added</span><span style="background:rgba(239,68,68,.15);color:#ef4444">-${removed} removed</span>`;
+  if(currentView==='unified'){
+    let html='<div class="diff-unified">';
+    result.forEach(d=>{
+      if(d.type==='same')html+=`<div class="diff-line same">  ${esc(d.old)}</div>`;
+      else if(d.type==='removed')html+=`<div class="diff-line removed">- ${esc(d.old)}</div>`;
+      else if(d.type==='added')html+=`<div class="diff-line added">+ ${esc(d.new)}</div>`;
+    });
+    html+='</div>';
+    el.innerHTML=html;
+  } else {
+    let html='<div class="diff-split"><div class="side" id="splitLeft"></div><div class="side" id="splitRight"></div></div>';
+    el.innerHTML=html;
+    let leftHtml='',rightHtml='';
+    result.forEach(d=>{
+      if(d.type==='same'){
+        leftHtml+=`<div class="split-line">${esc(d.old)}</div>`;
+        rightHtml+=`<div class="split-line">${esc(d.new||d.old)}</div>`;
+      } else if(d.type==='removed'){
+        leftHtml+=`<div class="split-line removed">${esc(d.old)}</div>`;
+        rightHtml+=`<div class="split-line empty"></div>`;
+      } else if(d.type==='added'){
+        leftHtml+=`<div class="split-line empty"></div>`;
+        rightHtml+=`<div class="split-line added">${esc(d.new)}</div>`;
+      }
+    });
+    document.getElementById('splitLeft').innerHTML=leftHtml;
+    document.getElementById('splitRight').innerHTML=rightHtml;
+  }
+}
+diff();
+</script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSV Viewer & Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--accent:#FF6B00;--bg:#0f0f0f;--card:#1a1a1a;--border:#2a2a2a;--text:#e0e0e0;--muted:#888}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{background:var(--card);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;gap:16px}
+header a{color:var(--accent);text-decoration:none;font-size:14px}
+header h1{font-size:18px;font-weight:600}
+header .icon{font-size:24px}
+.container{max-width:1200px;margin:0 auto;padding:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:500}
+textarea{width:100%;height:120px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:monospace;font-size:13px;padding:12px;resize:vertical}
+textarea:focus,input:focus{outline:none;border-color:var(--accent)}
+input[type=text]{width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px}
+.btn{background:var(--accent);color:#fff;border:none;padding:10px 20px;border-radius:8px;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .2s}
+.btn:hover{opacity:.85}
+.btn-outline{background:transparent;border:1px solid var(--accent);color:var(--accent)}
+.btn-outline:hover{background:var(--accent);color:#fff}
+.btn-sm{padding:6px 12px;font-size:12px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.table-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--bg);padding:10px 12px;text-align:left;font-weight:600;border-bottom:2px solid var(--accent);cursor:pointer;white-space:nowrap;position:sticky;top:0}
+th:hover{color:var(--accent)}
+th .sort-arrow{margin-left:4px;font-size:10px}
+td{padding:8px 12px;border-bottom:1px solid var(--border);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td[contenteditable]:focus{outline:2px solid var(--accent);background:rgba(255,107,0,.05)}
+tr:hover td{background:rgba(255,107,0,.03)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:16px}
+.stat-box{background:var(--bg);padding:14px;border-radius:8px;border:1px solid var(--border)}
+.stat-box h4{font-size:13px;color:var(--muted);margin-bottom:8px}
+.stat-box .value{font-size:20px;font-weight:700;color:var(--accent)}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--accent);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;opacity:0;transform:translateY(20px);transition:all .3s;z-index:9999;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.info-bar{display:flex;gap:16px;font-size:13px;color:var(--muted);margin-bottom:12px;flex-wrap:wrap}
+#dropZone{border:2px dashed var(--border);border-radius:8px;padding:30px;text-align:center;color:var(--muted);transition:border-color .2s}
+#dropZone.dragover{border-color:var(--accent);color:var(--accent)}
+</style>
+</head>
+<body>
+<header>
+  <a href="/"><span class="icon">🏠</span> ← Home</a>
+  <h1><span class="icon">📊</span> CSV Viewer & Editor</h1>
+</header>
+<div class="container">
+  <div class="card">
+    <label>Paste CSV data or drop a file</label>
+    <textarea id="csvInput" placeholder="name,age,city&#10;Alice,30,NYC&#10;Bob,25,LA">name,age,city,email
+Alice,30,NYC,alice@email.com
+Bob,25,LA,bob@email.com
+Charlie,35,Chicago,charlie@email.com
+Diana,28,Miami,diana@email.com
+Eve,32,Seattle,eve@email.com
+Frank,45,Boston,frank@email.com</textarea>
+    <div id="dropZone" style="margin-top:12px">📁 Drag & drop CSV file here</div>
+    <input type="file" id="fileInput" accept=".csv" style="display:none">
+    <div class="actions">
+      <button class="btn" onclick="parseCSV()">Load Data</button>
+      <button class="btn btn-outline" onclick="document.getElementById('fileInput').click()">📂 Upload File</button>
+      <button class="btn btn-outline" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="btn btn-outline" onclick="exportJSON()">⬇ Export JSON</button>
+    </div>
+  </div>
+  <div class="card" id="tableCard" style="display:none">
+    <div class="info-bar" id="infoBar"></div>
+    <div style="margin-bottom:12px">
+      <input type="text" id="searchInput" placeholder="🔍 Search rows..." oninput="filterRows()">
+    </div>
+    <div class="table-wrap" style="max-height:500px;overflow-y:auto">
+      <table id="dataTable"></table>
+    </div>
+    <div class="stats" id="stats"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let headers=[],rows=[],sortCol=-1,sortAsc=true;
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function parseCSV(){
+  const raw=document.getElementById('csvInput').value.trim();
+  if(!raw){toast('Paste CSV data first');return}
+  const lines=raw.split('\n').map(l=>l.trim()).filter(l=>l);
+  headers=lines[0].split(',').map(h=>h.trim());
+  rows=[];
+  for(let i=1;i<lines.length;i++){
+    const vals=lines[i].split(',').map(v=>v.trim());
+    rows.push(vals);
+  }
+  render();
+  document.getElementById('tableCard').style.display='block';
+  toast(`Loaded ${rows.length} rows`);
+}
+function render(){
+  const table=document.getElementById('dataTable');
+  let html='<thead><tr>';
+  headers.forEach((h,i)=>{
+    const arrow=sortCol===i?(sortAsc?'▲':'▼'):'';
+    html+=`<th onclick="sortBy(${i})">${h} <span class="sort-arrow">${arrow}</span></th>`;
+  });
+  html+='</tr></thead><tbody>';
+  rows.forEach((row,r)=>{
+    html+='<tr>';
+    row.forEach((cell,c)=>{
+      html+=`<td contenteditable="true" data-row="${r}" data-col="${c}" onblur="editCell(this)">${cell}</td>`;
+    });
+    html+='</tr>';
+  });
+  html+='</tbody>';
+  table.innerHTML=html;
+  document.getElementById('infoBar').innerHTML=`Rows: ${rows.length} | Columns: ${headers.length}`;
+  computeStats();
+}
+function sortBy(col){
+  if(sortCol===col)sortAsc=!sortAsc;else{sortCol=col;sortAsc=true}
+  rows.sort((a,b)=>{
+    const va=a[col],vb=b[col];
+    const na=parseFloat(va),nb=parseFloat(vb);
+    if(!isNaN(na)&&!isNaN(nb))return sortAsc?na-nb:nb-na;
+    return sortAsc?va.localeCompare(vb):vb.localeCompare(va);
+  });
+  render();
+}
+function filterRows(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  const tbody=document.querySelector('#dataTable tbody');
+  if(!tbody)return;
+  Array.from(tbody.rows).forEach(row=>{
+    const text=Array.from(row.cells).map(c=>c.textContent.toLowerCase()).join(' ');
+    row.style.display=text.includes(q)?'':'none';
+  });
+}
+function editCell(el){
+  const r=parseInt(el.dataset.row),c=parseInt(el.dataset.col);
+  rows[r][c]=el.textContent;
+  toast('Cell updated');
+}
+function computeStats(){
+  const stats=document.getElementById('stats');
+  stats.innerHTML=headers.map((h,i)=>{
+    const vals=rows.map(r=>r[i]);
+    const unique=new Set(vals).size;
+    const nulls=vals.filter(v=>!v||v==='').length;
+    return `<div class="stat-box"><h4>${h}</h4><div class="value">${vals.length} rows</div><div style="font-size:12px;color:var(--muted);margin-top:4px">${unique} unique · ${nulls} empty</div></div>`;
+  }).join('');
+}
+function exportCSV(){
+  const csv=[headers.join(','),...rows.map(r=>r.join(','))].join('\n');
+  download(csv,'data.csv','text/csv');
+  toast('CSV exported!');
+}
+function exportJSON(){
+  const data=rows.map(r=>{const o={};headers.forEach((h,i)=>o[h]=r[i]);return o});
+  download(JSON.stringify(data,null,2),'data.json','application/json');
+  toast('JSON exported!');
+}
+function download(content,name,type){
+  const blob=new Blob([content],{type});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();
+}
+// File handling
+document.getElementById('fileInput').addEventListener('change',e=>{
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{document.getElementById('csvInput').value=ev.target.result;parseCSV()};
+  reader.readAsText(file);
+});
+const dz=document.getElementById('dropZone');
+dz.addEventListener('click',()=>document.getElementById('fileInput').click());
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+dz.addEventListener('drop',e=>{
+  e.preventDefault();dz.classList.remove('dragover');
+  const file=e.dataTransfer.files[0];
+  if(file){const reader=new FileReader();reader.onload=ev=>{document.getElementById('csvInput').value=ev.target.result;parseCSV()};reader.readAsText(file)}
+});
+parseCSV();
+</script>
+</body>
+</html>

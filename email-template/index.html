@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Email Template Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--accent:#FF6B00;--bg:#0f0f0f;--card:#1a1a1a;--border:#2a2a2a;--text:#e0e0e0;--muted:#888}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{background:var(--card);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;gap:16px}
+header a{color:var(--accent);text-decoration:none;font-size:14px}
+header h1{font-size:18px;font-weight:600}
+header .icon{font-size:24px}
+.app{display:grid;grid-template-columns:280px 1fr;min-height:calc(100vh - 61px)}
+@media(max-width:900px){.app{grid-template-columns:1fr;}}
+.sidebar{background:var(--card);border-right:1px solid var(--border);padding:16px;overflow-y:auto;max-height:calc(100vh - 61px)}
+.sidebar h3{font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px}
+.section-list{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.section-item{padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;cursor:grab;font-size:13px;display:flex;align-items:center;gap:8px;transition:border-color .2s}
+.section-item:hover{border-color:var(--accent)}
+.section-item:active{cursor:grabbing}
+.template-list{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.template-btn{padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);text-align:left}
+.template-btn:hover{border-color:var(--accent)}
+.main{padding:24px;display:flex;flex-direction:column;align-items:center;overflow-y:auto;max-height:calc(100vh - 61px)}
+.btn{background:var(--accent);color:#fff;border:none;padding:10px 20px;border-radius:8px;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .2s}
+.btn:hover{opacity:.85}
+.btn-outline{background:transparent;border:1px solid var(--accent);color:var(--accent)}
+.btn-outline:hover{background:var(--accent);color:#fff}
+.btn-sm{padding:6px 12px;font-size:12px}
+.actions-bar{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;justify-content:center}
+.email-canvas{width:600px;background:#fff;border-radius:8px;overflow:hidden;min-height:400px;box-shadow:0 4px 24px rgba(0,0,0,.3)}
+.email-section{position:relative;min-height:40px;border:2px dashed transparent;transition:border-color .2s}
+.email-section:hover{border-color:var(--accent)}
+.email-section .remove-btn{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);color:#fff;border:none;width:24px;height:24px;border-radius:4px;cursor:pointer;font-size:12px;display:none;z-index:10}
+.email-section:hover .remove-btn{display:block}
+.email-section.header-section{background:#FF6B00;color:#fff;padding:40px;text-align:center}
+.email-section.text-section{padding:24px 40px;color:#333;font-size:14px;line-height:1.6}
+.email-section.image-section{padding:0;text-align:center;background:#f5f5f5}
+.email-section.image-section img{max-width:100%;display:block}
+.email-section.button-section{padding:20px 40px;text-align:center}
+.email-section.button-section a{display:inline-block;background:#FF6B00;color:#fff;padding:14px 32px;text-decoration:none;border-radius:6px;font-weight:600}
+.email-section.divider-section{padding:0 40px}
+.email-section.divider-section hr{border:none;border-top:1px solid #eee;margin:0}
+.email-section.spacer-section{height:32px}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--accent);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;opacity:0;transform:translateY(20px);transition:all .3s;z-index:9999;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:flex;align-items:center;justify-content:center}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;width:90%;max-width:400px}
+.modal input,.modal textarea,.modal select{width:100%;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;margin-bottom:12px}
+.modal textarea{height:80px;resize:vertical}
+.modal label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+.modal .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+</style>
+</head>
+<body>
+<header>
+  <a href="/"><span class="icon">🏠</span> ← Home</a>
+  <h1><span class="icon">✉️</span> Email Template Builder</h1>
+</header>
+<div class="app">
+  <div class="sidebar">
+    <h3>Sections</h3>
+    <div class="section-list">
+      <div class="section-item" draggable="true" data-type="header">🏗️ Header</div>
+      <div class="section-item" draggable="true" data-type="text">📝 Text</div>
+      <div class="section-item" draggable="true" data-type="image">🖼️ Image</div>
+      <div class="section-item" draggable="true" data-type="button">🔘 Button</div>
+      <div class="section-item" draggable="true" data-type="divider">➖ Divider</div>
+      <div class="section-item" draggable="true" data-type="spacer">⬜ Spacer</div>
+    </div>
+    <h3>Templates</h3>
+    <div class="template-list">
+      <button class="template-btn" onclick="loadTemplate('newsletter')">📧 Newsletter</button>
+      <button class="template-btn" onclick="loadTemplate('transactional')">🔐 Transactional</button>
+      <button class="template-btn" onclick="loadTemplate('promotional')">🏷️ Promotional</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="actions-bar">
+      <button class="btn" onclick="exportHTML()">⬇ Export HTML</button>
+      <button class="btn btn-outline" onclick="clearCanvas()">🗑 Clear</button>
+      <button class="btn btn-outline" onclick="previewHTML()">👁 Preview</button>
+    </div>
+    <div class="email-canvas" id="canvas"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let sections=[];
+let dragType=null;
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function addSection(type,data={}){
+  const sec={type,data};
+  if(type==='header')sec.data={text:data.text||'Welcome!',bgColor:data.bgColor||'#FF6B00',color:data.color||'#ffffff'};
+  if(type==='text')sec.data={html:data.html||'Your email content goes here. Edit this text to customize.'};
+  if(type==='image')sec.data={src:data.src||'https://placehold.co/560x200/e0e0e0/333?text=Image',alt:data.alt||'Image'};
+  if(type==='button')sec.data={text:data.text||'Click Here',url:data.url||'#',bgColor:data.bgColor||'#FF6B00',color:data.color||'#ffffff'};
+  if(type==='divider')sec.data={};
+  if(type==='spacer')sec.data={height:data.height||32};
+  sections.push(sec);
+  render();
+}
+function render(){
+  const canvas=document.getElementById('canvas');
+  if(sections.length===0){canvas.innerHTML='<div style="padding:60px;text-align:center;color:#999;font-size:14px">Drag sections here or choose a template</div>';return}
+  canvas.innerHTML='';
+  sections.forEach((sec,i)=>{
+    const div=document.createElement('div');
+    div.className='email-section';
+    div.dataset.index=i;
+    const removeBtn='<button class="remove-btn" onclick="removeSection('+i+')">✕</button>';
+    if(sec.type==='header'){
+      div.classList.add('header-section');
+      div.style.background=sec.data.bgColor;div.style.color=sec.data.color;
+      div.innerHTML=removeBtn+`<h1 style="margin:0;font-size:24px;font-weight:700">${sec.data.text}</h1>`;
+      div.style.cursor='pointer';
+      div.onclick=(e)=>{if(e.target.tagName!=='BUTTON')editField(i,'text','Header Text')};
+    } else if(sec.type==='text'){
+      div.classList.add('text-section');
+      div.innerHTML=removeBtn+`<div>${sec.data.html}</div>`;
+      div.style.cursor='pointer';
+      div.onclick=(e)=>{if(e.target.tagName!=='BUTTON')editTextField(i)};
+    } else if(sec.type==='image'){
+      div.classList.add('image-section');
+      div.innerHTML=removeBtn+`<img src="${sec.data.src}" alt="${sec.data.alt}" onerror="this.src='https://placehold.co/560x200/e0e0e0/333?text=Image'">`;
+      div.style.cursor='pointer';
+      div.onclick=(e)=>{if(e.target.tagName!=='BUTTON')editField(i,'src','Image URL')};
+    } else if(sec.type==='button'){
+      div.classList.add('button-section');
+      div.innerHTML=removeBtn+`<a href="${sec.data.url}" style="background:${sec.data.bgColor};color:${sec.data.color}">${sec.data.text}</a>`;
+      div.style.cursor='pointer';
+      div.onclick=(e)=>{if(e.target.tagName!=='BUTTON')editField(i,'text','Button Text')};
+    } else if(sec.type==='divider'){
+      div.classList.add('divider-section');
+      div.innerHTML=removeBtn+'<hr>';
+    } else if(sec.type==='spacer'){
+      div.classList.add('spacer-section');
+      div.style.height=sec.data.height+'px';
+      div.innerHTML=removeBtn;
+    }
+    div.draggable=true;
+    div.ondragstart=()=>{window._dragIdx=i};
+    div.ondragover=e=>{e.preventDefault()};
+    div.ondrop=e=>{e.preventDefault();if(window._dragIdx!==undefined&&window._dragIdx!==i){const item=sections.splice(window._dragIdx,1)[0];sections.splice(i,0,item);render()}};
+    canvas.appendChild(div);
+  });
+}
+function removeSection(i){sections.splice(i,1);render()}
+function editField(i,field,label){
+  const val=prompt(label,sections[i].data[field]);
+  if(val!==null){sections[i].data[field]=val;render()}
+}
+function editTextField(i){
+  const val=prompt('Email text (HTML allowed):',sections[i].data.html);
+  if(val!==null){sections[i].data.html=val;render()}
+}
+// Drag from sidebar
+document.querySelectorAll('.section-item').forEach(el=>{
+  el.ondragstart=()=>{dragType=el.dataset.type};
+});
+document.getElementById('canvas').ondragover=e=>e.preventDefault();
+document.getElementById('canvas').ondrop=e=>{e.preventDefault();if(dragType){addSection(dragType);dragType=null}};
+function loadTemplate(type){
+  sections=[];
+  if(type==='newsletter'){
+    addSection('header',{text:'📬 Weekly Newsletter'});
+    addSection('text',{html:'<strong>Hello there!</strong><br><br>Welcome to this week\'s newsletter. Here are the top stories and updates you don\'t want to miss.'});
+    addSection('image',{src:'https://placehold.co/560x250/FF6B00/ffffff?text=Featured+Story',alt:'Featured'});
+    addSection('text',{html:'<strong>Featured Story</strong><br><br>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'});
+    addSection('button',{text:'Read More',url:'#'});
+    addSection('divider',{});
+    addSection('text',{html:'<strong>Quick Updates</strong><br>• Update one<br>• Update two<br>• Update three'});
+    addSection('spacer',{});
+    addSection('text',{html:'<em>You received this because you subscribed to our newsletter. <a href="#" style="color:#FF6B00">Unsubscribe</a></em>'});
+  } else if(type==='transactional'){
+    addSection('header',{text:'✅ Order Confirmed',bgColor:'#22c55e'});
+    addSection('text',{html:'<strong>Thank you for your order!</strong><br><br>Your order #12345 has been confirmed and is being processed.'});
+    addSection('divider',{});
+    addSection('text',{html:'<strong>Order Details</strong><br>Item 1 — $29.99<br>Item 2 — $49.99<br>Shipping — $5.00<br><br><strong>Total: $84.98</strong>'});
+    addSection('button',{text:'Track Order',url:'#',bgColor:'#333'});
+    addSection('spacer',{});
+    addSection('text',{html:'If you have any questions, contact us at <a href="mailto:support@example.com" style="color:#FF6B00">support@example.com</a>'});
+  } else if(type==='promotional'){
+    addSection('header',{text:'🔥 Flash Sale — 50% Off!',bgColor:'#FF6B00'});
+    addSection('image',{src:'https://placehold.co/560x300/1a1a1a/FF6B00?text=SALE+50%25+OFF',alt:'Sale'});
+    addSection('text',{html:'<strong>Don\'t miss out!</strong><br><br>For a limited time, enjoy 50% off everything in store. Use code <strong>SAVE50</strong> at checkout.'});
+    addSection('button',{text:'Shop Now — 50% Off',url:'#'});
+    addSection('divider',{});
+    addSection('text',{html:'<em>Offer expires Sunday at midnight. Cannot be combined with other offers.</em>'});
+  }
+  toast('Template loaded!');
+}
+function exportHTML(){
+  const html=generateEmailHTML();
+  const blob=new Blob([html],{type:'text/html'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='email-template.html';a.click();
+  toast('Exported!');
+}
+function previewHTML(){
+  const html=generateEmailHTML();
+  const w=window.open('','_blank');
+  w.document.write(html);w.document.close();
+}
+function generateEmailHTML(){
+  let body='';
+  sections.forEach(sec=>{
+    if(sec.type==='header')body+=`<tr><td style="background:${sec.data.bgColor};color:${sec.data.color};padding:40px;text-align:center;font-size:24px;font-weight:700;font-family:Arial,sans-serif">${sec.data.text}</td></tr>`;
+    else if(sec.type==='text')body+=`<tr><td style="padding:24px 40px;color:#333;font-size:14px;line-height:1.6;font-family:Arial,sans-serif">${sec.data.html}</td></tr>`;
+    else if(sec.type==='image')body+=`<tr><td style="padding:0;text-align:center"><img src="${sec.data.src}" alt="${sec.data.alt}" style="max-width:100%;display:block"></td></tr>`;
+    else if(sec.type==='button')body+=`<tr><td style="padding:20px 40px;text-align:center"><a href="${sec.data.url}" style="background:${sec.data.bgColor};color:${sec.data.color};padding:14px 32px;text-decoration:none;border-radius:6px;font-weight:600;font-family:Arial,sans-serif;display:inline-block">${sec.data.text}</a></td></tr>`;
+    else if(sec.type==='divider')body+=`<tr><td style="padding:0 40px"><hr style="border:none;border-top:1px solid #eee"></td></tr>`;
+    else if(sec.type==='spacer')body+=`<tr><td style="height:${sec.data.height}px"></td></tr>`;
+  });
+  return`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:20px;background:#f0f0f0;font-family:Arial,sans-serif"><table role="presentation" width="600" cellpadding="0" cellspacing="0" style="margin:0 auto;background:#fff;border-radius:8px;overflow:hidden">${body}</table></body></html>`;
+}
+function clearCanvas(){sections=[];render();toast('Cleared')}
+// Drag from sidebar onto canvas
+document.querySelectorAll('.section-item').forEach(el=>{
+  el.addEventListener('click',()=>addSection(el.dataset.type));
+});
+loadTemplate('newsletter');
+</script>
+</body>
+</html>

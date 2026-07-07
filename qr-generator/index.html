@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Code Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--accent:#FF6B00;--bg:#0f0f0f;--card:#1a1a1a;--border:#2a2a2a;--text:#e0e0e0;--muted:#888}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{background:var(--card);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;gap:16px}
+header a{color:var(--accent);text-decoration:none;font-size:14px}
+header h1{font-size:18px;font-weight:600}
+header .icon{font-size:24px}
+.container{max-width:800px;margin:0 auto;padding:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:500}
+input[type=text],input[type=number],input[type=color],textarea{width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px}
+input[type=text]:focus,input[type=number]:focus,textarea:focus{outline:none;border-color:var(--accent)}
+textarea{resize:vertical;min-height:80px}
+.btn{background:var(--accent);color:#fff;border:none;padding:12px 24px;border-radius:8px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+.btn:hover{opacity:.85}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-outline{background:transparent;border:1px solid var(--accent);color:var(--accent)}
+.btn-outline:hover{background:var(--accent);color:#fff}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:600px){.row{grid-template-columns:1fr}}
+.qr-preview{display:flex;justify-content:center;align-items:center;min-height:200px;background:var(--bg);border-radius:8px;padding:20px;margin-top:16px}
+#qrcode{display:flex;justify-content:center;align-items:center}
+#qrcode img{max-width:100%}
+.actions{display:flex;gap:12px;margin-top:16px;flex-wrap:wrap}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--accent);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;opacity:0;transform:translateY(20px);transition:all .3s;z-index:9999;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+<header>
+  <a href="/"><span class="icon">🏠</span> ← Home</a>
+  <h1><span class="icon">📱</span> QR Code Generator</h1>
+</header>
+<div class="container">
+  <div class="card">
+    <label>Text or URL</label>
+    <textarea id="input" placeholder="Enter text or URL to encode...">https://example.com</textarea>
+  </div>
+  <div class="card">
+    <div class="row">
+      <div>
+        <label>Size (px): <span id="sizeVal">256</span></label>
+        <input type="range" id="size" min="100" max="500" value="256" style="width:100%;accent-color:var(--accent)" oninput="document.getElementById('sizeVal').textContent=this.value">
+      </div>
+      <div>
+        <label>Foreground Color</label>
+        <input type="color" id="fg" value="#000000">
+      </div>
+      <div>
+        <label>Background Color</label>
+        <input type="color" id="bg" value="#ffffff">
+      </div>
+      <div>
+        <label>Margin (modules)</label>
+        <input type="number" id="margin" value="4" min="0" max="20">
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <button class="btn" onclick="generate()">Generate QR Code</button>
+    <div class="qr-preview"><div id="qrcode"></div></div>
+    <div class="actions" id="actions" style="display:none">
+      <button class="btn" onclick="download()">⬇ Download PNG</button>
+      <button class="btn btn-outline" onclick="copyImage()">📋 Copy Image</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let qrInstance=null;
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function generate(){
+  const text=document.getElementById('input').value.trim();
+  if(!text){toast('Enter text or URL');return}
+  const size=parseInt(document.getElementById('size').value);
+  const fg=document.getElementById('fg').value;
+  const bg=document.getElementById('bg').value;
+  const margin=parseInt(document.getElementById('margin').value);
+  const el=document.getElementById('qrcode');
+  el.innerHTML='';
+  try{
+    qrInstance=new QRCode(el,{text:text,width:size,height:size,colorDark:fg,colorLight:bg,correctLevel:QRCode.CorrectLevel.M,margin:margin});
+    document.getElementById('actions').style.display='flex';
+    toast('QR Code generated!');
+  }catch(e){toast('Error: '+e.message)}
+}
+function download(){
+  const canvas=document.querySelector('#qrcode canvas');
+  if(!canvas){toast('Generate QR first');return}
+  const link=document.createElement('a');
+  link.download='qrcode.png';
+  link.href=canvas.toDataURL('image/png');
+  link.click();
+  toast('Downloaded!');
+}
+function copyImage(){
+  const canvas=document.querySelector('#qrcode canvas');
+  if(!canvas){toast('Generate QR first');return}
+  canvas.toBlob(blob=>{
+    navigator.clipboard.write([new ClipboardItem({'image/png':blob})]).then(()=>toast('Copied!')).catch(()=>toast('Copy failed'));
+  });
+}
+generate();
+</script>
+</body>
+</html>

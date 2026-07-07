@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON Diff Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--accent:#FF6B00;--bg:#0f0f0f;--card:#1a1a1a;--border:#2a2a2a;--text:#e0e0e0;--muted:#888}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{background:var(--card);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;gap:16px}
+header a{color:var(--accent);text-decoration:none;font-size:14px}
+header h1{font-size:18px;font-weight:600}
+header .icon{font-size:24px}
+.container{max-width:1200px;margin:0 auto;padding:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:500}
+textarea{width:100%;height:250px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:monospace;font-size:13px;padding:12px;resize:vertical}
+textarea:focus{outline:none;border-color:var(--accent)}
+.btn{background:var(--accent);color:#fff;border:none;padding:12px 24px;border-radius:8px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+.btn:hover{opacity:.85}
+.btn-outline{background:transparent;border:1px solid var(--accent);color:var(--accent)}
+.btn-outline:hover{background:var(--accent);color:#fff}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:768px){.row{grid-template-columns:1fr}}
+.diff-result{font-family:monospace;font-size:13px;line-height:1.8;border:1px solid var(--border);border-radius:8px;overflow:hidden;max-height:500px;overflow-y:auto}
+.diff-line{padding:4px 16px;border-bottom:1px solid var(--border);white-space:pre-wrap;word-break:break-all}
+.diff-line.added{background:rgba(34,197,94,.15);border-left:3px solid #22c55e}
+.diff-line.removed{background:rgba(239,68,68,.15);border-left:3px solid #ef4444}
+.diff-line.changed{background:rgba(234,179,8,.15);border-left:3px solid #eab308}
+.diff-line.unchanged{border-left:3px solid transparent;color:var(--muted)}
+.diff-line .key{color:#93c5fd}
+.diff-line .val-str{color:#86efac}
+.diff-line .val-num{color:#fca5a5}
+.diff-line .val-bool{color:#c4b5fd}
+.diff-line .val-null{color:var(--muted);font-style:italic}
+.stats-bar{display:flex;gap:20px;font-size:13px;margin-top:12px;padding:12px 0}
+.stats-bar span{padding:4px 10px;border-radius:4px;font-weight:500}
+.added-count{background:rgba(34,197,94,.15);color:#22c55e}
+.removed-count{background:rgba(239,68,68,.15);color:#ef4444}
+.changed-count{background:rgba(234,179,8,.15);color:#eab308}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--accent);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;opacity:0;transform:translateY(20px);transition:all .3s;z-index:9999;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.sample-btn{background:none;border:none;color:var(--accent);cursor:pointer;font-size:12px;text-decoration:underline;font-family:'Inter',sans-serif;padding:0;margin-top:4px}
+</style>
+</head>
+<body>
+<header>
+  <a href="/"><span class="icon">🏠</span> ← Home</a>
+  <h1><span class="icon">🔍</span> JSON Diff Tool</h1>
+</header>
+<div class="container">
+  <div class="card">
+    <div class="row">
+      <div>
+        <label>Original JSON <button class="sample-btn" onclick="loadSample('left')">Load sample</button></label>
+        <textarea id="left" placeholder="Paste original JSON...">{
+  "name": "John",
+  "age": 30,
+  "city": "New York",
+  "hobbies": ["reading", "coding"]
+}</textarea>
+      </div>
+      <div>
+        <label>Modified JSON <button class="sample-btn" onclick="loadSample('right')">Load sample</button></label>
+        <textarea id="right" placeholder="Paste modified JSON...">{
+  "name": "John",
+  "age": 31,
+  "city": "Boston",
+  "hobbies": ["reading", "gaming", "cooking"],
+  "active": true
+}</textarea>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">
+      <button class="btn" onclick="compare()">Compare</button>
+      <button class="btn btn-outline" onclick="swap()">⇄ Swap</button>
+      <button class="btn btn-outline" onclick="formatBoth()">✨ Format</button>
+    </div>
+  </div>
+  <div class="card" id="resultCard" style="display:none">
+    <h3 style="margin-bottom:8px;font-size:15px">Differences</h3>
+    <div class="stats-bar" id="statsBar"></div>
+    <div class="diff-result" id="diffResult"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function loadSample(side){
+  if(side==='left'){
+    document.getElementById('left').value=JSON.stringify({name:"Alice",age:25,active:true,tags:["admin","user"],address:{city:"NYC",zip:"10001"}},null,2);
+  } else {
+    document.getElementById('right').value=JSON.stringify({name:"Alice",age:26,active:false,tags:["user","editor"],address:{city:"LA",zip:"90001"},phone:"555-1234"},null,2);
+  }
+}
+function swap(){
+  const l=document.getElementById('left'),r=document.getElementById('right');
+  [l.value,r.value]=[r.value,l.value];
+}
+function formatBoth(){
+  try{
+    document.getElementById('left').value=JSON.stringify(JSON.parse(document.getElementById('left').value),null,2);
+    document.getElementById('right').value=JSON.stringify(JSON.parse(document.getElementById('right').value),null,2);
+    toast('Formatted!');
+  }catch(e){toast('Invalid JSON')}
+}
+function compare(){
+  let leftParsed,rightParsed;
+  try{leftParsed=JSON.parse(document.getElementById('left').value)}catch(e){toast('Left JSON: '+e.message);return}
+  try{rightParsed=JSON.parse(document.getElementById('right').value)}catch(e){toast('Right JSON: '+e.message);return}
+  const diffs=deepDiff(leftParsed,rightParsed);
+  renderDiffs(diffs);
+  document.getElementById('resultCard').style.display='block';
+}
+function deepDiff(a,b,prefix=''){
+  const result=[];
+  const allKeys=new Set([...Object.keys(a||{}),...Object.keys(b||{})]);
+  for(const key of allKeys){
+    const path=prefix?`${prefix}.${key}`:key;
+    const va=a?.[key],vb=b?.[key];
+    if(!(key in(a||{})))result.push({type:'added',path,value:vb});
+    else if(!(key in(b||{})))result.push({type:'removed',path,value:va});
+    else if(typeof va==='object'&&va!==null&&typeof vb==='object'&&vb!==null&&!Array.isArray(va)){
+      result.push(...deepDiff(va,vb,path));
+    } else if(JSON.stringify(va)!==JSON.stringify(vb)){
+      result.push({type:'changed',path,oldValue:va,newValue:vb});
+    }
+  }
+  return result;
+}
+function formatVal(v){
+  if(v===null)return`<span class="val-null">null</span>`;
+  if(typeof v==='string')return`<span class="val-str">"${esc(v)}"</span>`;
+  if(typeof v==='boolean'||typeof v==='number')return`<span class="val-num">${v}</span>`;
+  return`<span class="val-str">${esc(JSON.stringify(v))}</span>`;
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function renderDiffs(diffs){
+  const el=document.getElementById('diffResult');
+  const stats={added:0,removed:0,changed:0};
+  if(diffs.length===0){el.innerHTML='<div class="diff-line unchanged">✅ No differences found</div>';document.getElementById('statsBar').innerHTML='';return}
+  let html='';
+  diffs.forEach(d=>{
+    stats[d.type]++;
+    if(d.type==='added'){
+      html+=`<div class="diff-line added">+ <span class="key">${esc(d.path)}</span>: ${formatVal(d.value)}</div>`;
+    } else if(d.type==='removed'){
+      html+=`<div class="diff-line removed">- <span class="key">${esc(d.path)}</span>: ${formatVal(d.value)}</div>`;
+    } else if(d.type==='changed'){
+      html+=`<div class="diff-line removed">- <span class="key">${esc(d.path)}</span>: ${formatVal(d.oldValue)}</div>`;
+      html+=`<div class="diff-line added">+ <span class="key">${esc(d.path)}</span>: ${formatVal(d.newValue)}</div>`;
+    }
+  });
+  el.innerHTML=html;
+  document.getElementById('statsBar').innerHTML=`<span class="added-count">+ ${stats.added} added</span><span class="removed-count">- ${stats.removed} removed</span><span class="changed-count">~ ${stats.changed} changed</span>`;
+  toast(`Found ${diffs.length} differences`);
+}
+compare();
+</script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Base64 Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--accent:#FF6B00;--bg:#0f1117;--card:#1a1d27;--border:#2a2d3a;--text:#e4e4e7;--muted:#71717a;--input-bg:#12141c}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:0}
+a{color:var(--accent);text-decoration:none}
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;gap:16px}
+.header .icon{font-size:24px}
+.header h1{font-size:18px;font-weight:600;flex:1}
+.container{max-width:900px;margin:0 auto;padding:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px}
+.card h2{font-size:15px;font-weight:600;margin-bottom:16px;color:var(--accent)}
+textarea{width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:12px;color:var(--text);font-family:'Inter',monospace;font-size:13px;resize:vertical;min-height:100px;outline:none}
+textarea:focus{border-color:var(--accent)}
+.btn-row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+button{background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;transition:opacity .15s}
+button:hover{opacity:.85}
+button.secondary{background:var(--border);color:var(--text)}
+.swap-btn{display:flex;justify-content:center;margin:8px 0}
+.toast{position:fixed;bottom:24px;right:24px;background:#22c55e;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:500;opacity:0;transition:opacity .3s;z-index:9999;pointer-events:none}
+.toast.show{opacity:1}
+@media(max-width:600px){.container{padding:16px}.card{padding:16px}.btn-row{gap:6px}button{padding:6px 12px;font-size:12px}}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<header class="header">
+  <span class="icon">🔗</span>
+  <h1>Base64 / URL / HTML Encoder</h1>
+  <a href="/">← Home</a>
+</header>
+<div class="container">
+  <div class="card">
+    <h2>Input</h2>
+    <textarea id="input" placeholder="Enter text to encode or decode..."></textarea>
+  </div>
+  <div class="card" style="text-align:center">
+    <div class="btn-row" style="justify-content:center">
+      <button onclick="encode('b64')">Base64 Encode</button>
+      <button class="secondary" onclick="decode('b64')">Base64 Decode</button>
+      <button onclick="encode('url')">URL Encode</button>
+      <button class="secondary" onclick="decode('url')">URL Decode</button>
+      <button onclick="encode('html')">HTML Encode</button>
+      <button class="secondary" onclick="decode('html')">HTML Decode</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Output</h2>
+    <textarea id="output" readonly placeholder="Result will appear here..."></textarea>
+    <div class="btn-row">
+      <button class="secondary" onclick="copyOutput()">📋 Copy</button>
+      <button class="secondary" onclick="swap()">⇅ Swap</button>
+    </div>
+  </div>
+</div>
+<script>
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+const $=id=>document.getElementById(id);
+function encode(type){
+  const v=$('input').value;if(!v){toast('Enter text first');return}
+  try{
+    let r;
+    if(type==='b64')r=btoa(unescape(encodeURIComponent(v)));
+    else if(type==='url')r=encodeURIComponent(v);
+    else if(type==='html')r=v.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    $('output').value=r;toast('Encoded!');
+  }catch(e){toast('Error: '+e.message)}
+}
+function decode(type){
+  const v=$('input').value;if(!v){toast('Enter text first');return}
+  try{
+    let r;
+    if(type==='b64')r=decodeURIComponent(escape(atob(v)));
+    else if(type==='url')r=decodeURIComponent(v);
+    else if(type==='html')r=v.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'");
+    $('output').value=r;toast('Decoded!');
+  }catch(e){toast('Error: '+e.message)}
+}
+function copyOutput(){
+  const v=$('output').value;if(!v)return navigator.clipboard.writeText(v).then(()=>toast('Copied!'));
+  navigator.clipboard.writeText(v).then(()=>toast('Copied!')).catch(()=>toast('Copy failed'));
+}
+function swap(){$('input').value=$('output').value;$('output').value=''}
+</script>
+</body>
+</html>

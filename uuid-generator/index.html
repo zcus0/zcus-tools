@@ -1,0 +1,48 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>UUID Generator</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}:root{--accent:#FF6B00;--bg:#f8f9fc;--card:#fff;--text:#1a1a2e;--text2:#6b7280;--border:#e5e7eb;--radius:12px}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}.app{max-width:900px;margin:0 auto;padding:20px}
+.header{display:flex;align-items:center;gap:12px;padding:16px 0;border-bottom:2px solid var(--accent);margin-bottom:24px}
+.header h1{font-size:1.5rem;font-weight:700}.header a{color:var(--accent);text-decoration:none;font-size:0.85rem;margin-left:auto}
+.btn{background:var(--accent);color:#fff;border:none;padding:10px 20px;border-radius:var(--radius);font-weight:600;cursor:pointer;font-size:0.9rem}.btn:hover{opacity:.9}.btn-sm{padding:6px 14px;font-size:0.8rem}.btn-outline{background:transparent;color:var(--accent);border:2px solid var(--accent)}
+.card{background:var(--card);border-radius:var(--radius);padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid var(--border)}
+input,textarea,select{width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.9rem;background:var(--card);color:var(--text);outline:none}
+input:focus,textarea:focus{border-color:var(--accent)}
+textarea{min-height:150px;font-family:'JetBrains Mono',monospace;font-size:0.85rem;line-height:1.5}
+.flex{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.mb-4{margin-bottom:16px}.mt-2{margin-top:8px}
+pre{background:#1e1e2e;color:#a6e3a1;padding:16px;border-radius:8px;overflow-x:auto;font-size:0.82rem;line-height:1.6;font-family:'JetBrains Mono',monospace;max-height:400px;overflow-y:auto}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:12px 24px;border-radius:var(--radius);font-size:0.85rem;z-index:9999}
+.info{background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:12px;font-size:0.85rem;color:#9a3412;margin-bottom:16px}
+footer{text-align:center;padding:24px;color:var(--text2);font-size:0.75rem}
+.match{background:#fef3c7;padding:2px 6px;border-radius:4px}
+.diff-add{background:#dcfce7;padding:2px 4px;border-radius:3px}.diff-del{background:#fee2e2;padding:2px 4px;border-radius:3px;text-decoration:line-through}.diff-chg{background:#fef3c7;padding:2px 4px;border-radius:3px}
+</style></head><body>
+<div class="app">
+  <div class="header"><span style="font-size:1.8rem">🆔</span><h1>UUID Generator</h1><a href="/">← Home</a></div>
+  <div class="card">
+    <div class="flex mb-4">
+      <label style="font-size:0.85rem"><input type="checkbox" id="uppercase"> Uppercase</label>
+      <label style="font-size:0.85rem"><input type="checkbox" id="nodash"> No dashes</label>
+      <select id="qty" style="width:100px"><option>1</option><option>5</option><option selected>10</option><option>25</option><option>50</option><option>100</option></select>
+      <button class="btn" onclick="generate()">Generate</button>
+      <button class="btn btn-sm btn-outline" onclick="copyAll()">Copy All</button>
+    </div>
+  </div>
+  <div class="card"><div id="output" style="font-family:'JetBrains Mono',monospace;font-size:0.85rem;line-height:2.2">Click Generate...</div></div>
+</div><footer>ZCUS Tools — UUID Generator</footer>
+<script>
+function toast(m){var t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(function(){t.remove()},2500)}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function uuid4(){return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0;var v=c==='x'?r:(r&0x3|0x8);return v.toString(16)})}
+function generate(){
+  var up=document.getElementById('uppercase').checked;var nd=document.getElementById('nodash').checked;
+  var qty=parseInt(document.getElementById('qty').value);var uuids=[];
+  for(var i=0;i<qty;i++){var u=uuid4();if(up)u=u.toUpperCase();if(nd)u=u.replace(/-/g,'');uuids.push(u)}
+  document.getElementById('output').innerHTML=uuids.map(function(u,i){return '<div style="padding:4px 8px;border-radius:6px;background:#f8f9fc;margin-bottom:4px;cursor:pointer;display:flex;align-items:center;gap:8px" onclick="navigator.clipboard.writeText(\''+u.replace(/'/g,"\\'")+'\');toast(\'Copied!\')"><span style="color:var(--text2);min-width:24px">'+(i+1)+'</span>'+u+'</div>'}).join('');
+}
+function copyAll(){
+  var items=document.querySelectorAll('#output div');var all=[];items.forEach(function(d){all.push(d.textContent.trim())});
+  navigator.clipboard.writeText(all.join('\n'));toast('All UUIDs copied!');
+}
+generate();
+</script></body></html>

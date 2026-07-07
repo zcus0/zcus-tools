@@ -1,0 +1,82 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>JSON Formatter & Validator</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"><style>
+*{margin:0;padding:0;box-sizing:border-box}:root{--accent:#FF6B00;--bg:#f8f9fc;--card:#fff;--text:#1a1a2e;--text2:#6b7280;--border:#e5e7eb;--radius:12px}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.app{max-width:900px;margin:0 auto;padding:20px}
+.header{display:flex;align-items:center;gap:12px;padding:16px 0;border-bottom:2px solid var(--accent);margin-bottom:24px}
+.header h1{font-size:1.5rem;font-weight:700}.header a{color:var(--accent);text-decoration:none;font-size:0.85rem;margin-left:auto}
+.btn{background:var(--accent);color:#fff;border:none;padding:10px 20px;border-radius:var(--radius);font-weight:600;cursor:pointer;font-size:0.9rem;transition:all .2s}
+.btn:hover{opacity:.9}.btn-sm{padding:6px 14px;font-size:0.8rem}.btn-outline{background:transparent;color:var(--accent);border:2px solid var(--accent)}
+.card{background:var(--card);border-radius:var(--radius);padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid var(--border)}
+textarea{width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:0.85rem;background:var(--card);color:var(--text);resize:vertical;outline:none;min-height:200px;line-height:1.5;tab-size:2}
+textarea:focus{border-color:var(--accent)}
+.flex{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.mt-2{margin-top:8px}.mt-4{margin-top:16px}.mb-4{margin-bottom:16px}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600}
+.badge-green{background:#dcfce7;color:#166534}.badge-red{background:#fee2e2;color:#991b1b}
+pre{background:#1e1e2e;color:#a6e3a1;padding:16px;border-radius:8px;overflow-x:auto;font-size:0.82rem;line-height:1.6;font-family:'JetBrains Mono',monospace;max-height:400px;overflow-y:auto}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:12px 24px;border-radius:var(--radius);font-size:0.85rem;z-index:9999;animation:fadeIn .3s}
+@keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.info{background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:12px;font-size:0.85rem;color:#9a3412;margin-bottom:16px}
+footer{text-align:center;padding:24px;color:var(--text2);font-size:0.75rem}
+</style></head><body>
+<div class="app">
+  <div class="header"><span style="font-size:1.8rem">{ }</span><h1>JSON Formatter</h1><a href="/">← Home</a></div>
+  <div class="info">💡 Paste JSON → Format, validate, minify, atau convert ke CSV/XML/YAML</div>
+  <div class="card">
+    <div class="flex mb-4"><span style="font-weight:600">Input</span>
+      <button class="btn btn-sm" onclick="formatJSON()">Format</button>
+      <button class="btn btn-sm btn-outline" onclick="minifyJSON()">Minify</button>
+      <button class="btn btn-sm btn-outline" onclick="validateJSON()">Validate</button>
+      <button class="btn btn-sm btn-outline" onclick="toCSV()">→ CSV</button>
+      <button class="btn btn-sm btn-outline" onclick="toYAML()">→ YAML</button>
+      <button class="btn btn-sm btn-outline" onclick="document.getElementById('input').value='';document.getElementById('output').innerHTML=''">Clear</button>
+    </div>
+    <textarea id="input" placeholder='Paste JSON here...\n{\n  "name": "Tuan",\n  "tools": ["json", "formatter"]\n}'></textarea>
+  </div>
+  <div class="card">
+    <div class="flex mb-4"><span style="font-weight:600">Output</span><span id="status"></span>
+      <button class="btn btn-sm btn-outline" onclick="copyOutput()">Copy</button>
+    </div>
+    <pre id="output">Output will appear here...</pre>
+  </div>
+  <div class="card">
+    <div class="flex mb-4"><span style="font-weight:600">JSON Path Explorer</span></div>
+    <div class="flex"><input type="text" id="jsonpath" placeholder="e.g. data.users[0].name" style="flex:1"><button class="btn btn-sm" onclick="jsonPath()">Query</button></div>
+    <pre id="pathoutput" class="mt-2">Enter a JSONPath expression...</pre>
+  </div>
+</div><footer>ZCUS Tools — JSON Formatter</footer>
+<script>
+function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2500)}
+function getInput(){try{return JSON.parse(document.getElementById('input').value)}catch(e){toast('Invalid JSON: '+e.message);return null}}
+function setOutput(v){document.getElementById('output').textContent=typeof v==='string'?v:JSON.stringify(v,null,2);document.getElementById('status').innerHTML='<span class="badge badge-green">Valid</span>'}
+function formatJSON(){const d=getInput();if(d)setOutput(d)}
+function minifyJSON(){const d=getInput();if(d){document.getElementById('output').textContent=JSON.stringify(d);toast('Minified!')}}
+function validateJSON(){const d=getInput();if(d!==null){document.getElementById('status').innerHTML='<span class="badge badge-green">Valid JSON ✓</span>';toast('JSON is valid!')}else{document.getElementById('status').innerHTML='<span class="badge badge-red">Invalid ✗</span>'}}
+function toCSV(){
+  const d=getInput();if(!d)return;
+  if(!Array.isArray(d)){toast('Top-level must be array for CSV');return}
+  if(!d.length){toast('Empty array');return}
+  const keys=Object.keys(d[0]);
+  let csv=keys.join(',')+'\n';
+  d.forEach(row=>{csv+=keys.map(k=>{let v=row[k];if(typeof v==='object')v=JSON.stringify(v);return '"'+String(v).replace(/"/g,'""')+'"'}).join(',')+'\n'});
+  document.getElementById('output').textContent=csv;toast('Converted to CSV')
+}
+function toYAML(){
+  const d=getInput();if(!d)return;
+  function yaml(o,indent=0){let r='';const pad='  '.repeat(indent);if(Array.isArray(o)){o.forEach(v=>{if(typeof v==='object'&&v!==null)r+=pad+'- '+yaml(v,indent+1).trimStart()+'\n';else r+=pad+'- '+v+'\n'})}else if(typeof o==='object'&&o!==null){Object.entries(o).forEach(([k,v])=>{if(typeof v==='object'&&v!==null)r+=pad+k+':\n'+yaml(v,indent+1);else r+=pad+k+': '+v+'\n'})}return r}
+  document.getElementById('output').textContent=yaml(d);toast('Converted to YAML')
+}
+function jsonPath(){
+  const input=getInput();if(!input)return;
+  const path=document.getElementById('jsonpath').value.trim();
+  try{
+    const parts=path.split(/\.|\[|\]/).filter(Boolean);
+    let val=input;parts.forEach(p=>{if(val===undefined||val===null)throw new Error('Path not found');val=isNaN(p)?val[p]:val[parseInt(p)]});
+    document.getElementById('pathoutput').textContent=typeof val==='object'?JSON.stringify(val,null,2):String(val);
+  }catch(e){document.getElementById('pathoutput').textContent='Error: '+e.message}
+}
+function copyOutput(){navigator.clipboard.writeText(document.getElementById('output').textContent);toast('Copied!')}
+document.getElementById('input').addEventListener('input',function(){
+  try{const d=JSON.parse(this.value);document.getElementById('status').innerHTML='<span class="badge badge-green">Valid</span>'}catch{document.getElementById('status').innerHTML='<span class="badge badge-red">Invalid</span>'}
+});
+</script></body></html>

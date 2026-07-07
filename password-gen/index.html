@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Password Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--accent:#FF6B00;--bg:#0f1117;--card:#1a1d27;--border:#2a2d3a;--text:#e4e4e7;--muted:#71717a;--input-bg:#12141c}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;gap:16px}
+.header .icon{font-size:24px}
+.header h1{font-size:18px;font-weight:600;flex:1}
+.container{max-width:700px;margin:0 auto;padding:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px}
+.card h2{font-size:15px;font-weight:600;margin-bottom:16px;color:var(--accent)}
+label{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px;cursor:pointer}
+input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
+input[type=range]{width:100%;accent-color:var(--accent);margin:8px 0}
+.range-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.range-row span{font-size:13px;color:var(--muted);min-width:40px;text-align:right}
+select{background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:inherit;font-size:13px;outline:none}
+button{background:var(--accent);color:#fff;border:none;padding:10px 20px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;transition:opacity .15s}
+button:hover{opacity:.85}
+.password-display{background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:monospace;font-size:15px;word-break:break-all;margin-bottom:12px;min-height:48px;line-height:1.6;cursor:pointer}
+.password-item{background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.password-item code{font-family:monospace;font-size:14px;word-break:break-all;flex:1}
+.password-item button{padding:4px 10px;font-size:11px}
+.strength-bar{height:8px;border-radius:4px;background:var(--border);overflow:hidden;margin:8px 0}
+.strength-bar .fill{height:100%;border-radius:4px;transition:width .3s,background .3s}
+.strength-info{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.toast{position:fixed;bottom:24px;right:24px;background:#22c55e;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:500;opacity:0;transition:opacity .3s;z-index:9999;pointer-events:none}
+.toast.show{opacity:1}
+@media(max-width:600px){.container{padding:16px}.card{padding:16px}}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<header class="header">
+  <span class="icon">🔑</span>
+  <h1>Password Generator</h1>
+  <a href="/">← Home</a>
+</header>
+<div class="container">
+  <div class="card">
+    <h2>Settings</h2>
+    <div class="range-row">
+      <label style="margin:0;min-width:120px">Length: <strong id="lenVal">16</strong></label>
+      <input type="range" id="length" min="8" max="128" value="16" oninput="document.getElementById('lenVal').textContent=this.value">
+      <span id="lenVal2">16</span>
+    </div>
+    <label><input type="checkbox" id="upper" checked> Uppercase (A-Z)</label>
+    <label><input type="checkbox" id="lower" checked> Lowercase (a-z)</label>
+    <label><input type="checkbox" id="digits" checked> Digits (0-9)</label>
+    <label><input type="checkbox" id="symbols" checked> Symbols (!@#$...)</label>
+    <label><input type="checkbox" id="ambiguous"> Exclude Ambiguous (Il1O0)</label>
+    <div style="margin-top:16px;display:flex;align-items:center;gap:12px">
+      <label style="margin:0">Quantity:</label>
+      <select id="quantity">
+        <option value="1">1</option>
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="20">20</option>
+      </select>
+      <button onclick="generate()">Generate</button>
+      <button style="background:var(--border);color:var(--text)" onclick="copyAll()">📋 Copy All</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Passwords</h2>
+    <div id="output"><p style="color:var(--muted);font-size:13px">Click Generate to create passwords</p></div>
+  </div>
+  <div class="card">
+    <h2>Strength</h2>
+    <div class="strength-bar"><div class="fill" id="strengthFill" style="width:0"></div></div>
+    <div class="strength-info">
+      <span id="strengthLabel">-</span>
+      <span id="entropy">-</span>
+    </div>
+  </div>
+</div>
+<script>
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+const $=id=>document.getElementById(id);
+
+function generate(){
+  const len=parseInt($('length').value);
+  const qty=parseInt($('quantity').value);
+  let chars='';
+  if($('upper').checked)chars+='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  if($('lower').checked)chars+='abcdefghijklmnopqrstuvwxyz';
+  if($('digits').checked)chars+='0123456789';
+  if($('symbols').checked)chars+='!@#$%^&*()_+-=[]{}|;:,.<>?';
+  if($('ambiguous').checked)chars=chars.replace(/[Il1O0]/g,'');
+  if(!chars){toast('Select at least one character type');return}
+  
+  const passwords=[];
+  for(let i=0;i<qty;i++){
+    let pw='';
+    const arr=new Uint32Array(len);
+    crypto.getRandomValues(arr);
+    for(let j=0;j<len;j++)pw+=chars[arr[j]%chars.length];
+    passwords.push(pw);
+  }
+  
+  $('output').innerHTML=passwords.map(p=>`<div class="password-item"><code>${esc(p)}</code><button onclick="copyPw('${esc(p)}')">📋</button></div>`).join('');
+  
+  // Strength
+  const poolSize = ($('upper').checked?26:0)+($('lower').checked?26:0)+($('digits').checked?10:0)+($('symbols').checked?23:0);
+  const entropy = Math.log2(poolSize)*len;
+  let color,label;
+  if(entropy<28){color='#ef4444';label='Very Weak'}
+  else if(entropy<36){color='#f97316';label='Weak'}
+  else if(entropy<60){color='#eab308';label='Fair'}
+  else if(entropy<80){color='#22c55e';label='Strong'}
+  else{color='#06b6d4';label='Very Strong'}
+  $('strengthFill').style.width=Math.min(100,entropy/1.28)+'%';
+  $('strengthFill').style.background=color;
+  $('strengthLabel').textContent=label;
+  $('entropy').textContent=entropy.toFixed(1)+' bits entropy';
+}
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function copyPw(p){navigator.clipboard.writeText(p).then(()=>toast('Copied!'))}
+function copyAll(){
+  const codes=document.querySelectorAll('#output code');
+  const text=Array.from(codes).map(c=>c.textContent).join('\n');
+  if(text)navigator.clipboard.writeText(text).then(()=>toast('All copied!'));
+}
+
+$('length').addEventListener('input',e=>$('lenVal2').textContent=e.target.value);
+generate();
+</script>
+</body>
+</html>

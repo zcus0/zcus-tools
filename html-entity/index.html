@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HTML Entity Encoder/Decoder</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--accent:#FF6B00;--bg:#0f0f0f;--card:#1a1a1a;--border:#2a2a2a;--text:#e0e0e0;--muted:#888}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{background:var(--card);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;gap:16px}
+header a{color:var(--accent);text-decoration:none;font-size:14px}
+header h1{font-size:18px;font-weight:600}
+header .icon{font-size:24px}
+.container{max-width:1000px;margin:0 auto;padding:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:500}
+textarea{width:100%;height:120px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:monospace;font-size:13px;padding:12px;resize:vertical;line-height:1.6}
+textarea:focus{outline:none;border-color:var(--accent)}
+.btn{background:var(--accent);color:#fff;border:none;padding:12px 24px;border-radius:8px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+.btn:hover{opacity:.85}
+.btn-outline{background:transparent;border:1px solid var(--accent);color:var(--accent)}
+.btn-outline:hover{background:var(--accent);color:#fff}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0}
+.result-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:monospace;font-size:13px;word-break:break-all;min-height:60px;line-height:1.6}
+.entity-table{width:100%;border-collapse:collapse;font-size:13px}
+.entity-table th{background:var(--bg);padding:10px;text-align:left;border-bottom:2px solid var(--accent);position:sticky;top:0}
+.entity-table td{padding:8px 10px;border-bottom:1px solid var(--border)}
+.entity-table tr:hover td{background:rgba(255,107,0,.03)}
+.entity-table .entity{font-family:monospace;color:var(--accent);cursor:pointer}
+.entity-table .entity:hover{text-decoration:underline}
+.entity-table .char-col{font-size:18px;text-align:center;width:40px}
+.table-wrap{max-height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:8px}
+.search-box{width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;margin-bottom:12px}
+.search-box:focus{outline:none;border-color:var(--accent)}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--accent);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;opacity:0;transform:translateY(20px);transition:all .3s;z-index:9999;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+<header>
+  <a href="/"><span class="icon">🏠</span> ← Home</a>
+  <h1><span class="icon">🏷️</span> HTML Entity Encoder/Decoder</h1>
+</header>
+<div class="container">
+  <div class="card">
+    <label>Input (text or entities)</label>
+    <textarea id="input" placeholder="Enter text to encode or HTML entities to decode...">Hello &amp; <world> "quotes" 'apostrophes' © ® ™</textarea>
+    <div class="actions">
+      <button class="btn" onclick="encode()">Encode →</button>
+      <button class="btn" onclick="decode()">Decode ←</button>
+      <button class="btn btn-outline" onclick="clearAll()">Clear</button>
+    </div>
+    <label>Result</label>
+    <div class="result-box" id="result"></div>
+    <div class="actions">
+      <button class="btn btn-outline" onclick="copyResult()">📋 Copy</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3 style="margin-bottom:12px;font-size:15px">📖 Entity Reference Table</h3>
+    <input type="text" class="search-box" id="entitySearch" placeholder="🔍 Search entities..." oninput="filterEntities()">
+    <div class="table-wrap">
+      <table class="entity-table" id="entityTable">
+        <thead><tr><th>Char</th><th>Entity</th><th>Description</th><th>Code</th></tr></thead>
+        <tbody id="entityBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const ENTITIES=[
+  ['&','&amp;','Ampersand','&#38;'],['<','&lt;','Less-than','&#60;'],['>','&gt;','Greater-than','&#62;'],['"','&quot;','Quotation mark','&#34;'],
+  ["'",'&apos;','Apostrophe','&#39;'],[' ','&nbsp;','Non-breaking space','&#160;'],['©','&copy;','Copyright','&#169;'],['®','&reg;','Registered','&#174;'],
+  ['™','&trade;','Trademark','&#8482;'],['°','&deg;','Degree','&#176;'],['±','&plusmn;','Plus-minus','&#177;'],['×','&times;','Multiplication','&#215;'],
+  ['÷','&divide;','Division','&#247;'],['€','&euro;','Euro sign','&#8364;'],['£','&pound;','Pound sign','&#163;'],['¥','&yen;','Yen sign','&#165;'],
+  ['¢','&cent;','Cent sign','&#162;'],['§','&sect;','Section sign','&#167;'],['¶','&para;','Pilcrow','&#182;'],['•','&bull;','Bullet','&#8226;'],
+  ['…','&hellip;','Ellipsis','&#8230;'],['–','&ndash;','En dash','&#8211;'],['—','&mdash;','Em dash','&#8212;'],['¡','&iexcl;','Inverted exclamation','&#161;'],
+  ['¿','&iquest;','Inverted question','&#191;'],['‹','&lsaquo;','Left single angle','&#8249;'],['›','&rsaquo;','Right single angle','&#8250;'],
+  ['«','&laquo;','Left guillemet','&#171;'],['»','&raquo;','Right guillemet','&#187;'],['\'','&apos;','Apostrophe','&#39;'],
+  ['„','&sbquo;','Single low-9 quote','&#8218;'],['‚','&sbquo;','Single low-9 quote','&#8218;'],['"',  '&ldquo;','Left double quote','&#8220;'],
+  ['"','&rdquo;','Right double quote','&#8221;'],[''','&lsquo;','Left single quote','&#8216;'],[''','&rsquo;','Right single quote','&#8217;'],
+  ['†','&dagger;','Dagger','&#8224;'],['‡','&Dagger;','Double dagger','&#8225;'],['‹','&sbquo;','Single low-9 quote','&#8218;'],
+  ['→','&rarr;','Right arrow','&#8594;'],['←','&larr;','Left arrow','&#8592;'],['↑','&uarr;','Up arrow','&#8593;'],['↓','&darr;','Down arrow','&#8595;'],
+  ['↔','&harr;','Left-right arrow','&#8596;'],['♠','&spades;','Spade','&#9824;'],['♣','&clubs;','Club','&#9827;'],
+  ['♥','&hearts;','Heart','&#9829;'],['♦','&diams;','Diamond','&#9830;'],['α','&alpha;','Alpha','&#945;'],['β','&beta;','Beta','&#946;'],
+  ['γ','&gamma;','Gamma','&#947;'],['δ','&delta;','Delta','&#948;'],['ε','&epsilon;','Epsilon','&#949;'],['λ','&lambda;','Lambda','&#955;'],
+  ['μ','&mu;','Mu','&#956;'],['π','&pi;','Pi','&#960;'],['σ','&sigma;','Sigma','&#963;'],['φ','&phi;','Phi','&#966;'],
+  ['ω','&omega;','Omega','&#969;'],['∑','&sum;','Summation','&#8721;'],['√','&radic;','Square root','&#8730;'],['∞','&infin;','Infinity','&#8734;'],
+  ['≠','&ne;','Not equal','&#8800;'],['≈','&asymp;','Almost equal','&#8776;'],['≤','&le;','Less or equal','&#8804;'],['≥','&ge;','Greater or equal','&#8805;'],
+  ['±','&pm;','Plus-minus','&#177;'],['∝','&prop;','Proportional','&#8733;'],['∠','&ang;','Angle','&#8736;'],['½','&frac12;','Fraction 1/2','&#189;'],
+  ['¼','&frac14;','Fraction 1/4','&#188;'],['¾','&frac34;','Fraction 3/4','&#190;'],['¹','&sup1;','Superscript 1','&#185;'],
+  ['²','&sup2;','Superscript 2','&#178;'],['³','&sup3;','Superscript 3','&#179;']
+];
+let lastResult='';
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function encode(){
+  const text=document.getElementById('input').value;
+  const encoded=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  lastResult=encoded;
+  document.getElementById('result').textContent=encoded;
+  toast('Encoded!');
+}
+function decode(){
+  const text=document.getElementById('input').value;
+  const el=document.createElement('textarea');
+  el.innerHTML=text;
+  const decoded=el.value;
+  lastResult=decoded;
+  document.getElementById('result').textContent=decoded;
+  toast('Decoded!');
+}
+function clearAll(){
+  document.getElementById('input').value='';
+  document.getElementById('result').textContent='';
+}
+function copyResult(){
+  navigator.clipboard.writeText(lastResult).then(()=>toast('Copied!')).catch(()=>toast('Copy failed'));
+}
+function renderTable(filter=''){
+  const body=document.getElementById('entityBody');
+  body.innerHTML='';
+  ENTITIES.filter(e=>!filter||e.join(' ').toLowerCase().includes(filter.toLowerCase())).forEach(e=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="char-col">${e[0]}</td><td class="entity" onclick="copyEntity('${e[1]}')">${e[1]}</td><td>${e[2]}</td><td><code style="font-size:11px">${e[3]}</code></td>`;
+    body.appendChild(tr);
+  });
+}
+function filterEntities(){renderTable(document.getElementById('entitySearch').value)}
+function copyEntity(e){navigator.clipboard.writeText(e).then(()=>toast('Copied: '+e))}
+renderTable();
+decode();
+</script>
+</body>
+</html>

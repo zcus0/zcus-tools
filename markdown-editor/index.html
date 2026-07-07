@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Markdown Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--accent:#FF6B00;--bg:#0f1117;--card:#1a1d27;--border:#2a2d3a;--text:#e4e4e7;--muted:#71717a;--input-bg:#12141c}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--accent);text-decoration:none}
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:16px}
+.header .icon{font-size:24px}
+.header h1{font-size:18px;font-weight:600;flex:1}
+.header .actions{display:flex;gap:8px}
+button{background:var(--accent);color:#fff;border:none;padding:6px 14px;border-radius:6px;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;transition:opacity .15s}
+button:hover{opacity:.85}
+button.secondary{background:var(--border);color:var(--text)}
+.split{display:flex;flex:1;overflow:hidden}
+.editor-pane,.preview-pane{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.editor-pane{border-right:1px solid var(--border)}
+.editor-pane textarea{flex:1;background:var(--input-bg);border:none;padding:20px;color:var(--text);font-family:'Fira Code',monospace;font-size:14px;resize:none;outline:none;line-height:1.6}
+.preview-pane .content{flex:1;padding:20px;overflow-y:auto;font-size:14px;line-height:1.7}
+.preview-pane .content h1{font-size:24px;margin:16px 0 8px;color:var(--accent)}
+.preview-pane .content h2{font-size:20px;margin:14px 0 6px;color:var(--accent)}
+.preview-pane .content h3{font-size:17px;margin:12px 0 4px}
+.preview-pane .content h4{font-size:15px;margin:10px 0 4px}
+.preview-pane .content p{margin:8px 0}
+.preview-pane .content code{background:var(--input-bg);padding:2px 6px;border-radius:4px;font-family:monospace;font-size:13px}
+.preview-pane .content pre{background:var(--input-bg);padding:14px;border-radius:8px;overflow-x:auto;margin:12px 0;border:1px solid var(--border)}
+.preview-pane .content pre code{background:none;padding:0}
+.preview-pane .content blockquote{border-left:3px solid var(--accent);padding-left:14px;margin:12px 0;color:var(--muted);font-style:italic}
+.preview-pane .content ul,.preview-pane .content ol{margin:8px 0 8px 24px}
+.preview-pane .content li{margin:4px 0}
+.preview-pane .content a{color:var(--accent)}
+.preview-pane .content hr{border:none;border-top:1px solid var(--border);margin:16px 0}
+.preview-pane .content img{max-width:100%;border-radius:8px}
+.pane-label{font-size:11px;font-weight:600;text-transform:uppercase;color:var(--muted);padding:8px 20px;border-bottom:1px solid var(--border)}
+.toast{position:fixed;bottom:24px;right:24px;background:#22c55e;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:500;opacity:0;transition:opacity .3s;z-index:9999;pointer-events:none}
+.toast.show{opacity:1}
+@media(max-width:700px){.split{flex-direction:column}.editor-pane{border-right:none;border-bottom:1px solid var(--border)}}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<header class="header">
+  <span class="icon">📝</span>
+  <h1>Markdown Editor</h1>
+  <div class="actions">
+    <button class="secondary" onclick="exportMd()">Export .md</button>
+    <button class="secondary" onclick="exportHtml()">Export .html</button>
+    <button class="secondary" onclick="copyHtml()">Copy HTML</button>
+  </div>
+  <a href="/">← Home</a>
+</header>
+<div class="split">
+  <div class="editor-pane">
+    <div class="pane-label">Markdown</div>
+    <textarea id="editor" oninput="render()" placeholder="Write markdown here..."></textarea>
+  </div>
+  <div class="preview-pane">
+    <div class="pane-label">Preview</div>
+    <div class="content" id="preview"></div>
+  </div>
+</div>
+<script>
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+
+function parseMd(md){
+  let html=md;
+  // Code blocks (``` ... ```)
+  html=html.replace(/```(\w*)\n([\s\S]*?)```/g,(_,lang,code)=>`<pre><code class="lang-${lang}">${esc(code.trim())}</code></pre>`);
+  // Inline code
+  html=html.replace(/`([^`]+)`/g,'<code>$1</code>');
+  // Headers
+  html=html.replace(/^#### (.+)$/gm,'<h4>$1</h4>');
+  html=html.replace(/^### (.+)$/gm,'<h3>$1</h3>');
+  html=html.replace(/^## (.+)$/gm,'<h2>$1</h2>');
+  html=html.replace(/^# (.+)$/gm,'<h1>$1</h1>');
+  // Bold and italic
+  html=html.replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>');
+  html=html.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  html=html.replace(/\*(.+?)\*/g,'<em>$1</em>');
+  // Strikethrough
+  html=html.replace(/~~(.+?)~~/g,'<del>$1</del>');
+  // Links and images
+  html=html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img src="$2" alt="$1">');
+  html=html.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank">$1</a>');
+  // Horizontal rules
+  html=html.replace(/^---$/gm,'<hr>');
+  // Blockquotes
+  html=html.replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>');
+  // Unordered lists
+  html=html.replace(/^[\-\*] (.+)$/gm,'<li>$1</li>');
+  html=html.replace(/(<li>.*<\/li>\n?)+/g,m=>`<ul>${m}</ul>`);
+  // Ordered lists
+  html=html.replace(/^\d+\. (.+)$/gm,'<li>$1</li>');
+  // Paragraphs
+  html=html.replace(/\n\n/g,'</p><p>');
+  html=html.replace(/\n/g,'<br>');
+  html='<p>'+html+'</p>';
+  // Clean empty p
+  html=html.replace(/<p><\/p>/g,'');
+  html=html.replace(/<p>(<h[1-4]>)/g,'$1');
+  html=html.replace(/(<\/h[1-4]>)<\/p>/g,'$1');
+  html=html.replace(/<p>(<pre>)/g,'$1');
+  html=html.replace(/(<\/pre>)<\/p>/g,'$1');
+  html=html.replace(/<p>(<ul>)/g,'$1');
+  html=html.replace(/(<\/ul>)<\/p>/g,'$1');
+  html=html.replace(/<p>(<blockquote>)/g,'$1');
+  html=html.replace(/(<\/blockquote>)<\/p>/g,'$1');
+  html=html.replace(/<p>(<hr>)/g,'$1');
+  html=html.replace(/(<hr>)<\/p>/g,'$1');
+  return html;
+}
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+let debounce;
+function render(){
+  clearTimeout(debounce);
+  debounce=setTimeout(()=>{
+    const md=document.getElementById('editor').value;
+    document.getElementById('preview').innerHTML=parseMd(md);
+  },100);
+}
+
+function exportMd(){
+  const blob=new Blob([document.getElementById('editor').value],{type:'text/markdown'});
+  downloadBlob(blob,'document.md');
+}
+function exportHtml(){
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:sans-serif;max-width:800px;margin:40px auto;padding:0 20px;line-height:1.7;color:#333}pre{background:#f4f4f4;padding:14px;border-radius:8px;overflow:auto}code{background:#f4f4f4;padding:2px 6px;border-radius:3px}blockquote{border-left:3px solid #FF6B00;padding-left:14px;color:#666}</style></head><body>${parseMd(document.getElementById('editor').value)}</body></html>`;
+  const blob=new Blob([html],{type:'text/html'});
+  downloadBlob(blob,'document.html');
+}
+function copyHtml(){
+  const html=parseMd(document.getElementById('editor').value);
+  navigator.clipboard.writeText(html).then(()=>toast('HTML copied!'));
+}
+function downloadBlob(b,name){const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;a.click();URL.revokeObjectURL(u)}
+
+// Sample markdown
+document.getElementById('editor').value=`# Hello Markdown
+
+## Features
+
+- **Bold** and *italic* text
+- [Links](https://example.com)
+- \`inline code\` and code blocks
+
+### Code Example
+
+\`\`\`javascript
+function hello() {
+  console.log("Hello, World!");
+}
+\`\`\`
+
+> This is a blockquote
+
+---
+
+1. First item
+2. Second item
+3. Third item`;
+render();
+</script>
+</body>
+</html>

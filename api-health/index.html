@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Health Checker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#e0e0e0;min-height:100vh}
+.header{background:#16213e;padding:1rem 2rem;display:flex;align-items:center;gap:1rem;border-bottom:2px solid #FF6B00;position:sticky;top:0;z-index:100}
+.header h1{font-size:1.5rem;font-weight:600}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;margin-left:auto;padding:.5rem 1rem;border:1px solid #FF6B00;border-radius:6px;transition:all .2s}
+.header a:hover{background:#FF6B00;color:#fff}
+.header .icon{font-size:1.8rem}
+.container{max-width:1100px;margin:0 auto;padding:1.5rem}
+.card{background:#16213e;border-radius:12px;padding:1.5rem;border:1px solid #333;margin-bottom:1.5rem}
+.card h2{font-size:1.1rem;margin-bottom:1rem;color:#fff}
+.request-form{display:flex;gap:.75rem;flex-wrap:wrap;align-items:flex-end}
+.form-group{display:flex;flex-direction:column;gap:.35rem;flex:1;min-width:200px}
+.form-group label{font-size:.8rem;color:#aaa;font-weight:500}
+.form-group input,.form-group select{background:#1a1a2e;border:1px solid #333;color:#e0e0e0;padding:.6rem 1rem;border-radius:8px;font-family:'Inter',sans-serif;font-size:.9rem}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:#FF6B00}
+.btn{background:#FF6B00;color:#fff;border:none;padding:.6rem 1.2rem;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-weight:500;transition:all .2s;font-size:.9rem;white-space:nowrap}
+.btn:hover{background:#e55e00;transform:translateY(-1px)}
+.btn-outline{background:transparent;border:1px solid #FF6B00;color:#FF6B00}
+.btn-outline:hover{background:#FF6B00;color:#fff}
+.btn-sm{padding:.4rem .8rem;font-size:.8rem}
+.btn-danger{background:#e74c3c}
+.btn-danger:hover{background:#c0392b}
+.result-card{background:#0f0f23;border-radius:10px;padding:1.25rem;border:1px solid #333;margin-bottom:1rem}
+.result-header{display:flex;align-items:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap}
+.status-badge{padding:.3rem .8rem;border-radius:20px;font-weight:600;font-size:.85rem}
+.status-2xx{background:#27ae6022;color:#27ae60;border:1px solid #27ae6044}
+.status-3xx{background:#3498db22;color:#3498db;border:1px solid #3498db44}
+.status-4xx{background:#f39c1222;color:#f39c12;border:1px solid #f39c1244}
+.status-5xx{background:#e74c3c22;color:#e74c3c;border:1px solid #e74c3c44}
+.result-meta{font-size:.85rem;color:#aaa;display:flex;gap:1.5rem;flex-wrap:wrap}
+.result-meta span{display:flex;align-items:center;gap:.35rem}
+.result-section{margin-top:1rem}
+.result-section h4{font-size:.85rem;color:#888;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.05em}
+.result-section pre{background:#1a1a2e;padding:1rem;border-radius:8px;overflow-x:auto;font-size:.8rem;line-height:1.5;max-height:300px;overflow-y:auto;color:#ccc;border:1px solid #333}
+.history-list{max-height:500px;overflow-y:auto}
+.history-item{display:flex;align-items:center;gap:1rem;padding:.75rem 1rem;border-radius:8px;cursor:pointer;transition:background .2s;font-size:.85rem;border-bottom:1px solid #222}
+.history-item:hover{background:#1a1a2e}
+.history-item .method{font-weight:600;min-width:40px}
+.method-GET{color:#27ae60}
+.method-POST{color:#3498db}
+.saved-endpoints{display:flex;flex-direction:column;gap:.5rem}
+.saved-item{display:flex;align-items:center;gap:.75rem;padding:.5rem .75rem;background:#1a1a2e;border-radius:8px;font-size:.85rem}
+.saved-item .url{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.auto-refresh{display:flex;align-items:center;gap:.75rem;margin-top:1rem;padding-top:1rem;border-top:1px solid #333}
+.auto-refresh label{font-size:.85rem;color:#aaa}
+.auto-refresh input{width:60px;background:#1a1a2e;border:1px solid #333;color:#e0e0e0;padding:.4rem .6rem;border-radius:6px;font-family:'Inter',sans-serif;font-size:.85rem;text-align:center}
+.toast{position:fixed;bottom:2rem;right:2rem;background:#16213e;color:#fff;padding:1rem 1.5rem;border-radius:10px;border-left:4px solid #FF6B00;box-shadow:0 4px 20px rgba(0,0,0,0.4);z-index:300;transform:translateX(120%);transition:transform .3s ease;font-size:.9rem}
+.toast.show{transform:translateX(0)}
+.toast.error{border-left-color:#e74c3c}
+.toast.success{border-left-color:#27ae60}
+@media(max-width:768px){.request-form{flex-direction:column}.form-group{min-width:100%}}
+</style>
+</head>
+<body>
+<header class="header">
+<span class="icon">🩺</span>
+<h1>API Health Checker</h1>
+<a href="../index.html">← Home</a>
+</header>
+<div class="container">
+<div class="card">
+<h2>Send Request</h2>
+<div class="request-form">
+<div class="form-group" style="flex:3">
+<label>URL</label>
+<input type="url" id="urlInput" placeholder="https://api.example.com/health" value="https://httpbin.org/get">
+</div>
+<div class="form-group" style="flex:1">
+<label>Method</label>
+<select id="methodInput">
+<option value="GET">GET</option>
+<option value="POST">POST</option>
+</select>
+</div>
+<div class="form-group" style="flex:0">
+<label>&nbsp;</label>
+<button class="btn" onclick="sendRequest()" id="sendBtn">Send</button>
+</div>
+<div class="form-group" style="flex:0">
+<label>&nbsp;</label>
+<button class="btn btn-outline" onclick="saveEndpoint()">Save Endpoint</button>
+</div>
+</div>
+<div class="auto-refresh">
+<label>Auto-refresh every</label>
+<input type="number" id="refreshInterval" min="1" max="3600" value="30"> seconds
+<button class="btn btn-sm" onclick="toggleAutoRefresh()" id="autoRefreshBtn">Start</button>
+<button class="btn btn-sm btn-outline" onclick="clearAutoRefresh()">Stop</button>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+<div>
+<div class="card">
+<h2>Result</h2>
+<div id="resultArea"><div style="color:#666;text-align:center;padding:2rem">Send a request to see results</div></div>
+</div>
+</div>
+<div>
+<div class="card">
+<h2>Saved Endpoints</h2>
+<div class="saved-endpoints" id="savedList"></div>
+</div>
+<div class="card">
+<h2>History</h2>
+<div class="history-list" id="historyList"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let history=JSON.parse(localStorage.getItem('zcus-apihistory')||'[]');
+let savedEndpoints=JSON.parse(localStorage.getItem('zcus-apisaved')||'[]');
+let autoRefreshTimer=null;
+
+async function sendRequest(){
+  const url=document.getElementById('urlInput').value.trim();
+  const method=document.getElementById('methodInput').value;
+  if(!url){showToast('Enter a URL','error');return;}
+  const btn=document.getElementById('sendBtn');
+  btn.textContent='Sending...';btn.disabled=true;
+  const start=performance.now();
+  try{
+    const res=await fetch(url,{method,mode:'cors'});
+    const elapsed=Math.round(performance.now()-start);
+    const text=await res.text();
+    let headers={};res.headers.forEach((v,k)=>headers[k]=v);
+    const entry={url,method,status:res.status,statusText:res.statusText,time:elapsed,headers,body:text.substring(0,5000),timestamp:Date.now()};
+    history.unshift(entry);
+    if(history.length>50)history.pop();
+    localStorage.setItem('zcus-apihistory',JSON.stringify(history));
+    showResult(entry);renderHistory();
+    showToast(`${res.status} ${res.statusText} — ${elapsed}ms`,res.status<400?'success':'error');
+  }catch(err){
+    const elapsed=Math.round(performance.now()-start);
+    const entry={url,method,status:0,statusText:'Error',time:elapsed,headers:{},body:err.message,timestamp:Date.now()};
+    history.unshift(entry);localStorage.setItem('zcus-apihistory',JSON.stringify(history));
+    showResult(entry);renderHistory();
+    showToast('Request failed: '+err.message,'error');
+  }
+  btn.textContent='Send';btn.disabled=false;
+}
+
+function showResult(e){
+  const sc=e.status>=200&&e.status<300?'2xx':e.status>=300&&e.status<400?'3xx':e.status>=400&&e.status<500?'4xx':e.status>=500?'5xx':'';
+  const badgeClass=sc?`status-${sc}`:'';
+  let bodyPreview=e.body;
+  try{bodyPreview=JSON.stringify(JSON.parse(e.body),null,2);}catch(_){}
+  document.getElementById('resultArea').innerHTML=`
+    <div class="result-card">
+      <div class="result-header">
+        <span class="method method-${e.method}">${e.method}</span>
+        <span class="status-badge ${badgeClass}">${e.status||'ERR'} ${e.statusText}</span>
+        <span style="color:#aaa;font-size:.85rem">${e.time}ms</span>
+      </div>
+      <div class="result-meta">
+        <span>🔗 ${new URL(e.url).hostname}</span>
+        <span>🕐 ${new Date(e.timestamp).toLocaleTimeString()}</span>
+      </div>
+      <div class="result-section">
+        <h4>Response Headers</h4>
+        <pre>${Object.entries(e.headers).map(([k,v])=>`${k}: ${v}`).join('\n')||'No headers'}</pre>
+      </div>
+      <div class="result-section">
+        <h4>Response Body</h4>
+        <pre>${esc(bodyPreview)}</pre>
+      </div>
+    </div>`;
+}
+
+function renderHistory(){
+  const el=document.getElementById('historyList');
+  if(!history.length){el.innerHTML='<div style="color:#666;padding:1rem;text-align:center;font-size:.85rem">No history yet</div>';return;}
+  el.innerHTML=history.slice(0,20).map((h,i)=>{
+    const sc=h.status>=200&&h.status<300?'2xx':h.status>=300&&h.status<400?'3xx':h.status>=400&&h.status<500?'4xx':h.status>=500?'5xx':'';
+    return `<div class="history-item" onclick="showResult(history[${i}])">
+      <span class="method method-${h.method}">${h.method}</span>
+      <span class="status-badge status-${sc||'2xx'}" style="font-size:.75rem;padding:.15rem .5rem">${h.status||'ERR'}</span>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${new URL(h.url).hostname}</span>
+      <span style="color:#666">${h.time}ms</span>
+    </div>`;
+  }).join('');
+}
+
+function renderSaved(){
+  const el=document.getElementById('savedList');
+  if(!savedEndpoints.length){el.innerHTML='<div style="color:#666;padding:1rem;text-align:center;font-size:.85rem">No saved endpoints</div>';return;}
+  el.innerHTML=savedEndpoints.map((s,i)=>`
+    <div class="saved-item">
+      <span class="method method-${s.method}" style="font-size:.75rem">${s.method}</span>
+      <span class="url">${esc(s.url)}</span>
+      <button class="btn btn-sm btn-outline" onclick="loadEndpoint(${i})">Load</button>
+      <button class="btn btn-sm btn-danger" onclick="deleteEndpoint(${i})">×</button>
+    </div>`).join('');
+}
+
+function loadEndpoint(i){
+  document.getElementById('urlInput').value=savedEndpoints[i].url;
+  document.getElementById('methodInput').value=savedEndpoints[i].method;
+}
+function deleteEndpoint(i){
+  savedEndpoints.splice(i,1);localStorage.setItem('zcus-apisaved',JSON.stringify(savedEndpoints));renderSaved();
+}
+function saveEndpoint(){
+  const url=document.getElementById('urlInput').value.trim();
+  const method=document.getElementById('methodInput').value;
+  if(!url){showToast('Enter a URL','error');return;}
+  savedEndpoints.unshift({url,method});
+  localStorage.setItem('zcus-apisaved',JSON.stringify(savedEndpoints));renderSaved();
+  showToast('Endpoint saved','success');
+}
+
+function toggleAutoRefresh(){
+  const sec=parseInt(document.getElementById('refreshInterval').value)||30;
+  clearAutoRefresh();
+  autoRefreshTimer=setInterval(()=>sendRequest(),sec*1000);
+  document.getElementById('autoRefreshBtn').textContent='Running...';
+  showToast(`Auto-refresh every ${sec}s started`);
+}
+function clearAutoRefresh(){
+  if(autoRefreshTimer){clearInterval(autoRefreshTimer);autoRefreshTimer=null;}
+  document.getElementById('autoRefreshBtn').textContent='Start';
+}
+
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+renderHistory();renderSaved();
+</script>
+</body>
+</html>

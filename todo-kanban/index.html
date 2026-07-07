@@ -1,0 +1,104 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Todo Kanban Board</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}:root{--accent:#FF6B00;--bg:#f8f9fc;--card:#fff;--text:#1a1a2e;--text2:#6b7280;--border:#e5e7eb;--radius:12px}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.app{max-width:1200px;margin:0 auto;padding:20px}
+.header{display:flex;align-items:center;gap:12px;padding:16px 0;border-bottom:2px solid var(--accent);margin-bottom:24px}
+.header h1{font-size:1.5rem;font-weight:700}.header a{color:var(--accent);text-decoration:none;font-size:0.85rem;margin-left:auto}
+.btn{background:var(--accent);color:#fff;border:none;padding:10px 20px;border-radius:var(--radius);font-weight:600;cursor:pointer;font-size:0.9rem}.btn:hover{opacity:.9}.btn-sm{padding:6px 14px;font-size:0.8rem}.btn-outline{background:transparent;color:var(--accent);border:2px solid var(--accent)}
+.card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid var(--border)}
+input,textarea,select{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.9rem;background:var(--card);color:var(--text);outline:none}
+input:focus,textarea:focus{border-color:var(--accent)}
+.flex{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:12px 24px;border-radius:var(--radius);font-size:0.85rem;z-index:9999}
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;min-height:400px}
+@media(max-width:768px){.board{grid-template-columns:1fr}}
+.column{background:#f1f5f9;border-radius:var(--radius);padding:12px;min-height:300px}
+.col-header{font-weight:700;font-size:0.9rem;padding:8px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.col-todo .col-header{color:#3b82f6}.col-progress .col-header{color:#f59e0b}.col-done .col-header{color:#22c55e}
+.task{background:var(--card);border-radius:8px;padding:12px;margin-bottom:8px;border:1px solid var(--border);cursor:grab;transition:all .15s}
+.task:hover{box-shadow:0 2px 8px rgba(0,0,0,.1);transform:translateY(-1px)}
+.task-title{font-weight:600;font-size:0.9rem;margin-bottom:4px}
+.task-desc{font-size:0.8rem;color:var(--text2);margin-bottom:8px}
+.task-meta{display:flex;justify-content:space-between;align-items:center}
+.task-tag{font-size:0.7rem;padding:2px 8px;border-radius:12px;font-weight:600}
+.tag-low{background:#dcfce7;color:#166534}.tag-med{background:#fef3c7;color:#92400e}.tag-high{background:#fee2e2;color:#991b1b}
+.task-actions{display:flex;gap:4px}
+.task-actions button{background:none;border:none;cursor:pointer;padding:4px;font-size:0.9rem;opacity:0.5}.task-actions button:hover{opacity:1}
+.add-task{width:100%;padding:8px;border:2px dashed var(--border);border-radius:8px;background:transparent;color:var(--text2);font-size:0.85rem;cursor:pointer;text-align:center}
+.add-task:hover{border-color:var(--accent);color:var(--accent)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal{background:var(--card);border-radius:var(--radius);padding:24px;width:90%;max-width:400px}
+label{display:block;font-size:0.85rem;font-weight:600;margin-bottom:4px;margin-top:12px}
+footer{text-align:center;padding:24px;color:var(--text2);font-size:0.75rem}
+</style></head><body>
+<div class="app">
+  <div class="header"><span style="font-size:1.8rem">📋</span><h1>Todo Kanban</h1><a href="/">← Home</a></div>
+  <div class="board" id="board">
+    <div class="column col-todo" ondrop="drop(event,'todo')" ondragover="event.preventDefault()">
+      <div class="col-header"><span>📝 To Do <span id="todo-count"></span></span></div>
+      <div id="todo"></div>
+      <button class="add-task" onclick="showModal('todo')">+ Add Task</button>
+    </div>
+    <div class="column col-progress" ondrop="drop(event,'progress')" ondragover="event.preventDefault()">
+      <div class="col-header"><span>🔄 In Progress <span id="progress-count"></span></span></div>
+      <div id="progress"></div>
+      <button class="add-task" onclick="showModal('progress')">+ Add Task</button>
+    </div>
+    <div class="column col-done" ondrop="drop(event,'done')" ondragover="event.preventDefault()">
+      <div class="col-header"><span>✅ Done <span id="done-count"></span></span></div>
+      <div id="done"></div>
+    </div>
+  </div>
+  <div style="margin-top:16px"><button class="btn btn-sm btn-outline" onclick="clearDone()">🗑 Clear Done Tasks</button></div>
+</div><footer>ZCUS Tools — Todo Kanban</footer>
+<div id="modal-container"></div>
+<script>
+function toast(m){var t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(function(){t.remove()},2500)}
+function getTasks(){try{return JSON.parse(localStorage.getItem('kanban_tasks')||'[]')}catch{return[]}}
+function saveTasks(t){localStorage.setItem('kanban_tasks',JSON.stringify(t))}
+var dragId=null;
+function render(){
+  var tasks=getTasks();
+  ['todo','progress','done'].forEach(function(col){
+    var colTasks=tasks.filter(function(t){return t.status===col});
+    document.getElementById(col).innerHTML=colTasks.map(function(t){
+      return '<div class="task" draggable="true" ondragstart="drag(event,'+t.id+')" id="task-'+t.id+'">'+
+        '<div class="task-title">'+escHtml(t.title)+'</div>'+
+        (t.desc?'<div class="task-desc">'+escHtml(t.desc)+'</div>':'')+
+        '<div class="task-meta"><span class="task-tag tag-'+t.priority+'">'+t.priority.toUpperCase()+'</span>'+
+        '<div class="task-actions">'+
+        (col!=='done'?'<button onclick="moveTask('+t.id+',\''+(col==='todo'?'progress':'done')+'\')" title="Move Forward">→</button>':'')+
+        '<button onclick="removeTask('+t.id+')" title="Delete">✕</button></div></div></div>';
+    }).join('');
+    document.getElementById(col+'-count').textContent='('+colTasks.length+')';
+  });
+}
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+function drag(e,id){dragId=id;e.dataTransfer.effectAllowed='move'}
+function drop(e,status){e.preventDefault();if(!dragId)return;var tasks=getTasks();var t=tasks.find(function(t){return t.id===dragId});if(t){t.status=status;saveTasks(tasks);render();toast('Moved to '+status)}dragId=null}
+function moveTask(id,status){var tasks=getTasks();var t=tasks.find(function(t){return t.id===id});if(t){t.status=status;saveTasks(tasks);render();toast('Moved!')}}
+function removeTask(id){var tasks=getTasks().filter(function(t){return t.id!==id});saveTasks(tasks);render();toast('Removed')}
+function clearDone(){var tasks=getTasks().filter(function(t){return t.status!=='done'});saveTasks(tasks);render();toast('Done tasks cleared')}
+function showModal(status){
+  document.getElementById('modal-container').innerHTML='<div class="modal-overlay" onclick="this.remove()">'+
+    '<div class="modal" onclick="event.stopPropagation()">'+
+    '<h3 style="font-size:1.1rem;font-weight:700">Add Task</h3>'+
+    '<label>Title</label><input type="text" id="m-title" placeholder="Task title...">'+
+    '<label>Description</label><textarea id="m-desc" rows="2" placeholder="Optional description..."></textarea>'+
+    '<label>Priority</label><select id="m-priority"><option value="low">Low</option><option value="med" selected>Medium</option><option value="high">High</option></select>'+
+    '<div class="flex" style="justify-content:flex-end;margin-top:16px"><button class="btn btn-sm btn-outline" onclick="document.querySelector(\\'.modal-overlay\\').remove()" style="margin-right:8px">Cancel</button>'+
+    '<button class="btn btn-sm" onclick="addTask(\\''+status+'\\')">Add Task</button></div></div></div>';
+  document.getElementById('m-title').focus();
+}
+function addTask(status){
+  var title=document.getElementById('m-title').value.trim();
+  if(!title){toast('Enter a title');return}
+  var tasks=getTasks();
+  tasks.push({id:Date.now(),title:title,desc:document.getElementById('m-desc').value.trim(),priority:document.getElementById('m-priority').value,status:status});
+  saveTasks(tasks);render();
+  document.querySelector('.modal-overlay').remove();toast('Task added');
+}
+render();
+</script></body></html>

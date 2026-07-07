@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEO Meta Tag Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--accent:#FF6B00;--bg:#0f0f0f;--card:#1a1a1a;--border:#2a2a2a;--text:#e0e0e0;--muted:#888}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{background:var(--card);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;gap:16px}
+header a{color:var(--accent);text-decoration:none;font-size:14px}
+header h1{font-size:18px;font-weight:600}
+header .icon{font-size:24px}
+.container{max-width:1000px;margin:0 auto;padding:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:500}
+input[type=text],input[type=url],textarea{width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px}
+input:focus,textarea:focus{outline:none;border-color:var(--accent)}
+textarea{height:80px;resize:vertical;font-family:monospace;font-size:13px}
+.btn{background:var(--accent);color:#fff;border:none;padding:12px 24px;border-radius:8px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+.btn:hover{opacity:.85}
+.btn-outline{background:transparent;border:1px solid var(--accent);color:var(--accent)}
+.btn-outline:hover{background:var(--accent);color:#fff}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:600px){.row{grid-template-columns:1fr}}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+.preview-google{border:1px solid var(--border);border-radius:8px;padding:20px;background:var(--bg);margin-bottom:16px}
+.preview-google .title{color:#8ab4f8;font-size:18px;cursor:pointer;margin-bottom:4px}
+.preview-google .url{color:#bdc1c6;font-size:13px;margin-bottom:4px}
+.preview-google .desc{color:#969ba1;font-size:13px;line-height:1.5}
+.preview-twitter{border:1px solid var(--border);border-radius:12px;overflow:hidden;max-width:400px;margin-bottom:16px}
+.preview-twitter .tw-image{background:var(--accent);height:200px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;font-weight:700}
+.preview-twitter .tw-content{padding:12px;background:var(--card)}
+.preview-twitter .tw-domain{color:var(--muted);font-size:12px;text-transform:uppercase}
+.preview-twitter .tw-title{font-weight:700;font-size:14px;margin:4px 0}
+.preview-twitter .tw-desc{color:var(--muted);font-size:13px}
+.preview-og{border:1px solid var(--border);border-radius:8px;overflow:hidden;max-width:500px}
+.preview-og .og-image{background:var(--accent);height:250px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;font-weight:700}
+.preview-og .og-content{padding:16px;background:var(--card)}
+.preview-og .og-site{color:var(--muted);font-size:12px;text-transform:uppercase}
+.preview-og .og-title{font-weight:700;font-size:16px;margin:4px 0}
+.preview-og .og-desc{color:var(--muted);font-size:13px}
+.code-output{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px;font-family:monospace;font-size:12px;line-height:1.8;overflow-x:auto;white-space:pre-wrap;max-height:300px;overflow-y:auto}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--accent);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;opacity:0;transform:translateY(20px);transition:all .3s;z-index:9999;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+<header>
+  <a href="/"><span class="icon">🏠</span> ← Home</a>
+  <h1><span class="icon">🔍</span> SEO Meta Tag Generator</h1>
+</header>
+<div class="container">
+  <div class="card">
+    <h3 style="margin-bottom:16px;font-size:15px">Basic Meta Tags</h3>
+    <div style="display:grid;gap:12px">
+      <div>
+        <label>Title <span id="titleCount" style="color:var(--accent)">0/60</span></label>
+        <input type="text" id="title" placeholder="Page Title" oninput="updatePreview()">
+      </div>
+      <div>
+        <label>Description <span id="descCount" style="color:var(--accent)">0/160</span></label>
+        <textarea id="description" placeholder="Page description for search engines..." oninput="updatePreview()"></textarea>
+      </div>
+      <div>
+        <label>Keywords</label>
+        <input type="text" id="keywords" placeholder="keyword1, keyword2, keyword3" oninput="updatePreview()">
+      </div>
+      <div>
+        <label>Canonical URL</label>
+        <input type="url" id="canonical" placeholder="https://example.com/page" oninput="updatePreview()">
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <h3 style="margin-bottom:16px;font-size:15px">Open Graph (Facebook)</h3>
+    <div class="row">
+      <div><label>OG Title</label><input type="text" id="ogTitle" placeholder="OG title..." oninput="updatePreview()"></div>
+      <div><label>OG Type</label><input type="text" id="ogType" value="website" oninput="updatePreview()"></div>
+    </div>
+    <div style="margin-top:12px"><label>OG Description</label><textarea id="ogDesc" placeholder="OG description..." oninput="updatePreview()"></textarea></div>
+    <div class="row" style="margin-top:12px">
+      <div><label>OG Image URL</label><input type="url" id="ogImage" placeholder="https://..." oninput="updatePreview()"></div>
+      <div><label>OG URL</label><input type="url" id="ogUrl" placeholder="https://..." oninput="updatePreview()"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3 style="margin-bottom:16px;font-size:15px">Twitter Cards</h3>
+    <div class="row">
+      <div><label>Twitter Card Type</label>
+        <select id="twType" style="width:100%;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Inter',sans-serif" oninput="updatePreview()">
+          <option value="summary_large_image">Summary Large Image</option>
+          <option value="summary">Summary</option>
+        </select>
+      </div>
+      <div><label>Twitter Site</label><input type="text" id="twSite" placeholder="@username" oninput="updatePreview()"></div>
+    </div>
+    <div style="margin-top:12px"><label>Twitter Title</label><input type="text" id="twTitle" placeholder="Twitter title..." oninput="updatePreview()"></div>
+    <div style="margin-top:12px"><label>Twitter Description</label><textarea id="twDesc" placeholder="Twitter description..." oninput="updatePreview()"></textarea></div>
+    <div style="margin-top:12px"><label>Twitter Image URL</label><input type="url" id="twImage" placeholder="https://..." oninput="updatePreview()"></div>
+  </div>
+  <div class="card">
+    <h3 style="margin-bottom:16px;font-size:15px">Previews</h3>
+    <h4 style="font-size:13px;color:var(--muted);margin-bottom:8px">Google Search</h4>
+    <div class="preview-google" id="previewGoogle">
+      <div class="title" id="pgTitle">Page Title</div>
+      <div class="url" id="pgUrl">example.com</div>
+      <div class="desc" id="pgDesc">Page description will appear here...</div>
+    </div>
+    <h4 style="font-size:13px;color:var(--muted);margin-bottom:8px">Twitter Card</h4>
+    <div class="preview-twitter" id="previewTwitter">
+      <div class="tw-image" id="ptImage">No Image</div>
+      <div class="tw-content">
+        <div class="tw-domain" id="ptDomain">example.com</div>
+        <div class="tw-title" id="ptTitle">Page Title</div>
+        <div class="tw-desc" id="ptDesc">Description...</div>
+      </div>
+    </div>
+    <h4 style="font-size:13px;color:var(--muted);margin-bottom:8px">Open Graph</h4>
+    <div class="preview-og" id="previewOg">
+      <div class="og-image" id="poImage">No Image</div>
+      <div class="og-content">
+        <div class="og-site" id="poSite">example.com</div>
+        <div class="og-title" id="poTitle">Page Title</div>
+        <div class="og-desc" id="poDesc">Description...</div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3 style="font-size:15px">Generated HTML</h3>
+      <button class="btn btn-outline" onclick="copyCode()">📋 Copy</button>
+    </div>
+    <div class="code-output" id="codeOutput"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function v(id){return document.getElementById(id).value.trim()}
+function updatePreview(){
+  const title=v('title')||'Page Title';
+  const desc=v('description')||'Page description will appear here...';
+  const url=v('canonical')||'https://example.com';
+  document.getElementById('titleCount').textContent=`${(v('title')).length}/60`;
+  document.getElementById('descCount').textContent=`${(v('description')).length}/160`;
+  // Google
+  document.getElementById('pgTitle').textContent=title;
+  document.getElementById('pgUrl').textContent=url.replace(/https?:\/\//,'');
+  document.getElementById('pgDesc').textContent=desc.substring(0,160);
+  // Twitter
+  const twImg=v('twImage');
+  document.getElementById('ptImage').textContent=twImg?'📷 Image':'No Image';
+  document.getElementById('ptImage').style.backgroundImage=twImg?`url(${twImg})`:'none';
+  document.getElementById('ptImage').style.backgroundSize='cover';
+  document.getElementById('ptDomain').textContent=url.replace(/https?:\/\//,'');
+  document.getElementById('ptTitle').textContent=v('twTitle')||title;
+  document.getElementById('ptDesc').textContent=(v('twDesc')||desc).substring(0,200);
+  // OG
+  const ogImg=v('ogImage');
+  document.getElementById('poImage').textContent=ogImg?'📷 Image':'No Image';
+  document.getElementById('poImage').style.backgroundImage=ogImg?`url(${ogImg})`:'none';
+  document.getElementById('poImage').style.backgroundSize='cover';
+  document.getElementById('poSite').textContent=(v('ogUrl')||url).replace(/https?:\/\//,'');
+  document.getElementById('poTitle').textContent=v('ogTitle')||title;
+  document.getElementById('poDesc').textContent=(v('ogDesc')||desc).substring(0,200);
+  // Generate code
+  let code=`<!-- Basic Meta -->\n<title>${esc(title)}</title>\n<meta name="description" content="${esc(desc)}">\n`;
+  if(v('keywords'))code+=`<meta name="keywords" content="${esc(v('keywords'))}">\n`;
+  if(v('canonical'))code+=`<link rel="canonical" href="${esc(v('canonical'))}">\n`;
+  code+=`\n<!-- Open Graph -->\n<meta property="og:type" content="${esc(v('ogType')||'website')}">\n<meta property="og:title" content="${esc(v('ogTitle')||title)}">\n<meta property="og:description" content="${esc(v('ogDesc')||desc)}">\n`;
+  if(v('ogImage'))code+=`<meta property="og:image" content="${esc(v('ogImage'))}">\n`;
+  if(v('ogUrl'))code+=`<meta property="og:url" content="${esc(v('ogUrl'))}">\n`;
+  code+=`\n<!-- Twitter Card -->\n<meta name="twitter:card" content="${esc(v('twType'))}">\n<meta name="twitter:title" content="${esc(v('twTitle')||title)}">\n<meta name="twitter:description" content="${esc(v('twDesc')||desc)}">\n`;
+  if(v('twSite'))code+=`<meta name="twitter:site" content="${esc(v('twSite'))}">\n`;
+  if(v('twImage'))code+=`<meta name="twitter:image" content="${esc(v('twImage'))}">\n`;
+  document.getElementById('codeOutput').textContent=code;
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function copyCode(){
+  navigator.clipboard.writeText(document.getElementById('codeOutput').textContent).then(()=>toast('Copied!')).catch(()=>toast('Copy failed'));
+}
+updatePreview();
+</script>
+</body>
+</html>

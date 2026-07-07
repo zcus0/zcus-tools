@@ -1,0 +1,118 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Regex Tester</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}:root{--accent:#FF6B00;--bg:#f8f9fc;--card:#fff;--text:#1a1a2e;--text2:#6b7280;--border:#e5e7eb;--radius:12px}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}.app{max-width:900px;margin:0 auto;padding:20px}
+.header{display:flex;align-items:center;gap:12px;padding:16px 0;border-bottom:2px solid var(--accent);margin-bottom:24px}
+.header h1{font-size:1.5rem;font-weight:700}.header a{color:var(--accent);text-decoration:none;font-size:0.85rem;margin-left:auto}
+.btn{background:var(--accent);color:#fff;border:none;padding:10px 20px;border-radius:var(--radius);font-weight:600;cursor:pointer;font-size:0.9rem}.btn:hover{opacity:.9}.btn-sm{padding:6px 14px;font-size:0.8rem}.btn-outline{background:transparent;color:var(--accent);border:2px solid var(--accent)}
+.card{background:var(--card);border-radius:var(--radius);padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid var(--border)}
+textarea,input[type="text"]{width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:0.85rem;background:var(--card);color:var(--text);resize:vertical;outline:none;min-height:150px;line-height:1.5}
+textarea:focus,input:focus{border-color:var(--accent)}
+.flex{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.mb-4{margin-bottom:16px}.mt-2{margin-top:8px}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600}.badge-green{background:#dcfce7;color:#166534}.badge-red{background:#fee2e2;color:#991b1b}
+pre{background:#1e1e2e;color:#a6e3a1;padding:16px;border-radius:8px;overflow-x:auto;font-size:0.82rem;line-height:1.6;font-family:'JetBrains Mono',monospace;max-height:400px;overflow-y:auto}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:12px 24px;border-radius:var(--radius);font-size:0.85rem;z-index:9999;animation:fadeIn .3s}
+@keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.info{background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:12px;font-size:0.85rem;color:#9a3412;margin-bottom:16px}
+.match{background:#fef3c7;padding:2px 6px;border-radius:4px;font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:0.85rem}th,td{padding:8px 12px;border:1px solid var(--border);text-align:left}th{background:#f1f5f9;font-weight:600}
+footer{text-align:center;padding:24px;color:var(--text2);font-size:0.75rem}
+</style></head><body>
+<div class="app">
+  <div class="header"><span style="font-size:1.8rem">.*</span><h1>Regex Tester</h1><a href="/">← Home</a></div>
+  <div class="info">💡 Test regular expressions with real-time matching, capture groups, and flags</div>
+  <div class="card">
+    <div class="flex mb-4" style="gap:8px">
+      <span style="color:var(--accent);font-weight:700;font-size:1.2rem">/</span>
+      <input type="text" id="pattern" placeholder="regex pattern..." style="flex:1;min-height:auto" oninput="testRegex()">
+      <span style="color:var(--accent);font-weight:700;font-size:1.2rem">/</span>
+      <input type="text" id="flags" placeholder="gm" value="gm" style="width:60px;text-align:center;min-height:auto" oninput="testRegex()">
+    </div>
+    <div class="flex mb-4">
+      <label style="font-size:0.85rem"><input type="checkbox" id="fg" checked onchange="testRegex()"> g (global)</label>
+      <label style="font-size:0.85rem"><input type="checkbox" id="fi" onchange="testRegex()"> i (case-insensitive)</label>
+      <label style="font-size:0.85rem"><input type="checkbox" id="fm" checked onchange="testRegex()"> m (multiline)</label>
+      <label style="font-size:0.85rem"><input type="checkbox" id="fs" onchange="testRegex()"> s (dotAll)</label>
+    </div>
+    <textarea id="input" placeholder="Enter test string here..." oninput="testRegex()" style="min-height:120px"></textarea>
+  </div>
+  <div class="card">
+    <div class="flex mb-4"><span style="font-weight:600">Highlighted Matches</span><span id="count"></span></div>
+    <div id="highlight" style="font-family:'JetBrains Mono',monospace;font-size:0.85rem;line-height:1.8;white-space:pre-wrap;word-break:break-all;min-height:60px;padding:12px;background:#fafafa;border-radius:8px"></div>
+  </div>
+  <div class="card">
+    <div class="flex mb-4"><span style="font-weight:600">Match Details</span></div>
+    <div id="matches" style="font-size:0.85rem">Enter a pattern and test string...</div>
+  </div>
+  <div class="card">
+    <div style="font-weight:600;margin-bottom:8px">Quick Reference</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;font-size:0.8rem;color:var(--text2)">
+      <span><code>. </code> Any char</span><span><code>\d</code> Digit [0-9]</span><span><code>\w</code> Word [a-zA-Z0-9_]</span><span><code>\s</code> Whitespace</span>
+      <span><code>^</code> Start of line</span><span><code>$</code> End of line</span><span><code>*</code> 0 or more</span><span><code>+</code> 1 or more</span>
+      <span><code>?</code> 0 or 1</span><span><code>{n}</code> Exactly n</span><span><code>[abc]</code> Char set</span><span><code>(abc)</code> Capture group</span>
+      <span><code>(?:abc)</code> Non-capture</span><span><code>a|b</code> Alternation</span><span><code>\b</code> Word boundary</span><span><code>(?=x)</code> Lookahead</span>
+    </div>
+  </div>
+</div><footer>ZCUS Tools — Regex Tester</footer>
+<script>
+function toast(m){var t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(function(){t.remove()},2500)}
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function testRegex(){
+  var pattern=document.getElementById('pattern').value;
+  var input=document.getElementById('input').value;
+  var fg=document.getElementById('fg').checked;
+  var fi=document.getElementById('fi').checked;
+  var fm=document.getElementById('fm').checked;
+  var fs=document.getElementById('fs').checked;
+  var flags='';if(fg)flags+='g';if(fi)flags+='i';if(fm)flags+='m';if(fs)flags+='s';
+  document.getElementById('flags').value=flags;
+  if(!pattern||!input){document.getElementById('highlight').innerHTML=escHtml(input)||'';document.getElementById('matches').innerHTML='Enter a pattern and test string...';document.getElementById('count').textContent='';return}
+  try{
+    var allMatches=[];
+    var re=new RegExp(pattern,flags);
+    var m;
+    while((m=re.exec(input))!==null){
+      allMatches.push({match:m[0],index:m.index,groups:[]});
+      for(var i=1;i<m.length;i++)allMatches[allMatches.length-1].groups.push(m[i]);
+      if(!flags.includes('g'))break;
+      if(m.index===re.lastIndex)re.lastIndex++;
+    }
+    // Highlight
+    var hlRe=new RegExp(pattern,flags.includes('g')?flags:flags+'g');
+    var positions=[];
+    var hm;
+    while((hm=hlRe.exec(input))!==null){
+      positions.push({start:hm.index,end:hm.index+hm[0].length});
+      if(!flags.includes('g'))break;
+      if(hm.index===hlRe.lastIndex)hlRe.lastIndex++;
+    }
+    positions.sort(function(a,b){return a.start-b.start});
+    var filtered=[];
+    positions.forEach(function(p){
+      if(filtered.length===0||p.start>=filtered[filtered.length-1].end)filtered.push(p);
+      else filtered[filtered.length-1].end=Math.max(filtered[filtered.length-1].end,p.end);
+    });
+    var html='';var lastIdx=0;
+    filtered.forEach(function(p){
+      html+=escHtml(input.slice(lastIdx,p.start));
+      html+='<span class="match">'+escHtml(input.slice(p.start,p.end))+'</span>';
+      lastIdx=p.end;
+    });
+    html+=escHtml(input.slice(lastIdx));
+    document.getElementById('highlight').innerHTML=html||'<span style="color:#999">No matches</span>';
+    document.getElementById('count').innerHTML='<span class="badge badge-green">'+allMatches.length+' match'+(allMatches.length!==1?'es':'')+'</span>';
+    // Details
+    var detail='<table><tr><th>#</th><th>Match</th><th>Index</th><th>Groups</th></tr>';
+    allMatches.forEach(function(m,i){
+      detail+='<tr><td>'+(i+1)+'</td><td><code>'+escHtml(m.match)+'</code></td><td>'+m.index+'</td><td>'+
+        (m.groups.length?m.groups.map(function(g,i){return '$'+(i+1)+'='+(g||'<null>')}).join(', '):'-')+'</td></tr>';
+    });
+    detail+='</table>';
+    document.getElementById('matches').innerHTML=allMatches.length?detail:'<span style="color:#999">No matches found</span>';
+  }catch(e){
+    document.getElementById('highlight').innerHTML='<span style="color:red">Error: '+escHtml(e.message)+'</span>';
+    document.getElementById('count').innerHTML='<span class="badge badge-red">Error</span>';
+  }
+}
+</script></body></html>

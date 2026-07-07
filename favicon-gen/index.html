@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Favicon Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--accent:#FF6B00;--bg:#0f0f0f;--card:#1a1a1a;--border:#2a2a2a;--text:#e0e0e0;--muted:#888}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{background:var(--card);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;gap:16px}
+header a{color:var(--accent);text-decoration:none;font-size:14px}
+header h1{font-size:18px;font-weight:600}
+header .icon{font-size:24px}
+.container{max-width:900px;margin:0 auto;padding:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:500}
+input[type=text],input[type=number],input[type=color]{width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px}
+input:focus{outline:none;border-color:var(--accent)}
+.row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:600px){.row{grid-template-columns:1fr}}
+.btn{background:var(--accent);color:#fff;border:none;padding:12px 24px;border-radius:8px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+.btn:hover{opacity:.85}
+.btn-outline{background:transparent;border:1px solid var(--accent);color:var(--accent)}
+.btn-outline:hover{background:var(--accent);color:#fff}
+.btn-sm{padding:8px 16px;font-size:12px}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+.preview-grid{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;justify-content:center;padding:20px 0}
+.preview-item{text-align:center}
+.preview-item canvas{border:1px solid var(--border);border-radius:4px}
+.preview-item .size-label{font-size:11px;color:var(--muted);margin-top:4px}
+.favicon-preview{display:flex;align-items:center;gap:16px;margin-bottom:16px}
+.favicon-preview canvas{border-radius:4px;border:1px solid var(--border)}
+.download-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.download-btn{padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;text-align:center;cursor:pointer;font-size:12px;font-family:'Inter',sans-serif;color:var(--text);transition:border-color .2s}
+.download-btn:hover{border-color:var(--accent)}
+.download-btn .icon{font-size:20px;margin-bottom:4px;display:block}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--accent);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;opacity:0;transform:translateY(20px);transition:all .3s;z-index:9999;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+<header>
+  <a href="/"><span class="icon">🏠</span> ← Home</a>
+  <h1><span class="icon">⚙️</span> Favicon Generator</h1>
+</header>
+<div class="container">
+  <div class="card">
+    <div class="row">
+      <div>
+        <label>Text / Emoji</label>
+        <input type="text" id="textInput" value="A" maxlength="2" oninput="generateFavicons()" placeholder="Enter text or emoji">
+      </div>
+      <div>
+        <label>Background Color</label>
+        <input type="color" id="bgColor" value="#FF6B00" oninput="generateFavicons()">
+      </div>
+      <div>
+        <label>Text Color</label>
+        <input type="color" id="fgColor" value="#ffffff" oninput="generateFavicons()">
+      </div>
+    </div>
+    <div style="margin-top:16px">
+      <label>Font Size (%)</label>
+      <input type="range" id="fontSize" min="40" max="90" value="70" style="width:100%;accent-color:var(--accent)" oninput="generateFavicons()">
+    </div>
+  </div>
+  <div class="card">
+    <h3 style="margin-bottom:16px;font-size:15px">Preview</h3>
+    <div class="favicon-preview" id="previewArea"></div>
+    <div class="preview-grid" id="previewGrid"></div>
+  </div>
+  <div class="card">
+    <h3 style="margin-bottom:12px;font-size:15px">Download</h3>
+    <div class="download-grid" id="downloadGrid"></div>
+    <div class="actions" style="margin-top:16px">
+      <button class="btn" onclick="downloadAll()">⬇ Download All (ZIP-like)</button>
+      <button class="btn btn-outline" onclick="copySVG()">📋 Copy SVG</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const SIZES=[{s:16,n:'favicon-16x16.png'},{s:32,n:'favicon-32x32.png'},{s:48,n:'favicon-48x48.png'},{s:180,n:'apple-touch-icon.png'},{s:192,n:'android-chrome-192x192.png'},{s:512,n:'android-chrome-512x512.png'}];
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function drawIcon(canvas,size){
+  const ctx=canvas.getContext('2d');
+  canvas.width=size;canvas.height=size;
+  const text=document.getElementById('textInput').value||'A';
+  const bg=document.getElementById('bgColor').value;
+  const fg=document.getElementById('fgColor').value;
+  const fs=parseInt(document.getElementById('fontSize').value);
+  // Background with rounded corners
+  const r=size*0.2;
+  ctx.fillStyle=bg;
+  ctx.beginPath();
+  ctx.moveTo(r,0);ctx.lineTo(size-r,0);ctx.quadraticCurveTo(size,0,size,r);
+  ctx.lineTo(size,size-r);ctx.quadraticCurveTo(size,size,size-r,size);
+  ctx.lineTo(r,size);ctx.quadraticCurveTo(0,size,0,size-r);
+  ctx.lineTo(0,r);ctx.quadraticCurveTo(0,0,r,0);
+  ctx.closePath();ctx.fill();
+  // Text
+  ctx.fillStyle=fg;
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  const fontSize=size*fs/100;
+  ctx.font=`bold ${fontSize}px Inter, Arial, sans-serif`;
+  ctx.fillText(text,size/2,size/2+fontSize*0.02);
+}
+function generateFavicons(){
+  const preview=document.getElementById('previewArea');
+  const grid=document.getElementById('previewGrid');
+  const dlGrid=document.getElementById('downloadGrid');
+  preview.innerHTML='';grid.innerHTML='';dlGrid.innerHTML='';
+  const text=document.getElementById('textInput').value||'A';
+  const emoji=/[\p{Emoji}]/u.test(text);
+  SIZES.forEach(({s,n})=>{
+    const canvas=document.createElement('canvas');
+    drawIcon(canvas,s);
+    // Preview
+    const item=document.createElement('div');
+    item.className='preview-item';
+    const dispSize=Math.min(s,80);
+    const previewCanvas=document.createElement('canvas');
+    previewCanvas.width=s;previewCanvas.height=s;
+    drawIcon(previewCanvas,s);
+    previewCanvas.style.width=dispSize+'px';previewCanvas.style.height=dispSize+'px';
+    item.appendChild(previewCanvas);
+    const label=document.createElement('div');
+    label.className='size-label';
+    label.textContent=`${s}×${s}`;
+    item.appendChild(label);
+    grid.appendChild(item);
+    // Download button
+    const btn=document.createElement('button');
+    btn.className='download-btn';
+    btn.innerHTML=`<span class="icon">⬇</span>${n}<br><span style="font-size:10px;color:var(--muted)">${s}×${s}</span>`;
+    btn.onclick=()=>downloadPNG(canvas,n);
+    dlGrid.appendChild(btn);
+  });
+  // Large preview
+  const largeCanvas=document.createElement('canvas');
+  drawIcon(largeCanvas,128);
+  largeCanvas.style.width='64px';largeCanvas.style.height='64px';
+  preview.appendChild(largeCanvas);
+}
+function downloadPNG(canvas,name){
+  const link=document.createElement('a');
+  link.download=name;
+  link.href=canvas.toDataURL('image/png');
+  link.click();
+  toast('Downloaded: '+name);
+}
+function downloadAll(){
+  SIZES.forEach(({s,n})=>{
+    const canvas=document.createElement('canvas');
+    drawIcon(canvas,s);
+    setTimeout(()=>downloadPNG(canvas,n),100);
+  });
+  toast('Downloading all sizes...');
+}
+function generateSVG(){
+  const text=document.getElementById('textInput').value||'A';
+  const bg=document.getElementById('bgColor').value;
+  const fg=document.getElementById('fgColor').value;
+  const fs=parseInt(document.getElementById('fontSize').value);
+  const r=20;
+  return`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="${r*6}" fill="${bg}"/><text x="256" y="280" text-anchor="middle" fill="${fg}" font-family="Inter,Arial,sans-serif" font-weight="bold" font-size="${512*fs/100}">${esc(text)}</text></svg>`;
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function copySVG(){navigator.clipboard.writeText(generateSVG()).then(()=>toast('SVG copied!')).catch(()=>toast('Copy failed'))}
+generateFavicons();
+</script>
+</body>
+</html>
