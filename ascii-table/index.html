@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ASCII Table</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333}
+.header{background:#fff;padding:16px 24px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+.header a{color:#FF6B00;text-decoration:none;font-weight:600}
+.header h1{font-size:20px;font-weight:700}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card h2{font-size:16px;font-weight:600;margin-bottom:12px}
+input[type=text]{width:100%;padding:10px 14px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px}
+input[type=text]:focus{outline:2px solid #FF6B00}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.filter-btn{padding:6px 14px;border:2px solid #e0e0e0;border-radius:20px;background:#fff;font-size:12px;font-weight:600;cursor:pointer}
+.filter-btn.active{border-color:#FF6B00;background:#FF6B00;color:#fff}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#FF6B00;color:#fff;padding:10px 8px;text-align:left;position:sticky;top:0}
+td{padding:8px;border-bottom:1px solid #eee;font-family:monospace}
+tr:hover{background:#fff3ee}
+td.char{font-size:18px;font-weight:700;text-align:center;width:40px}
+.table-wrap{max-height:500px;overflow-y:auto;border-radius:8px;border:1px solid #e0e0e0}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:1000;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">📜</span><h1>ASCII / Unicode Table</h1></div>
+<div class="container">
+<div class="card">
+<h2>Search & Filter</h2>
+<input type="text" id="search" placeholder="Search character, name, or code..." oninput="renderTable()">
+<div class="filters" id="filters"></div>
+</div>
+<div class="card">
+<div class="table-wrap">
+<table><thead><tr><th>Char</th><th>Dec</th><th>Hex</th><th>Oct</th><th>Binary</th><th>Name</th></tr></thead><tbody id="tableBody"></tbody></table>
+</div>
+<div style="margin-top:8px;font-size:12px;color:#666" id="count"></div>
+</div>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+const names={0:'NULL',1:'SOH',2:'STX',3:'ETX',4:'EOT',5:'ENQ',6:'ACK',7:'BEL',8:'BS',9:'HT',10:'LF',11:'VT',12:'FF',13:'CR',14:'SO',15:'SI',16:'DLE',17:'DC1',18:'DC2',19:'DC3',20:'DC4',21:'NAK',22:'SYN',23:'ETB',24:'CAN',25:'EM',26:'SUB',27:'ESC',28:'FS',29:'GS',30:'RS',31:'US',32:'SPACE',33:'!',34:'"',35:'#',36:'$',37:'%',38:'&',39:"'",40:'(',41:')',42:'*',43:'+',44:',',45:'-',46:'.',47:'/',48:'0',49:'1',50:'2',51:'3',52:'4',53:'5',54:'6',55:'7',56:'8',57:'9',58:':',59:';',60:'<',61:'=',62:'>',63:'?',64:'@',65:'A',66:'B',67:'C',68:'D',69:'E',70:'F',71:'G',72:'H',73:'I',74:'J',75:'K',76:'L',77:'M',78:'N',79:'O',80:'P',81:'Q',82:'R',83:'S',84:'T',85:'U',86:'V',87:'W',88:'X',89:'Y',90:'Z',91:'[',92:'\\',93:']',94:'^',95:'_',96:'`',97:'a',98:'b',99:'c',100:'d',101:'e',102:'f',103:'g',104:'h',105:'i',106:'j',107:'k',108:'l',109:'m',110:'n',111:'o',112:'p',113:'q',114:'r',115:'s',116:'t',117:'u',118:'v',119:'w',120:'x',121:'y',122:'z',123:'{',124:'|',125:'}',126:'~',127:'DEL'};
+const chars=[];for(let i=0;i<128;i++)chars.push({dec:i,hex:i.toString(16).toUpperCase().padStart(2,'0'),oct:i.toString(8),bin:i.toString(2).padStart(8,'0'),char:i<32||i===127?String.fromCharCode(32):String.fromCharCode(i),name:names[i]||'Unknown',cat:i<32||i===127?'control':i>=33&&i<=126?'printable':'extended'});
+let activeFilter='all';
+const filters=[
+{id:'all',label:'All (0-127)'},{id:'control',label:'Control (0-31)'},{id:'printable',label:'Printable (32-126)'},
+{id:'digits',label:'Digits'},{id:'upper',label:'Uppercase'},{id:'lower',label:'Lowercase'},{id:'extended',label:'Extended (128+)'}
+];
+// Add extended chars
+for(let i=128;i<256;i++)chars.push({dec:i,hex:i.toString(16).toUpperCase().padStart(2,'0'),oct:i.toString(8),bin:i.toString(2).padStart(8,'0'),char:String.fromCharCode(i),name:'Extended',cat:'extended'});
+document.getElementById('filters').innerHTML=filters.map(f=>`<button class="filter-btn${f.id==='all'?' active':''}" data-f="${f.id}" onclick="setFilter('${f.id}')">${f.label}</button>`).join('');
+function setFilter(f){
+activeFilter=f;
+document.querySelectorAll('.filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.f===f));
+renderTable();
+}
+function renderTable(){
+const q=document.getElementById('search').value.toLowerCase();
+let filtered=chars;
+if(activeFilter==='digits')filtered=chars.filter(c=>c.dec>=48&&c.dec<=57);
+else if(activeFilter==='upper')filtered=chars.filter(c=>c.dec>=65&&c.dec<=90);
+else if(activeFilter==='lower')filtered=chars.filter(c=>c.dec>=97&&c.dec<=122);
+else if(activeFilter!=='all')filtered=chars.filter(c=>c.cat===activeFilter);
+if(q)filtered=filtered.filter(c=>c.char.toLowerCase().includes(q)||c.name.toLowerCase().includes(q)||c.dec.toString().includes(q)||c.hex.toLowerCase().includes(q));
+document.getElementById('tableBody').innerHTML=filtered.map(c=>`<tr onclick="copyChar('${c.char}')" style="cursor:pointer"><td class="char">${c.char}</td><td>${c.dec}</td><td>${c.hex}</td><td>${c.oct}</td><td>${c.bin}</td><td>${c.name}</td></tr>`).join('');
+document.getElementById('count').textContent=`Showing ${filtered.length} characters`;
+}
+function copyChar(c){navigator.clipboard.writeText(c).then(()=>toast('Copied: '+c))}
+renderTable();
+</script>
+</body>
+</html>

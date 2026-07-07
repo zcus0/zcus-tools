@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>cURL Command Builder - ZCUs Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
+.header{background:#1a1d27;border-bottom:1px solid #2a2d3a;padding:16px 24px;display:flex;align-items:center;gap:16px}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header h1{font-size:20px;font-weight:700;color:#fff}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#1a1d27;border:1px solid #2a2d3a;border-radius:12px;padding:24px;margin-bottom:20px}
+.card h2{font-size:18px;font-weight:600;color:#fff;margin-bottom:16px}
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:14px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:12px;font-weight:500;color:#aaa;text-transform:uppercase;letter-spacing:.5px}
+select,input,textarea{background:#0f1117;border:1px solid #3a3d4a;border-radius:8px;padding:10px 12px;color:#e0e0e0;font-family:'Inter',sans-serif;font-size:14px;width:100%}
+select:focus,input:focus,textarea:focus{outline:none;border-color:#FF6B00}
+textarea{min-height:80px;resize:vertical;font-family:monospace;font-size:13px}
+.output-box{background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;padding:16px;font-family:monospace;font-size:13px;color:#8ae6a0;white-space:pre-wrap;max-height:500px;overflow-y:auto}
+button{background:#FF6B00;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+button:hover{opacity:.85}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.checkbox-row{display:flex;align-items:center;gap:8px;margin:6px 0}
+.checkbox-row input[type=checkbox]{width:auto;accent-color:#FF6B00}
+.checkbox-row label{font-size:14px;color:#ccc;text-transform:none;letter-spacing:0}
+.preset-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.preset-btn{background:#2a2d3a;color:#e0e0e0;border:1px solid #3a3d4a;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif}
+.preset-btn:hover{border-color:#FF6B00;color:#FF6B00}
+.response-box{background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;padding:16px;font-family:monospace;font-size:12px;color:#e0e0e0;white-space:pre-wrap;max-height:400px;overflow-y:auto;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">🔗</span><h1>cURL Command Builder</h1></div>
+<div class="container">
+<div class="card">
+<h2>Presets</h2>
+<div class="preset-row">
+<button class="preset-btn" onclick="applyPreset('get')">GET Request</button>
+<button class="preset-btn" onclick="applyPreset('post-json')">POST JSON</button>
+<button class="preset-btn" onclick="applyPreset('post-form')">POST Form</button>
+<button class="preset-btn" onclick="applyPreset('put')">PUT Request</button>
+<button class="preset-btn" onclick="applyPreset('delete')">DELETE Request</button>
+<button class="preset-btn" onclick="applyPreset('auth')">Basic Auth</button>
+<button class="preset-btn" onclick="applyPreset('download')">Download File</button>
+<button class="preset-btn" onclick="applyPreset('headers')">Headers Only</button>
+</div>
+</div>
+<div class="card">
+<h2>Configuration</h2>
+<div class="form-row">
+<div class="form-group"><label>Method</label>
+<select id="method" onchange="update()">
+<option value="-X GET">GET</option>
+<option value="-X POST">POST</option>
+<option value="-X PUT">PUT</option>
+<option value="-X PATCH">PATCH</option>
+<option value="-X DELETE">DELETE</option>
+<option value="-X HEAD">HEAD</option>
+<option value="-X OPTIONS">OPTIONS</option>
+</select>
+</div>
+<div class="form-group"><label>URL</label><input id="url" value="https://api.example.com/data" oninput="update()"></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Headers (Key: Value, one per line)</label><textarea id="headers" oninput="update()">Content-Type: application/json
+Accept: application/json</textarea></div>
+<div class="form-group"><label>Request Body</label><textarea id="body" oninput="update()">{"key": "value", "name": "test"}</textarea></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Basic Auth (user:pass)</label><input id="auth" placeholder="user:password" oninput="update()"></div>
+<div class="form-group"><label>Timeout (seconds)</label><input id="timeout" type="number" placeholder="30" oninput="update()"></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Proxy</label><input id="proxy" placeholder="http://proxy:8080" oninput="update()"></div>
+<div class="form-group"><label>Output File</label><input id="outputFile" placeholder="response.json" oninput="update()"></div>
+</div>
+<div style="margin-top:8px">
+<div class="checkbox-row"><input type="checkbox" id="verbose" onchange="update()"><label>Verbose (-v)</label></div>
+<div class="checkbox-row"><input type="checkbox" id="insecure" onchange="update()"><label>Insecure (-k)</label></div>
+<div class="checkbox-row"><input type="checkbox" id="followRedirects" checked onchange="update()"><label>Follow Redirects (-L)</label></div>
+<div class="checkbox-row"><input type="checkbox" id="compressed" onchange="update()"><label>Compressed (-compressed)</label></div>
+</div>
+</div>
+<div class="card">
+<h2>Generated cURL Command</h2>
+<div class="output-box" id="output"></div>
+<div class="btn-row">
+<button onclick="copyOutput()">📋 Copy</button>
+<button onclick="executeRequest()">▶ Execute (fetch)</button>
+</div>
+<div id="responseArea" style="display:none">
+<h2>Response</h2>
+<div class="response-box" id="responseBox"></div>
+</div>
+</div>
+</div>
+<script>
+function toast(msg){const t=document.createElement('div');t.textContent=msg;Object.assign(t.style,{position:'fixed',bottom:'20px',right:'20px',background:'#FF6B00',color:'#fff',padding:'12px 20px',borderRadius:'8px',fontFamily:'Inter',sans-serif',fontSize:'14px',zIndex:'9999',transition:'opacity .3s'});document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},2500)}
+
+function shellEscape(s){return `'${s.replace(/'/g,"'\\''")}'`}
+
+function applyPreset(p){
+const presets={
+'get':{method:'-X GET',headers:'Accept: application/json',body:'',auth:'',timeout:'',proxy:'',outputFile:'',verbose:false,insecure:false,followRedirects:true,compressed:false},
+'post-json':{method:'-X POST',headers:'Content-Type: application/json\nAccept: application/json',body:'{"name":"test","email":"test@example.com"}',auth:'',timeout:'',proxy:'',outputFile:'',verbose:false,insecure:false,followRedirects:true,compressed:false},
+'post-form':{method:'-X POST',headers:'Content-Type: application/x-www-form-urlencoded',body:'name=test&email=test@example.com',auth:'',timeout:'',proxy:'',outputFile:'',verbose:false,insecure:false,followRedirects:true,compressed:false},
+'put':{method:'-X PUT',headers:'Content-Type: application/json',body:'{"id":1,"name":"updated"}',auth:'',timeout:'',proxy:'',outputFile:'',verbose:false,insecure:false,followRedirects:true,compressed:false},
+'delete':{method:'-X DELETE',headers:'',body:'',auth:'',timeout:'',proxy:'',outputFile:'',verbose:false,insecure:false,followRedirects:true,compressed:false},
+'auth':{method:'-X GET',headers:'Accept: application/json',body:'',auth:'admin:secret123',timeout:'',proxy:'',outputFile:'',verbose:false,insecure:false,followRedirects:true,compressed:false},
+'download':{method:'-X GET',headers:'',body:'',auth:'',timeout:'60',proxy:'',outputFile:'download.zip',verbose:false,insecure:false,followRedirects:true,compressed:false},
+'headers':{method:'-X HEAD',headers:'',body:'',auth:'',timeout:'',proxy:'',outputFile:'',verbose:false,insecure:false,followRedirects:true,compressed:false}
+};
+const pr=presets[p];
+document.getElementById('method').value=pr.method;
+document.getElementById('headers').value=pr.headers;
+document.getElementById('body').value=pr.body;
+document.getElementById('auth').value=pr.auth;
+document.getElementById('timeout').value=pr.timeout;
+document.getElementById('proxy').value=pr.proxy;
+document.getElementById('outputFile').value=pr.outputFile;
+document.getElementById('verbose').checked=pr.verbose;
+document.getElementById('insecure').checked=pr.insecure;
+document.getElementById('followRedirects').checked=pr.followRedirects;
+document.getElementById('compressed').checked=pr.compressed;
+update();
+}
+
+function update(){
+const method=document.getElementById('method').value;
+const url=document.getElementById('url').value||'https://example.com';
+const headers=document.getElementById('headers').value.split('\n').filter(l=>l.trim());
+const body=document.getElementById('body').value.trim();
+const auth=document.getElementById('auth').value.trim();
+const timeout=document.getElementById('timeout').value.trim();
+const proxy=document.getElementById('proxy').value.trim();
+const outputFile=document.getElementById('outputFile').value.trim();
+const verbose=document.getElementById('verbose').checked;
+const insecure=document.getElementById('insecure').checked;
+const followRedirects=document.getElementById('followRedirects').checked;
+const compressed=document.getElementById('compressed').checked;
+
+let cmd=`curl`;
+if(verbose)cmd+=` -v`;
+if(insecure)cmd+=` -k`;
+if(followRedirects)cmd+=` -L`;
+if(compressed)cmd+=` --compressed`;
+if(method!=='-X GET')cmd+=` ${method}`;
+if(auth)cmd+=` -u ${shellEscape(auth)}`;
+if(timeout)cmd+=` --connect-timeout ${timeout}`;
+if(proxy)cmd+=` -x ${shellEscape(proxy)}`;
+headers.forEach(h=>{cmd+=` -H ${shellEscape(h.trim())}`});
+if(body&&method!=='-X GET'&&method!=='-X HEAD')cmd+=` -d ${shellEscape(body)}`;
+if(outputFile)cmd+=` -o ${shellEscape(outputFile)}`;
+cmd+=` ${shellEscape(url)}`;
+document.getElementById('output').textContent=cmd;
+}
+
+async function executeRequest(){
+const method=document.getElementById('method').value.replace('-X ','');
+const url=document.getElementById('url').value;
+const headers=document.getElementById('headers').value.split('\n').filter(l=>l.trim());
+const body=document.getElementById('body').value.trim();
+const auth=document.getElementById('auth').value.trim();
+document.getElementById('responseArea').style.display='';
+document.getElementById('responseBox').textContent='Loading...';
+try{
+const opts={method,headers:{}};
+headers.forEach(h=>{const[k,...v]=h.split(':');opts.headers[k.trim()]=v.join(':').trim()});
+if(auth)opts.headers['Authorization']='Basic '+btoa(auth);
+if(body&&method!=='GET'&&method!=='HEAD')opts.body=body;
+const res=await fetch(url,opts);
+let text=await res.text();
+try{text=JSON.stringify(JSON.parse(text),null,2)}catch(e){}
+const headerStr=[...res.headers.entries()].map(([k,v])=>`${k}: ${v}`).join('\n');
+document.getElementById('responseBox').textContent=`HTTP/${res.status} ${res.statusText}\n${headerStr}\n\n${text}`;
+toast(`Response: ${res.status}`);
+}catch(e){
+document.getElementById('responseBox').textContent=`Error: ${e.message}`;
+toast('Request failed');
+}
+}
+update();
+</script>
+</body>
+</html>

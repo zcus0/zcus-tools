@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hashtag Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333}
+.header{background:#fff;padding:16px 24px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+.header a{color:#FF6B00;text-decoration:none;font-weight:600}
+.header h1{font-size:20px;font-weight:700}
+.header .icon{font-size:24px}
+.container{max-width:700px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card h2{font-size:16px;font-weight:600;margin-bottom:12px}
+input[type=text]{width:100%;padding:12px 14px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px}
+input[type=text]:focus{outline:2px solid #FF6B00;border-color:#FF6B00}
+.btn{background:#FF6B00;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-family:'Inter';font-weight:600;font-size:14px;cursor:pointer}
+.btn:hover{opacity:.9}
+.btn-secondary{background:#eee;color:#333}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.platform-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.tab{padding:8px 16px;border:2px solid #e0e0e0;border-radius:20px;background:#fff;font-size:13px;font-weight:600;cursor:pointer}
+.tab.active{border-color:#FF6B00;background:#FF6B00;color:#fff}
+.hashtag-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.hashtag{background:#f8f8f8;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:600;cursor:pointer;border:2px solid transparent;transition:.2s;text-align:center}
+.hashtag:hover{border-color:#FF6B00;background:#fff3ee}
+.hashtag.selected{border-color:#FF6B00;background:#FF6B00;color:#fff}
+.copy-all{background:#1e1e1e;color:#d4d4d4;padding:16px;border-radius:8px;font-size:13px;word-break:break-word;margin-top:12px;font-family:monospace;min-height:60px;white-space:pre-wrap}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:1000;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">#️⃣</span><h1>Hashtag Generator</h1></div>
+<div class="container">
+<div class="card">
+<h2>Enter Topic or Keywords</h2>
+<input type="text" id="input" placeholder="e.g. travel, photography, sunset, beach..." onkeydown="if(event.key==='Enter')generate()">
+<div class="btn-row">
+<button class="btn" onclick="generate()">Generate Hashtags</button>
+</div>
+</div>
+<div class="card">
+<h2>Platform</h2>
+<div class="platform-tabs" id="platforms"></div>
+<h2>Generated Hashtags</h2>
+<div class="hashtag-grid" id="hashtags"></div>
+<div class="copy-all" id="copyArea" style="display:none"></div>
+<div class="btn-row" id="copyRow" style="display:none">
+<button class="btn btn-secondary" onclick="copySelected()">📋 Copy Selected</button>
+<button class="btn btn-secondary" onclick="copyAll()">📋 Copy All</button>
+<button class="btn btn-secondary" onclick="selectAll()">☑️ Select All</button>
+</div>
+</div>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+const platforms=[
+{id:'instagram',label:'📷 Instagram',maxTags:30,prefix:'#'},
+{id:'twitter',label:'🐦 Twitter',maxTags:5,prefix:'#'},
+{id:'tiktok',label:'🎵 TikTok',maxTags:5,prefix:'#'},
+{id:'linkedin',label:'💼 LinkedIn',maxTags:10,prefix:'#'},
+{id:'youtube',label:'▶️ YouTube',maxTags:15,prefix:'#'},
+];
+let currentPlatform='instagram';
+const selectedTags=new Set();
+document.getElementById('platforms').innerHTML=platforms.map(p=>`<button class="tab${p.id==='instagram'?' active':''}" data-p="${p.id}" onclick="setPlatform('${p.id}')">${p.label}</button>`).join('');
+function setPlatform(id){currentPlatform=id;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.p===id))}
+const relatedWords={
+travel:['wanderlust','adventure','explore','vacation','trip','journey','travelgram','traveltheworld','worldtravel','bucketlist','wanderlustlife','travelphotography','instatravel','traveladdict','travelblogger'],
+food:['foodie','foodporn','yummy','delicious','cooking','homemade','foodstagram','foodphotography','eeeeeats','foodlover','instafood','foodgasm','healthyeating','mealprep','recipe'],
+photo:['photography','photooftheday','instaphoto','picoftheday','photographer','nature','landscape','portrait','streetphotography','goldenhour','bokeh','lightroom','canon','nikon','sony'],
+fitness:['fitness','workout','gym','fitfam','healthylifestyle','motivation','training','muscle','crossfit','yoga','running','cardio','strength','bodybuilding','personaltrainer'],
+tech:['technology','coding','programming','developer','startup','innovation','ai','machinelearning','software','javascript','python','webdev','techlife','data','digital'],
+fashion:['fashion','style','ootd','fashionista','outfit','beauty','clothes','trendy','chic','fashionweek','streetstyle','luxury','designer','model','accessories'],
+nature:['nature','naturephotography','landscape','outdoors','wildlife','mountains','forest','ocean','sunset','flowers','trees','nationalpark','conservation','ecology','earth'],
+business:['business','entrepreneur','marketing','success','money','motivation','leadership','startup','branding','goals','hustle','digitalmarketing','socialmedia','growth','mindset'],
+music:['music','musician','song','playlist','concert','band','live','studio','rapper','singer','guitar','piano','hiphop','rock','pop'],
+sports:['sports','football','basketball','soccer','tennis','baseball','athlete','championship','team','winning','score','tournament','league','player','coach'],
+health:['health','wellness','selfcare','mentalhealth','meditation','mindfulness','holistic','nutrition','fitness','recovery','sleep','stress','therapy','wellbeing','healthy'],
+art:['art','artist','painting','drawing','illustration','creative','design','digitalart','sketch','canvas','abstract','contemporary','gallery','studio','craft'],
+};
+function generate(){
+const input=document.getElementById('input').value.trim();
+if(!input)return toast('Enter a topic');
+const keywords=input.split(/[,;]+/).map(k=>k.trim().toLowerCase()).filter(Boolean);
+const maxTags=platforms.find(p=>p.id===currentPlatform)?.maxTags||30;
+const tags=new Set();
+// Direct hashtags
+keywords.forEach(k=>{
+if(k.length>1){
+tags.add('#'+k.replace(/\s+/g,''));
+tags.add('#'+k.replace(/\s+/g,''));
+}
+});
+// Related words
+keywords.forEach(k=>{
+Object.keys(relatedWords).forEach(key=>{
+if(k.includes(key)||key.includes(k)){
+relatedWords[key].forEach(w=>tags.add('#'+w));
+}
+});
+});
+// Common variations
+keywords.forEach(k=>{
+if(k.length>3){
+tags.add('#'+k+'photography');
+tags.add('#'+k+'love');
+tags.add('#'+k+'daily');
+tags.add('#'+k+'life');
+tags.add('#'+k+'gram');
+tags.add('#'+k+'world');
+tags.add('#'+k+'community');
+tags.add('#'+k+'vibes');
+tags.add('#'+k+'life');
+tags.add('#'+k+'style');
+tags.add('#'+k+'today');
+}
+});
+const tagArray=[...tags].slice(0,maxTags);
+selectedTags.clear();
+document.getElementById('hashtags').innerHTML=tagArray.map(t=>`<div class="hashtag" data-tag="${t}" onclick="toggleTag(this,'${t}')">${t}</div>`).join('');
+document.getElementById('copyRow').style.display=tagArray.length?'flex':'none';
+document.getElementById('copyArea').style.display='none';
+toast(`Generated ${tagArray.length} hashtags!`);
+}
+function toggleTag(el,tag){
+el.classList.toggle('selected');
+if(selectedTags.has(tag))selectedTags.delete(tag);else selectedTags.add(tag);
+const tags=[...selectedTags];
+document.getElementById('copyArea').textContent=tags.join(' ');
+document.getElementById('copyArea').style.display=tags.length?'block':'none';
+}
+function selectAll(){
+selectedTags.clear();
+document.querySelectorAll('.hashtag').forEach(el=>{el.classList.add('selected');selectedTags.add(el.dataset.tag)});
+const tags=[...selectedTags];
+document.getElementById('copyArea').textContent=tags.join(' ');
+document.getElementById('copyArea').style.display='block';
+}
+function copySelected(){
+const tags=[...selectedTags];
+if(!tags.length)return toast('Select some hashtags first');
+navigator.clipboard.writeText(tags.join(' ')).then(()=>toast('Copied!'));
+}
+function copyAll(){
+const tags=[...document.querySelectorAll('.hashtag')].map(el=>el.dataset.tag);
+navigator.clipboard.writeText(tags.join(' ')).then(()=>toast('Copied all!'));
+}
+</script>
+</body>
+</html>

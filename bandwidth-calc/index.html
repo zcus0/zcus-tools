@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bandwidth Calculator - ZCUs Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
+.header{background:#1a1d27;border-bottom:1px solid #2a2d3a;padding:16px 24px;display:flex;align-items:center;gap:16px}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header h1{font-size:20px;font-weight:700;color:#fff}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#1a1d27;border:1px solid #2a2d3a;border-radius:12px;padding:24px;margin-bottom:20px}
+.card h2{font-size:18px;font-weight:600;color:#fff;margin-bottom:16px}
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:14px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:12px;font-weight:500;color:#aaa;text-transform:uppercase;letter-spacing:.5px}
+select,input{background:#0f1117;border:1px solid #3a3d4a;border-radius:8px;padding:10px 12px;color:#e0e0e0;font-family:'Inter',sans-serif;font-size:14px}
+select:focus,input:focus{outline:none;border-color:#FF6B00}
+button{background:#FF6B00;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+button:hover{opacity:.85}
+.result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.result-item{background:#0f1117;border-radius:8px;padding:14px}
+.result-label{font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.result-value{font-size:15px;font-weight:600;color:#FF6B00}
+.result-value.sm{font-size:12px;color:#8ae6a0}
+.speed-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px}
+.speed-table th{text-align:left;padding:8px;color:#FF6B00;border-bottom:1px solid #3a3d4a;font-size:11px;text-transform:uppercase}
+.speed-table td{padding:6px 8px;border-bottom:1px solid #1a1d27;font-family:monospace;font-size:12px}
+.speed-table tr:hover{background:#1a1d27}
+.preset-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.preset-btn{background:#2a2d3a;color:#e0e0e0;border:1px solid #3a3d4a;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif}
+.preset-btn:hover{border-color:#FF6B00;color:#FF6B00}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">📶</span><h1>Bandwidth / Speed Calculator</h1></div>
+<div class="container">
+<div class="card">
+<h2>Quick Speed Presets</h2>
+<div class="preset-row">
+<button class="preset-btn" onclick="setSpeed(10)">10 Mbps</button>
+<button class="preset-btn" onclick="setSpeed(100)">100 Mbps</button>
+<button class="preset-btn" onclick="setSpeed(1000)">1 Gbps</button>
+<button class="preset-btn" onclick="setSpeed(10000)">10 Gbps</button>
+<button class="preset-btn" onclick="setSpeed(5)">5 Mbps (DSL)</button>
+<button class="preset-btn" onclick="setSpeed(25)">25 Mbps (Cable)</button>
+<button class="preset-btn" onclick="setSpeed(50)">50 Mbps (Fiber)</button>
+</div>
+</div>
+<div class="card">
+<h2>Download Time Calculator</h2>
+<div class="form-row">
+<div class="form-group"><label>File Size</label><input id="fileSize" type="number" value="100" oninput="calcDownload()"></div>
+<div class="form-group"><label>Unit</label>
+<select id="sizeUnit" onchange="calcDownload()">
+<option value="KB">KB</option><option value="MB" selected>MB</option><option value="GB">GB</option><option value="TB">TB</option>
+</select>
+</div>
+<div class="form-group"><label>Speed</label><input id="speed" type="number" value="100" oninput="calcDownload()"></div>
+<div class="form-group"><label>Speed Unit</label>
+<select id="speedUnit" onchange="calcDownload()">
+<option value="kbps">Kbps</option><option value="Mbps" selected>Mbps</option><option value="Gbps">Gbps</option>
+</select>
+</div>
+</div>
+<div class="result-grid" id="downloadResults"></div>
+</div>
+<div class="card">
+<h2>Transfer Time Table</h2>
+<p style="font-size:12px;color:#aaa;margin-bottom:12px">Time to transfer files at current speed</p>
+<table class="speed-table" id="transferTable">
+<thead><tr><th>File Size</th><th>Time</th><th>Data Rate</th></tr></thead>
+<tbody></tbody>
+</table>
+</div>
+<div class="card">
+<h2>Bandwidth Utilization</h2>
+<div class="form-row">
+<div class="form-group"><label>Link Speed (Mbps)</label><input id="linkSpeed" type="number" value="1000" oninput="calcUtil()"></div>
+<div class="form-group"><label>Used Bandwidth (Mbps)</label><input id="usedBw" type="number" value="250" oninput="calcUtil()"></div>
+</div>
+<div class="result-grid" id="utilResults"></div>
+</div>
+<div class="card">
+<h2>Network Throughput Calculator</h2>
+<div class="form-row">
+<div class="form-group"><label>Bandwidth (Mbps)</label><input id="tpBandwidth" type="number" value="100" oninput="calcTP()"></div>
+<div class="form-group"><label>Latency (ms)</label><input id="tpLatency" type="number" value="20" oninput="calcTP()"></div>
+<div class="form-group"><label>Packet Size (bytes)</label><input id="tpPktSize" type="number" value="1500" oninput="calcTP()"></div>
+</div>
+<div class="result-grid" id="tpResults"></div>
+</div>
+</div>
+<script>
+function toast(msg){const t=document.createElement('div');t.textContent=msg;Object.assign(t.style,{position:'fixed',bottom:'20px',right:'20px',background:'#FF6B00',color:'#fff',padding:'12px 20px',borderRadius:'8px',fontFamily:'Inter',sans-serif',fontSize:'14px',zIndex:'9999',transition:'opacity .3s'});document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},2500)}
+
+function setSpeed(mbps){document.getElementById('speed').value=mbps;document.getElementById('speedUnit').value='Mbps';calcDownload()}
+
+function toBytes(size,unit){const m={KB:1,MB:1024,GB:1048576,TB:1073741824};return size*m[unit]}
+function toBits(speed,unit){const m={kbps:1000,Mbps:1000000,Gbps:1000000000};return speed*m[unit]}
+function fmtTime(s){if(s<1)return'<1 second';if(s<60)return Math.round(s)+' seconds';if(s<3600)return Math.round(s/60)+' min '+Math.round(s%60)+' sec';return Math.floor(s/3600)+'h '+Math.floor((s%3600)/60)+'m'}
+
+function calcDownload(){
+const size=toBytes(parseFloat(document.getElementById('fileSize').value)||0,document.getElementById('sizeUnit').value);
+const bits=toBits(parseFloat(document.getElementById('speed').value)||0,document.getElementById('speedUnit').value);
+if(!bits){document.getElementById('downloadResults').innerHTML='';return}
+const seconds=size*8/bits;
+const bps=bits/8;
+const items=[
+['⏱️ Download Time',fmtTime(seconds)],
+['📊 Speed (MB/s)',(bps/1048576).toFixed(2)],
+['📊 Speed (KB/s)',(bps/1024).toFixed(1)],
+['📊 Speed (GB/hr)',(bps*3600/1073741824).toFixed(2)],
+['📊 Speed (GB/day)',(bps*86400/1073741824).toFixed(1)],
+['📊 Bandwidth Used',((size*8/seconds/1000000)||0).toFixed(2)+' Mbps']
+];
+document.getElementById('downloadResults').innerHTML=items.map(([k,v])=>`<div class="result-item"><div class="result-label">${k}</div><div class="result-value">${v}</div></div>`).join('');
+// Transfer table
+const tb=document.querySelector('#transferTable tbody');
+const sizes=[{l:'1 KB',b:1024},{l:'1 MB',b:1048576},{l:'10 MB',b:10485760},{l:'100 MB',b:104857600},{l:'1 GB',b:1073741824},{l:'10 GB',b:10737418240}];
+tb.innerHTML='';
+sizes.forEach(s=>{
+const t=s.b*8/bits;
+tb.innerHTML+=`<tr><td>${s.l}</td><td style="color:#8ae6a0">${fmtTime(t)}</td><td style="color:#aaa">${(bits/1000000).toFixed(0)} Mbps</td></tr>`;
+});
+}
+
+function calcUtil(){
+const link=parseFloat(document.getElementById('linkSpeed').value)||0;
+const used=parseFloat(document.getElementById('usedBw').value)||0;
+const pct=link?((used/link)*100):0;
+const avail=link-used;
+const items=[
+['📊 Utilization',pct.toFixed(1)+'%'],
+['📊 Available',avail.toFixed(1)+' Mbps'],
+['📊 Used',used.toFixed(1)+' Mbps'],
+['📊 Link Speed',link.toFixed(1)+' Mbps'],
+['📊 Saturation',pct>=100?'⚠️ Saturated':pct>=80?'⚠️ High':pct>=50?'Normal':'Low'],
+['📊 Color',pct>=100?'🔴':pct>=80?'🟡':pct>=50?'🟢':'🟢']
+];
+document.getElementById('utilResults').innerHTML=items.map(([k,v])=>`<div class="result-item"><div class="result-label">${k}</div><div class="result-value">${v}</div></div>`).join('');
+}
+
+function calcTP(){
+const bw=parseFloat(document.getElementById('tpBandwidth').value)||0;
+const lat=parseFloat(document.getElementById('tpLatency').value)||0;
+const pkt=parseFloat(document.getElementById('tpPktSize').value)||1500;
+const bps=bw*1000000;
+const maxTP=lat>0?(pkt*8)/(2*lat/1000)/1000000:0;
+const pktsPerSec=lat>0?1000/(2*lat):0;
+const items=[
+['📊 Max Throughput',maxTP.toFixed(2)+' Mbps'],
+['📊 Packets/sec',Math.round(pktsPerSec).toLocaleString()],
+['📊 Bandwidth-Delay Product',((bps*lat/1000)/8).toFixed(0)+' bytes'],
+['📊 RTT (2×latency)',(lat*2).toFixed(0)+' ms'],
+['📊 Window Size Needed',((bps*lat/2/1000)/1024).toFixed(1)+' KB'],
+];
+document.getElementById('tpResults').innerHTML=items.map(([k,v])=>`<div class="result-item"><div class="result-label">${k}</div><div class="result-value">${v}</div></div>`).join('');
+}
+
+calcDownload();calcUtil();calcTP();
+</script>
+</body>
+</html>

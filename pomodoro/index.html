@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pomodoro Timer</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#fff;min-height:100vh;padding:16px;display:flex;flex-direction:column;align-items:center}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:20px;width:100%;max-width:500px}
+.header a{color:#FF6B00;text-decoration:none;font-size:14px}
+.header h1{font-size:20px;font-weight:700}
+.header span{font-size:24px}
+.card{background:#16213e;border-radius:12px;padding:24px;border:1px solid #233554;margin-bottom:16px;width:100%;max-width:500px;text-align:center}
+.modes{display:flex;gap:8px;justify-content:center;margin-bottom:24px}
+.mode-btn{padding:8px 16px;background:#233554;border:none;color:#888;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px}
+.mode-btn.active{background:#FF6B00;color:#fff}
+.timer-ring{width:220px;height:220px;margin:0 auto 24px;position:relative}
+.timer-ring svg{transform:rotate(-90deg)}
+.timer-ring circle{fill:none;stroke-width:8}
+.timer-ring .bg{stroke:#233554}
+.timer-ring .progress{stroke:#FF6B00;stroke-linecap:round;transition:stroke-dashoffset .5s linear}
+.timer-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:42px;font-weight:700}
+.timer-label{font-size:13px;color:#888;margin-bottom:20px}
+.btn-group{display:flex;gap:12px;justify-content:center}
+.btn{padding:12px 28px;border:none;color:#fff;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.btn-primary{background:#FF6B00}.btn-primary:hover{background:#e65c00}
+.btn-secondary{background:#233554}.btn-secondary:hover{background:#2d4a6f}
+.btn-danger{background:#e74c3c}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+.stat{text-align:center}
+.stat .val{font-size:24px;font-weight:700;color:#FF6B00}
+.stat .lbl{font-size:11px;color:#888}
+.settings{margin-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:left}
+.settings label{font-size:12px;color:#888;display:block;margin-bottom:4px}
+.settings input{width:100%;padding:8px;background:#0f0f23;border:1px solid #233554;border-radius:6px;color:#fff;font-family:'Inter',sans-serif}
+.toast{position:fixed;bottom:20px;right:20px;background:#FF6B00;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span>🍅</span><h1>Pomodoro Timer</h1></div>
+<div class="card">
+<div class="modes">
+<button class="mode-btn active" onclick="setMode('work',this)">Work</button>
+<button class="mode-btn" onclick="setMode('break',this)">Short Break</button>
+<button class="mode-btn" onclick="setMode('long',this)">Long Break</button>
+</div>
+<div class="timer-ring">
+<svg width="220" height="220"><circle class="bg" cx="110" cy="110" r="100"/><circle class="progress" id="ring" cx="110" cy="110" r="100" stroke-dasharray="628.32" stroke-dashoffset="0"/></svg>
+<div class="timer-text" id="timerText">25:00</div>
+</div>
+<div class="timer-label" id="modeLabel">Work Session</div>
+<div class="btn-group">
+<button class="btn btn-primary" id="startBtn" onclick="toggleTimer()">Start</button>
+<button class="btn btn-secondary" onclick="resetTimer()">Reset</button>
+<button class="btn btn-danger" onclick="skipTimer()">Skip</button>
+</div>
+<div class="settings">
+<div><label>Work (min)</label><input type="number" id="workMin" value="25" min="1" onchange="updateSettings()"></div>
+<div><label>Break (min)</label><input type="number" id="breakMin" value="5" min="1" onchange="updateSettings()"></div>
+<div><label>Long Break (min)</label><input type="number" id="longMin" value="15" min="1" onchange="updateSettings()"></div>
+</div>
+</div>
+<div class="card">
+<div class="stats">
+<div class="stat"><div class="val" id="sessions">0</div><div class="lbl">Sessions</div></div>
+<div class="stat"><div class="val" id="totalWork">0m</div><div class="lbl">Total Work</div></div>
+<div class="stat"><div class="val" id="totalBreak">0m</div><div class="lbl">Total Break</div></div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let mode='work',running=false,interval=null,totalSec=25*60,remain=totalSec;
+let sessions=0,totalWorkMin=0,totalBreakMin=0;
+const CIRC=2*Math.PI*100;
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function setMode(m,el){mode=m;document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');
+const mins=m==='work'?parseInt(document.getElementById('workMin').value):m==='break'?parseInt(document.getElementById('breakMin').value):parseInt(document.getElementById('longMin').value);
+totalSec=mins*60;remain=totalSec;updateDisplay();document.getElementById('modeLabel').textContent=m==='work'?'Work Session':m==='break'?'Short Break':'Long Break'}
+function updateSettings(){if(!running){const mins=mode==='work'?parseInt(document.getElementById('workMin').value):mode==='break'?parseInt(document.getElementById('breakMin').value):parseInt(document.getElementById('longMin').value);totalSec=mins*60;remain=totalSec;updateDisplay()}}
+function updateDisplay(){const m=Math.floor(remain/60),s=remain%60;document.getElementById('timerText').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+const pct=1-(remain/totalSec);document.getElementById('ring').setAttribute('stroke-dashoffset',CIRC*pct)}
+function toggleTimer(){if(running){clearInterval(interval);running=false;document.getElementById('startBtn').textContent='Resume'}else{running=true;document.getElementById('startBtn').textContent='Pause';interval=setInterval(tick,1000)}}
+function tick(){remain--;updateDisplay();if(remain<=0){clearInterval(interval);running=false;document.getElementById('startBtn').textContent='Start';
+if(mode==='work'){sessions++;totalWorkMin+=parseInt(document.getElementById('workMin').value);document.getElementById('sessions').textContent=sessions;document.getElementById('totalWork').textContent=totalWorkMin+'m';playSound();toast('Work done! Take a break.');autoSwitch()}else{totalBreakMin+=parseInt(mode==='break'?document.getElementById('breakMin').value:document.getElementById('longMin').value);document.getElementById('totalBreak').textContent=totalBreakMin+'m';playSound();toast('Break over! Back to work.');setMode('work',document.querySelector('.modes .mode-btn'))}}}
+function autoSwitch(){setTimeout(()=>{if(mode==='work'){if(sessions%4===0)setMode('long',document.querySelectorAll('.mode-btn')[2]);else setMode('break',document.querySelectorAll('.mode-btn')[1])}},1000)}
+function resetTimer(){clearInterval(interval);running=false;document.getElementById('startBtn').textContent='Start';updateSettings()}
+function skipTimer(){clearInterval(interval);running=false;document.getElementById('startBtn').textContent='Start';
+if(mode==='work')setMode('break',document.querySelectorAll('.mode-btn')[1]);else setMode('work',document.querySelector('.modes .mode-btn'))}
+function playSound(){try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=800;g.gain.value=0.3;o.start();o.stop(ctx.currentTime+0.3);
+const o2=ctx.createOscillator(),g2=ctx.createGain();o2.connect(g2);g2.connect(ctx.destination);o2.frequency.value=1000;g2.gain.value=0.3;o2.start(ctx.currentTime+0.15);o2.stop(ctx.currentTime+0.45)}catch(e){}}
+updateDisplay();
+</script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Caesar Cipher</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333}
+.header{background:#fff;padding:16px 24px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+.header a{color:#FF6B00;text-decoration:none;font-weight:600}
+.header h1{font-size:20px;font-weight:700}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card h2{font-size:16px;font-weight:600;margin-bottom:12px}
+textarea{width:100%;height:100px;border:1px solid #e0e0e0;border-radius:8px;padding:12px;font-family:monospace;font-size:14px;resize:vertical}
+textarea:focus{outline:2px solid #FF6B00;border-color:#FF6B00}
+.btn{background:#FF6B00;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-family:'Inter';font-weight:600;font-size:14px;cursor:pointer}
+.btn:hover{opacity:.9}
+.btn-secondary{background:#eee;color:#333}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+input[type=number]{width:80px;padding:10px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px}
+input[type=number]:focus{outline:2px solid #FF6B00}
+.result{background:#1e1e1e;color:#d4d4d4;padding:16px;border-radius:8px;font-family:monospace;font-size:14px;white-space:pre-wrap;word-break:break-word;max-height:400px;overflow-y:auto}
+.brute-item{background:#f8f8f8;border-radius:6px;padding:8px 12px;margin:4px 0;font-family:monospace;font-size:12px;display:flex;align-items:center;gap:8px}
+.brute-label{color:#FF6B00;font-weight:700;min-width:80px}
+.freq-bar{height:8px;background:#FF6B00;border-radius:4px;display:inline-block}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:1000;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">🔐</span><h1>Caesar Cipher</h1></div>
+<div class="container">
+<div class="card">
+<h2>Encode / Decode</h2>
+<textarea id="input" placeholder="Enter text..."></textarea>
+<div class="btn-row" style="align-items:center">
+<label style="font-weight:600;font-size:13px">Shift:</label>
+<input type="number" id="shift" value="3" min="1" max="25">
+<button class="btn" onclick="caesar(1)">Encode →</button>
+<button class="btn btn-secondary" onclick="caesar(-1)">← Decode</button>
+</div>
+<textarea id="output" readonly placeholder="Result..."></textarea>
+<div class="btn-row">
+<button class="btn btn-secondary" onclick="copy(document.getElementById('output').value)">📋 Copy</button>
+<button class="btn btn-secondary" onclick="copy(document.getElementById('input').value)">📋 Copy Input</button>
+</div>
+</div>
+<div class="card">
+<h2>Brute Force (All 25 Shifts)</h2>
+<div class="btn-row"><button class="btn btn-secondary" onclick="bruteForce()">Show All Shifts</button></div>
+<div id="bruteResults"></div>
+</div>
+<div class="card">
+<h2>Letter Frequency Analysis</h2>
+<div class="btn-row"><button class="btn btn-secondary" onclick="frequencyAnalysis()">Analyze</button></div>
+<div id="freqResults"></div>
+</div>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function caesar(dir){
+const text=document.getElementById('input').value;
+const shift=(parseInt(document.getElementById('shift').value)%26)*dir;
+if(!text)return toast('Enter text');
+const result=[...text].map(c=>{
+if(c>='A'&&c<='Z')return String.fromCharCode(((c.charCodeAt(0)-65+shift+26)%26)+65);
+if(c>='a'&&c<='z')return String.fromCharCode(((c.charCodeAt(0)-97+shift+26)%26)+97);
+return c;
+}).join('');
+document.getElementById('output').value=result;
+}
+function bruteForce(){
+const text=document.getElementById('input').value;
+if(!text)return toast('Enter text');
+const div=document.getElementById('bruteResults');
+let html='';
+for(let s=1;s<=25;s++){
+const decoded=[...text].map(c=>{
+if(c>='A'&&c<='Z')return String.fromCharCode(((c.charCodeAt(0)-65+s)%26)+65);
+if(c>='a'&&c<='z')return String.fromCharCode(((c.charCodeAt(0)-97+s)%26)+97);
+return c;
+}).join('');
+html+=`<div class="brute-item"><span class="brute-label">Shift ${String(s).padStart(2,'0')}:</span><span>${decoded.substring(0,100)}${decoded.length>100?'...':''}</span></div>`;
+}
+div.innerHTML=html;
+toast('Brute force done!');
+}
+function frequencyAnalysis(){
+const text=document.getElementById('input').value.toLowerCase();
+if(!text)return toast('Enter text');
+const freq={};let total=0;
+[...text].forEach(c=>{if(c>='a'&&c<='z'){freq[c]=(freq[c]||0)+1;total++}});
+const max=Math.max(...Object.values(freq),1);
+const sorted=Object.entries(freq).sort((a,b)=>b[1]-a[1]);
+const div=document.getElementById('freqResults');
+div.innerHTML=sorted.map(([ch,cnt])=>{
+const pct=Math.round(cnt/total*100);
+return`<div style="display:flex;align-items:center;gap:8px;margin:4px 0"><span style="font-weight:700;min-width:20px;font-family:monospace;font-size:18px">${ch}</span><div class="freq-bar" style="width:${(cnt/max)*200}px"></div><span style="font-size:12px;color:#666">${cnt} (${pct}%)</span></div>`;
+}).join('');
+}
+function copy(v){navigator.clipboard.writeText(v).then(()=>toast('Copied!'))}
+</script>
+</body>
+</html>

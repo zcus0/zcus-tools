@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAC Address Vendor Lookup - ZCUs Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
+.header{background:#1a1d27;border-bottom:1px solid #2a2d3a;padding:16px 24px;display:flex;align-items:center;gap:16px}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header h1{font-size:20px;font-weight:700;color:#fff}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#1a1d27;border:1px solid #2a2d3a;border-radius:12px;padding:24px;margin-bottom:20px}
+.card h2{font-size:18px;font-weight:600;color:#fff;margin-bottom:16px}
+.form-row{display:flex;gap:12px;margin-bottom:16px;align-items:flex-end}
+.form-group{display:flex;flex-direction:column;gap:4px;flex:1}
+.form-group label{font-size:12px;font-weight:500;color:#aaa;text-transform:uppercase;letter-spacing:.5px}
+input{background:#0f1117;border:1px solid #3a3d4a;border-radius:8px;padding:10px 12px;color:#e0e0e0;font-family:'Inter',sans-serif;font-size:14px;width:100%}
+input:focus{outline:none;border-color:#FF6B00}
+button{background:#FF6B00;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+button:hover{opacity:.85}
+.result-card{background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;padding:16px;margin-bottom:12px}
+.field{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1a1d27;font-size:13px}
+.field-key{color:#aaa}
+.field-val{color:#e0e0e0;font-family:monospace}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.badge-green{background:#0d6832;color:#8ae6a0}
+.badge-yellow{background:#6b5b00;color:#f0e68c}
+.badge-blue{background:#003366;color:#88bbee}
+.preset-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.preset-btn{background:#2a2d3a;color:#e0e0e0;border:1px solid #3a3d4a;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif}
+.preset-btn:hover{border-color:#FF6B00;color:#FF6B00}
+.error-msg{color:#ff9999;padding:12px;font-size:13px}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">🔌</span><h1>MAC Address Vendor Lookup</h1></div>
+<div class="container">
+<div class="card">
+<h2>Lookup MAC Address</h2>
+<div class="form-row">
+<div class="form-group">
+<label>MAC Address</label>
+<input id="mac" placeholder="AA:BB:CC:DD:EE:FF" value="00:1A:2B:3C:4D:5E" onkeypress="if(event.key==='Enter')lookup()">
+</div>
+<button onclick="lookup()" style="margin-bottom:14px">🔍 Lookup</button>
+</div>
+<p style="font-size:12px;color:#666">Supported formats: AA:BB:CC:DD:EE:FF, AA-BB-CC-DD-EE-FF, AABB.CCDD.EEFF</p>
+</div>
+<div class="card">
+<h2>Example Lookups</h2>
+<div class="preset-row">
+<button class="preset-btn" onclick="quickLookup('00:1A:2B:3C:4D:5E')">00:1A:2B:3C:4D:5E</button>
+<button class="preset-btn" onclick="quickLookup('00:50:56:AA:BB:CC')">VMware</button>
+<button class="preset-btn" onclick="quickLookup('08:00:27:AB:CD:EF')">VirtualBox</button>
+<button class="preset-btn" onclick="quickLookup('02:42:AC:11:00:02')">Docker</button>
+<button class="preset-btn" onclick="quickLookup('52:54:00:12:34:56')">QEMU/KVM</button>
+<button class="preset-btn" onclick="quickLookup('00:0C:29:AA:BB:CC')">VMware ESXi</button>
+<button class="preset-btn" onclick="quickLookup('A4:83:E7:12:34:56')">Apple</button>
+<button class="preset-btn" onclick="quickLookup('3C:22:FB:12:34:56')">Apple</button>
+<button class="preset-btn" onclick="quickLookup('DC:A6:32:12:34:56')">Raspberry Pi</button>
+<button class="preset-btn" onclick="quickLookup('B8:27:EB:12:34:56')">Raspberry Pi</button>
+<button class="preset-btn" onclick="quickLookup('00:1E:58:12:34:56')">Dell</button>
+<button class="preset-btn" onclick="quickLookup('00:26:BB:12:34:56')">Apple</button>
+<button class="preset-btn" onclick="quickLookup('F8:FF:C2:12:34:56')">Apple</button>
+<button class="preset-btn" onclick="quickLookup('60:F8:1D:12:34:56')">Apple</button>
+<button class="preset-btn" onclick="quickLookup('18:59:36:12:34:56')">Xiaomi</button>
+</div>
+</div>
+<div id="results"></div>
+</div>
+<script>
+function toast(msg){const t=document.createElement('div');t.textContent=msg;Object.assign(t.style,{position:'fixed',bottom:'20px',right:'20px',background:'#FF6B00',color:'#fff',padding:'12px 20px',borderRadius:'8px',fontFamily:'Inter',sans-serif',fontSize:'14px',zIndex:'9999',transition:'opacity .3s'});document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},2500)}
+
+const OUI_DB={
+'00:1A:2B':'Itron Inc','00:0C:29':'VMware Inc','00:50:56':'VMware Inc','08:00:27':'Oracle VirtualBox',
+'02:42:AC':'Docker Inc','52:54:00':'QEMU/KVM','00:05:69':'VMware Inc','00:1C:14':'VMware Inc',
+'A4:83:E7':'Apple Inc','3C:22:FB':'Apple Inc','00:26:BB':'Apple Inc','F8:FF:C2':'Apple Inc',
+'60:F8:1D':'Apple Inc','00:14:22':'Apple Inc','00:16:CB':'Apple Inc','00:1E:C2':'Apple Inc',
+'00:25:00':'Apple Inc','00:26:08':'Apple Inc','38:F9:D3':'Apple Inc','78:7B:8A':'Apple Inc',
+'DC:A6:32':'Raspberry Pi','B8:27:EB':'Raspberry Pi','28:CD:C1':'Raspberry Pi','E4:5F:01':'Raspberry Pi',
+'00:1E:58':'Dell Inc','00:14:22':'Dell Inc','00:21:70':'Dell Inc','18:03:73':'Dell Inc',
+'18:59:36':'Xiaomi Comm','28:6C:07':'Xiaomi Comm','64:09:80':'Xiaomi Comm','7C:1D:D9':'Xiaomi Comm',
+'00:25:22':'Dell Inc','00:1A:A0':'Dell Inc','00:06:5B':'Dell Inc','14:FE:B5':'Dell Inc',
+'00:1B:21':'Intel Corp','3C:97:0E':'Intel Corp','00:15:17':'Intel Corp','A4:34:D9':'Intel Corp',
+'00:0E:8C':'Intel Corp','00:1B:77':'Intel Corp','5C:51:4F':'Intel Corp','A0:36:9F':'Intel Corp',
+'00:1D:D8':'Intel Corp','A4:4C:C8':'Intel Corp','8C:8D:28':'Intel Corp','40:EC:99':'Intel Corp',
+'00:1A:A0':'Cisco Systems','00:17:94':'Cisco Systems','00:1E:4A':'Cisco Systems','00:24:50':'Cisco Systems',
+'00:26:0B':'Cisco Systems','18:33:9D':'Cisco Systems','30:F7:0D':'Cisco Systems','58:6D:8F':'Cisco Systems',
+'00:50:F1':'ASUSTeK','E0:3F:49':'ASUSTeK','00:1A:92':'ASUSTeK','FC:C2:33':'ASUSTeK',
+'2C:4D:54':'ASUSTeK','04:D4:C4':'ASUSTeK','B0:6E:BF':'ASUSTeK','14:DA:E9':'ASUSTeK',
+'00:15:5D':'Microsoft Corp','00:1D:D8':'Microsoft Corp','28:18:78':'Microsoft Corp','60:45:BD':'Microsoft Corp',
+'00:0D:3A':'Azure IoT','00:17:FB':'Azure IoT Hub','24:4B:FE':'ASUSTeK','60:A4:4C':'ASUSTeK',
+'00:11:32':'Synology','00:1B:21':'TP-Link','E4:F0:04':'Google Inc','3C:5A:B4':'Google Inc',
+'54:60:09':'Google Inc','F4:F5:D8':'Google Inc','00:1C:B3':'Ubiquiti Networks','F4:E2:C6':'Ubiquiti Networks',
+'B4:FB:E4':'Ubiquiti Networks','24:5A:4C':'TP-Link','30:DE:4B':'TP-Link','64:70:02':'TP-Link',
+'00:12:17':'Brocade','00:05:33':'NetApp','00:1C:50':'NetApp','00:A0:98':'NetApp',
+'00:1B:4D':'Hewlett-Packard','00:14:38':'Hewlett-Packard','00:17:A4':'Hewlett-Packard','00:0B:CD':'Hewlett-Packard',
+'3C:D9:2B':'Hewlett-Packard','30:E1:71':'Hewlett-Packard','00:08:22':'InPro Comm','00:20:ED':'Koninklijke',
+'00:1F:3F':'Lenovo','8C:8D:28':'Lenovo','70:5A:0F':'Lenovo','18:CF:5E':'Lenovo',
+'74:D0:2B':'Lenovo','00:24:D7':'Lenovo','44:38:39':'Cumulus Networks','00:E0:4C':'Realtek',
+'52:54:AB':'Realtek','00:1F:1F':'QNAP','00:08:5D':'QNAP','24:5E:BE':'QNAP',
+'00:1A:8A':'D-Link','00:26:5A':'D-Link','1C:5F:2B':'D-Link','34:08:04':'D-Link',
+'00:11:95':'D-Link','60:63:4C':'D-Link','C8:BE:19':'D-Link','E4:6F:13':'D-Link',
+'00:03:6F':'Netgear','00:1B:2F':'Netgear','00:14:6C':'Netgear','B0:7F:B9':'Netgear',
+'00:22:3F':'Netgear','00:18:4D':'Netgear','00:90:A9':'Netgear','00:13:02':'Netgear',
+'00:1E:2A':'Netgear','00:01:3C':'Cisco Systems','00:14:AA':'Aruba Networks','00:24:6C':'Aruba Networks',
+'00:0B:86':'Aruba Networks','9C:1C:12':'Aruba Networks','00:0E:8F':'NetScaler','20:CF:30':'Arduino SA',
+'00:21:CC':'Arduino SA','2C:CF:67':'Arduino SA','00:1E:C0':'Vivotek Inc','00:02:D1':'Amino Comm',
+'00:23:E8':'Synology','00:11:32':'Synology','00:04:25':'ZyXEL','EC:C8:82':'ZyXEL',
+'00:1F:D0':'ZyXEL','50:7C:5D':'ZyXEL','00:0C:C3':'Ralink Tech','40:9F:38':'Razer Inc',
+'18:B6:F0':'OnePlus','14:CC:20':'OnePlus','00:0E:58':'D-Link','00:0D:88':'D-Link',
+};
+
+function normalizeMac(mac){
+const clean=mac.replace(/[:-]/g,'').replace(/\./g,'').toUpperCase();
+if(clean.length!==12)return null;
+return clean.match(/.{2}/g).join(':');
+}
+
+function getOui(mac){
+const prefix=mac.substring(0,8).toUpperCase();
+return OUI_DB[prefix]||null;
+}
+
+function lookup(){
+const raw=document.getElementById('mac').value.trim();
+const mac=normalizeMac(raw);
+if(!mac){
+document.getElementById('results').innerHTML='<div class="card"><div class="error-msg">❌ Invalid MAC address format. Use AA:BB:CC:DD:EE:FF</div></div>';
+return;
+}
+const vendor=getOui(mac);
+const prefix=mac.substring(0,8).toUpperCase();
+const isUnicast=(parseInt(mac.charAt(1),16)&1)===0;
+const isLocal=(parseInt(mac.charAt(1),16)&2)===0;
+const octets=mac.split(':');
+let html=`<div class="card"><h2>Lookup Result</h2>
+<div class="result-card">
+<div class="field"><span class="field-key">MAC Address</span><span class="field-val">${mac}</span></div>
+<div class="field"><span class="field-key">OUI Prefix</span><span class="field-val">${prefix}</span></div>
+<div class="field"><span class="field-key">Vendor</span><span class="field-val">${vendor?'<span class="badge badge-green">'+vendor+'</span>':'<span class="badge badge-yellow">Unknown</span>'}</span></div>
+<div class="field"><span class="field-key">Type</span><span class="field-val">${isUnicast?'Unicast':'Multicast'}</span></div>
+<div class="field"><span class="field-key">Scope</span><span class="field-val">${isLocal?'Globally Unique (Universal)':'Locally Administered'}</span></div>
+<div class="field"><span class="field-key">Binary</span><span class="field-val" style="font-size:11px">${octets.map(o=>parseInt(o,16).toString(2).padStart(8,'0')).join(' ')}</span></div>
+</div>`;
+if(vendor){
+html+=`<div style="padding:8px 0"><span class="badge badge-blue">IEEE OUI: ${prefix}</span> <span class="badge badge-green">Verified Vendor</span></div>`;
+}
+html+=`</div>`;
+document.getElementById('results').innerHTML=html;
+}
+
+function quickLookup(mac){document.getElementById('mac').value=mac;lookup()}
+</script>
+</body>
+</html>

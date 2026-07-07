@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebSocket Tester</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#fff;min-height:100vh;padding:16px}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.header a{color:#FF6B00;text-decoration:none;font-size:14px}
+.header h1{font-size:20px;font-weight:700}
+.header span{font-size:24px}
+.container{max-width:700px;margin:0 auto}
+.card{background:#16213e;border-radius:12px;padding:24px;border:1px solid #233554;margin-bottom:16px}
+label{display:block;color:#888;font-size:12px;margin-bottom:4px}
+input,textarea{width:100%;padding:10px;background:#0f0f23;border:1px solid #233554;border-radius:8px;color:#fff;font-family:'Inter',sans-serif;font-size:14px;margin-bottom:10px}
+input:focus,textarea:focus{outline:none;border-color:#FF6B00}
+textarea{min-height:80px;resize:vertical;font-family:'Courier New',monospace;font-size:13px}
+.btn{padding:10px 20px;border:none;color:#fff;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.btn:hover{opacity:0.9}
+.btn-primary{background:#FF6B00}
+.btn-danger{background:#e74c3c}
+.btn-secondary{background:#233554}
+.btn-success{background:#00b894}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.status-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:6px;font-size:13px;margin-bottom:12px}
+.status-dot{width:8px;height:8px;border-radius:50%}
+.status-connected{background:#0e4429;color:#39d353}.status-connected .status-dot{background:#39d353}
+.status-disconnected{background:#3d1f1f;color:#e74c3c}.status-disconnected .status-dot{background:#e74c3c}
+.status-connecting{background:#1a1a3e;color:#f1c40f}.status-connecting .status-dot{background:#f1c40f}
+.message-log{background:#0f0f23;border-radius:8px;padding:12px;max-height:400px;overflow-y:auto;font-family:'Courier New',monospace;font-size:12px;line-height:1.6}
+.msg{padding:4px 8px;border-radius:4px;margin-bottom:2px;word-break:break-all}
+.msg-sent{background:#1a1a3e;color:#6c5ce7;border-left:3px solid #6c5ce7}
+.msg-recv{background:#0e4429;color:#39d353;border-left:3px solid #39d353}
+.msg-info{background:#233554;color:#888;font-style:italic;border-left:3px solid #555}
+.msg-error{background:#3d1f1f;color:#e74c3c;border-left:3px solid #e74c3c}
+.msg .timestamp{color:#555;margin-right:8px}
+.send-row{display:flex;gap:8px}
+.send-row textarea{margin:0;flex:1}
+.toast{position:fixed;bottom:20px;right:20px;background:#FF6B00;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span>🔌</span><h1>WebSocket Tester</h1></div>
+<div class="container">
+<div class="card">
+<label>WebSocket URL</label>
+<div style="display:flex;gap:8px">
+<input type="text" id="wsUrl" placeholder="wss://echo.websocket.org" style="margin:0;flex:1">
+<button class="btn btn-success" id="connectBtn" onclick="toggleConnection()">Connect</button>
+</div>
+</div>
+<div class="card">
+<div class="status-bar status-disconnected" id="statusBar"><div class="status-dot"></div><span id="statusText">Disconnected</span></div>
+<label>Message</label>
+<div class="send-row">
+<textarea id="msgInput" placeholder='{"type":"ping"}' style="min-height:40px"></textarea>
+<button class="btn btn-primary" id="sendBtn" onclick="sendMessage()" disabled>Send</button>
+</div>
+<div style="display:flex;gap:8px;margin-top:8px">
+<button class="btn btn-sm btn-secondary" onclick="clearLog()">Clear Log</button>
+<button class="btn btn-sm btn-secondary" onclick="exportLog()">Export Log</button>
+<button class="btn btn-sm btn-secondary" onclick="sendPing()">Send Ping</button>
+</div>
+</div>
+<div class="card">
+<h3 style="font-size:14px;color:#888;margin-bottom:8px">Message Log <span id="msgCount" style="color:#555;font-weight:400"></span></h3>
+<div class="message-log" id="log"></div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let ws=null,reconnectTimer=null,autoReconnect=false;
+let msgHistory=[];
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function timestamp(){return new Date().toLocaleTimeString()}
+function addMsg(type,text){msgHistory.push({type,text,time:timestamp()});
+const el=document.getElementById('log');
+el.innerHTML+=`<div class="msg msg-${type}"><span class="timestamp">${timestamp()}</span>${escHtml(text)}</div>`;
+el.scrollTop=el.scrollHeight;document.getElementById('msgCount').textContent=`(${msgHistory.length})`}
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function setStatus(state,text){const bar=document.getElementById('statusBar');bar.className='status-bar status-'+state;document.getElementById('statusText').textContent=text}
+function toggleConnection(){
+if(ws&&ws.readyState<=1){ws.close();return}
+const url=document.getElementById('wsUrl').value.trim();if(!url){toast('Enter a URL');return}
+setStatus('connecting','Connecting...');
+addMsg('info','Connecting to '+url);
+try{ws=new WebSocket(url);autoReconnect=false;
+ws.onopen=()=>{setStatus('connected','Connected');document.getElementById('sendBtn').disabled=false;document.getElementById('connectBtn').textContent='Disconnect';document.getElementById('connectBtn').className='btn btn-danger';addMsg('info','Connection opened')};
+ws.onmessage=e=>{addMsg('recv',e.data)};
+ws.onclose=e=>{setStatus('disconnected','Disconnected ('+e.code+')');document.getElementById('sendBtn').disabled=true;document.getElementById('connectBtn').textContent='Connect';document.getElementById('connectBtn').className='btn btn-success';addMsg('info','Connection closed: '+e.code+' '+e.reason);
+if(autoReconnect){addMsg('info','Reconnecting in 3s...');reconnectTimer=setTimeout(()=>toggleConnection(),3000)}};
+ws.onerror=e=>{addMsg('error','Error occurred');toast('Connection error')}}
+catch(e){setStatus('disconnected','Error');addMsg('error',e.message);toast('Failed to connect')}}
+function sendMessage(){if(!ws||ws.readyState!==1){toast('Not connected');return}const msg=document.getElementById('msgInput').value.trim();if(!msg)return;ws.send(msg);addMsg('sent',msg);document.getElementById('msgInput').value=''}
+function sendPing(){document.getElementById('msgInput').value='ping';sendMessage()}
+function clearLog(){msgHistory=[];document.getElementById('log').innerHTML='';document.getElementById('msgCount').textContent=''}
+function exportLog(){const text=msgHistory.map(m=>`[${m.time}] ${m.type.toUpperCase()}: ${m.text}`).join('\n');const blob=new Blob([text],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ws-log.txt';a.click();toast('Exported')}
+document.getElementById('msgInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}});
+</script>
+</body>
+</html>

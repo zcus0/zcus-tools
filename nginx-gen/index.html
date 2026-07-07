@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nginx Config Generator - ZCUs Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
+.header{background:#1a1d27;border-bottom:1px solid #2a2d3a;padding:16px 24px;display:flex;align-items:center;gap:16px}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header h1{font-size:20px;font-weight:700;color:#fff}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#1a1d27;border:1px solid #2a2d3a;border-radius:12px;padding:24px;margin-bottom:20px}
+.card h2{font-size:18px;font-weight:600;color:#fff;margin-bottom:16px}
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:14px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:12px;font-weight:500;color:#aaa;text-transform:uppercase;letter-spacing:.5px}
+select,input,textarea{background:#0f1117;border:1px solid #3a3d4a;border-radius:8px;padding:10px 12px;color:#e0e0e0;font-family:'Inter',sans-serif;font-size:14px;width:100%}
+select:focus,input:focus,textarea:focus{outline:none;border-color:#FF6B00}
+textarea{min-height:100px;resize:vertical;font-family:monospace;font-size:13px}
+.output-box{background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;padding:16px;font-family:monospace;font-size:13px;color:#8ae6a0;white-space:pre-wrap;max-height:500px;overflow-y:auto}
+button{background:#FF6B00;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+button:hover{opacity:.85}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.checkbox-row{display:flex;align-items:center;gap:8px;margin:8px 0}
+.checkbox-row input[type=checkbox]{width:auto;accent-color:#FF6B00}
+.checkbox-row label{font-size:14px;color:#ccc;text-transform:none;letter-spacing:0}
+.presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.preset-btn{background:#2a2d3a;color:#e0e0e0;border:1px solid #3a3d4a;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif}
+.preset-btn:hover{border-color:#FF6B00;color:#FF6B00}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">🌐</span><h1>Nginx Config Generator</h1></div>
+<div class="container">
+<div class="card">
+<h2>Preset Templates</h2>
+<div class="presets">
+<button class="preset-btn" onclick="applyPreset('proxy')">Reverse Proxy</button>
+<button class="preset-btn" onclick="applyPreset('static')">Static Site</button>
+<button class="preset-btn" onclick="applyPreset('lb')">Load Balancer</button>
+<button class="preset-btn" onclick="applyPreset('redirect')">HTTP→HTTPS</button>
+<button class="preset-btn" onclick="applyPreset('rate')">Rate Limiting</button>
+</div>
+</div>
+<div class="card">
+<h2>Configuration</h2>
+<div class="form-row">
+<div class="form-group"><label>Server Name</label><input id="serverName" value="example.com" oninput="update()"></div>
+<div class="form-group"><label>Listen Port</label><input id="listenPort" value="80" oninput="update()"></div>
+<div class="form-group"><label>Config Type</label>
+<select id="configType" onchange="update()">
+<option value="proxy">Reverse Proxy</option>
+<option value="static">Static Site</option>
+<option value="lb">Load Balancer</option>
+</select>
+</div>
+</div>
+<div id="proxyFields">
+<div class="form-row">
+<div class="form-group"><label>Proxy Pass URL</label><input id="proxyPass" value="http://127.0.0.1:3000" oninput="update()"></div>
+</div>
+</div>
+<div id="staticFields" style="display:none">
+<div class="form-row">
+<div class="form-group"><label>Root Directory</label><input id="rootDir" value="/var/www/html" oninput="update()"></div>
+<div class="form-group"><label>Index File</label><input id="indexFile" value="index.html" oninput="update()"></div>
+</div>
+</div>
+<div id="lbFields" style="display:none">
+<div class="form-group"><label>Upstream Servers (one per line, e.g. 127.0.0.1:3000)</label>
+<textarea id="upstreamServers" oninput="update()">127.0.0.1:3001
+127.0.0.1:3002
+127.0.0.1:3003</textarea>
+</div>
+</div>
+<div style="margin-top:12px">
+<div class="checkbox-row"><input type="checkbox" id="enableSSL" onchange="update()"><label>Enable SSL Redirect</label></div>
+<div class="checkbox-row"><input type="checkbox" id="enableCORS" onchange="update()"><label>Add CORS Headers</label></div>
+<div class="checkbox-row"><input type="checkbox" id="enableRateLimit" onchange="update()"><label>Enable Rate Limiting</label></div>
+<div class="checkbox-row"><input type="checkbox" id="enableGzip" checked onchange="update()"><label>Enable Gzip</label></div>
+</div>
+<div class="form-row" style="margin-top:12px">
+<div class="form-group"><label>SSL Certificate</label><input id="sslCert" placeholder="/etc/letsencrypt/live/example.com/fullchain.pem"></div>
+<div class="form-group"><label>SSL Key</label><input id="sslKey" placeholder="/etc/letsencrypt/live/example.com/privkey.pem"></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Rate Limit Zone (req/s)</label><input id="rateLimitRate" value="10r" oninput="update()"></div>
+<div class="form-group"><label>Rate Limit Burst</label><input id="rateLimitBurst" value="20" oninput="update()"></div>
+</div>
+</div>
+<div class="card">
+<h2>Generated Nginx Config</h2>
+<div class="output-box" id="output"></div>
+<div class="btn-row">
+<button onclick="copyOutput()">📋 Copy</button>
+<button onclick="downloadOutput()">⬇️ Download</button>
+</div>
+</div>
+</div>
+<script>
+function toast(msg){const t=document.createElement('div');t.textContent=msg;Object.assign(t.style,{position:'fixed',bottom:'20px',right:'20px',background:'#FF6B00',color:'#fff',padding:'12px 20px',borderRadius:'8px',fontFamily:'Inter',sans-serif',fontSize:'14px',zIndex:'9999',transition:'opacity .3s'});document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},2500)}
+
+function applyPreset(p){
+const types={proxy:'proxy',static:'static',lb:'lb'};
+document.getElementById('configType').value=types[p]||'proxy';
+document.getElementById('enableSSL').checked=(p==='redirect');
+document.getElementById('enableRateLimit').checked=(p==='rate');
+document.getElementById('enableCORS').checked=false;
+document.getElementById('listenPort').value=p==='redirect'?'80':'80';
+update();
+}
+
+function update(){
+const type=document.getElementById('configType').value;
+document.getElementById('proxyFields').style.display=type==='proxy'?'':'none';
+document.getElementById('staticFields').style.display=type==='static'?'':'none';
+document.getElementById('lbFields').style.display=type==='lb'?'':'none';
+const sName=document.getElementById('serverName').value||'example.com';
+const port=document.getElementById('listenPort').value||'80';
+const ssl=document.getElementById('enableSSL').checked;
+const cors=document.getElementById('enableCORS').checked;
+const rateLimit=document.getElementById('enableRateLimit').checked;
+const gzip=document.getElementById('enableGzip').checked;
+let cfg='';
+if(ssl){
+cfg+=`upstream ssl_backend {\n    server ${document.getElementById('proxyPass').value||'127.0.0.1:3000'};\n}\n\n`;
+}
+if(rateLimit){
+cfg+=`limit_req_zone $binary_remote_addr zone=general:10m rate=${document.getElementById('rateLimitRate').value};\n\n`;
+}
+if(type==='lb'){
+const servers=document.getElementById('upstreamServers').value.split('\n').filter(l=>l.trim());
+cfg+=`upstream backend {\n`;
+const method=servers.length>1?'least_conn':'least_conn';
+servers.forEach(s=>{cfg+=`    server ${s.trim()};\n`});
+cfg+=`}\n\n`;
+}
+cfg+=`server {\n`;
+cfg+=`    listen ${ssl?'443 ssl http2':port};\n`;
+cfg+=`    server_name ${sName};\n\n`;
+if(ssl){
+const cert=document.getElementById('sslCert').value||'/etc/letsencrypt/live/'+sName+'/fullchain.pem';
+const key=document.getElementById('sslKey').value||'/etc/letsencrypt/live/'+sName+'/privkey.pem';
+cfg+=`    ssl_certificate ${cert};\n    ssl_certificate_key ${key};\n    ssl_protocols TLSv1.2 TLSv1.3;\n    ssl_ciphers HIGH:!aNULL:!MD5;\n\n`;
+}
+if(gzip){cfg+=`    gzip on;\n    gzip_types text/plain text/css application/json application/javascript text/xml;\n\n`}
+if(rateLimit){cfg+=`    limit_req zone=general burst=${document.getElementById('rateLimitBurst').value||20} nodelay;\n\n`}
+if(cors){cfg+=`    add_header Access-Control-Allow-Origin * always;\n    add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;\n    add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;\n\n`}
+if(type==='proxy'){
+const pp=document.getElementById('proxyPass').value||'http://127.0.0.1:3000';
+cfg+=`    location / {\n        proxy_pass ${pp};\n        proxy_http_version 1.1;\n        proxy_set_header Upgrade $http_upgrade;\n        proxy_set_header Connection 'upgrade';\n        proxy_set_header Host $host;\n        proxy_set_header X-Real-IP $remote_addr;\n        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n        proxy_set_header X-Forwarded-Proto $scheme;\n    }\n`;
+}else if(type==='static'){
+const root=document.getElementById('rootDir').value||'/var/www/html';
+const idx=document.getElementById('indexFile').value||'index.html';
+cfg+=`    root ${root};\n    index ${idx};\n\n    location / {\n        try_files $uri $uri/ =404;\n    }\n\n    location ~* \\.(js|css|png|jpg|jpeg|gif|ico|svg|woff2?)$ {\n        expires 1y;\n        add_header Cache-Control "public, immutable";\n    }\n`;
+}else if(type==='lb'){
+cfg+=`    location / {\n        proxy_pass http://backend;\n        proxy_http_version 1.1;\n        proxy_set_header Host $host;\n        proxy_set_header X-Real-IP $remote_addr;\n        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n    }\n`;
+}
+cfg+=`}`;
+if(ssl){
+cfg+=`\n\nserver {\n    listen 80;\n    server_name ${sName};\n    return 301 https://$host$request_uri;\n}`;
+}
+document.getElementById('output').textContent=cfg;
+}
+
+function copyOutput(){navigator.clipboard.writeText(document.getElementById('output').textContent);toast('Copied!')}
+function downloadOutput(){const b=new Blob([document.getElementById('output').textContent],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='nginx.conf';a.click();toast('Downloaded!')}
+update();
+</script>
+</body>
+</html>

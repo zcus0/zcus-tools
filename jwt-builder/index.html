@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JWT Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333}
+.header{background:#fff;padding:16px 24px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+.header a{color:#FF6B00;text-decoration:none;font-weight:600}
+.header h1{font-size:20px;font-weight:700}
+.header .icon{font-size:24px}
+.container{max-width:800px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card h2{font-size:16px;font-weight:600;margin-bottom:12px}
+textarea{width:100%;height:120px;border:1px solid #e0e0e0;border-radius:8px;padding:12px;font-family:monospace;font-size:13px;resize:vertical}
+textarea:focus{outline:2px solid #FF6B00;border-color:#FF6B00}
+input[type=text]{width:100%;padding:10px 14px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px}
+input[type=text]:focus{outline:2px solid #FF6B00}
+.btn{background:#FF6B00;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-family:'Inter';font-weight:600;font-size:14px;cursor:pointer}
+.btn:hover{opacity:.9}
+.btn-secondary{background:#eee;color:#333}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.token-display{background:#1e1e1e;color:#d4d4d4;padding:16px;border-radius:8px;font-family:monospace;font-size:12px;word-break:break-all;white-space:pre-wrap}
+.jwt-part{display:inline;padding:2px 4px;border-radius:4px}
+.jwt-header{color:#FF6B00}
+.jwt-payload{color:#2ecc71}
+.jwt-sig{color:#e74c3c}
+.expiry-info{background:#f8f8f8;border-radius:8px;padding:12px;font-size:13px;margin-top:8px}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:1000;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">🎫</span><h1>JWT Builder</h1></div>
+<div class="container">
+<div class="card">
+<h2>Build JWT Token</h2>
+<label style="font-size:13px;font-weight:600">Algorithm</label>
+<select id="alg" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:8px;margin:8px 0;font-size:14px">
+<option value="HS256">HS256 (HMAC-SHA256)</option>
+<option value="HS384">HS384 (HMAC-SHA384)</option>
+<option value="HS512">HS512 (HMAC-SHA512)</option>
+</select>
+<label style="font-size:13px;font-weight:600">Type</label>
+<input type="text" id="typ" value="JWT" style="margin:8px 0">
+<label style="font-size:13px;font-weight:600">Payload (JSON)</label>
+<textarea id="payload" placeholder='{"sub":"12345","name":"John","iat":1700000000}'>{"sub":"12345","name":"John","iat":1700000000}</textarea>
+<label style="font-size:13px;font-weight:600">Secret Key</label>
+<input type="text" id="secret" placeholder="your-secret-key" value="my-secret-key" style="margin:8px 0">
+<label style="font-size:13px;font-weight:600">Expiry</label>
+<div class="btn-row" style="margin-top:4px">
+<button class="btn btn-secondary" onclick="setExpiry(300)">+5 min</button>
+<button class="btn btn-secondary" onclick="setExpiry(3600)">+1 hour</button>
+<button class="btn btn-secondary" onclick="setExpiry(86400)">+1 day</button>
+<button class="btn btn-secondary" onclick="setExpiry(604800)">+1 week</button>
+</div>
+<div class="btn-row">
+<button class="btn" onclick="generate()">Generate Token</button>
+</div>
+</div>
+<div class="card">
+<h2>Generated Token</h2>
+<div class="token-display" id="tokenDisplay">Token will appear here...</div>
+<div class="btn-row">
+<button class="btn btn-secondary" onclick="copyToken()">📋 Copy Token</button>
+</div>
+<div class="expiry-info" id="expiryInfo" style="display:none"></div>
+</div>
+<div class="card">
+<h2>Decode Existing JWT</h2>
+<textarea id="decodeInput" placeholder="Paste a JWT token to decode..."></textarea>
+<div class="btn-row">
+<button class="btn" onclick="decodeJwt()">Decode</button>
+</div>
+<div id="decodedResult"></div>
+</div>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function b64url(str){return btoa(str).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+function b64urlDecode(str){str=str.replace(/-/g,'+').replace(/_/g,'/');while(str.length%4)str+='=';return atob(str)}
+function setExpiry(seconds){
+const now=Math.floor(Date.now()/1000);
+const payload=JSON.parse(document.getElementById('payload').value||'{}');
+payload.exp=now+seconds;
+payload.iat=now;
+document.getElementById('payload').value=JSON.stringify(payload,null,2);
+}
+async function generate(){
+const alg=document.getElementById('alg').value;
+const typ=document.getElementById('typ').value||'JWT';
+const secret=document.getElementById('secret').value;
+let payloadStr=document.getElementById('payload').value;
+let payload;
+try{payload=JSON.parse(payloadStr)}catch(e){return toast('Invalid JSON payload')}
+if(!payload.iat)payload.iat=Math.floor(Date.now()/1000);
+const header={alg,typ};
+const headerB64=b64url(JSON.stringify(header));
+const payloadB64=b64url(JSON.stringify(payload));
+const data=headerB64+'.'+payloadB64;
+// Sign with HMAC
+const enc=new TextEncoder();
+const key=await crypto.subtle.importKey('raw',enc.encode(secret),{name:'HMAC',hash:'SHA-'+alg.slice(2)},false,['sign']);
+const sig=await crypto.subtle.sign('HMAC',key,enc.encode(data));
+const sigB64=b64url(String.fromCharCode(...new Uint8Array(sig)));
+const token=data+'.'+sigB64;
+document.getElementById('tokenDisplay').innerHTML=`<span class="jwt-part jwt-header">${headerB64}</span>.<span class="jwt-part jwt-payload">${payloadB64}</span>.<span class="jwt-part jwt-sig">${sigB64}</span>`;
+document.getElementById('tokenDisplay').dataset.token=token;
+if(payload.exp){
+const exp=new Date(payload.exp*1000);
+const now=new Date();
+const diff=payload.exp-Math.floor(Date.now()/1000);
+document.getElementById('expiryInfo').style.display='block';
+document.getElementById('expiryInfo').innerHTML=`<strong>Expires:</strong> ${exp.toLocaleString()} ${diff>0?'(in '+formatDuration(diff)+')':'<span style="color:#e74c3c">(EXPIRED)</span>'}`;
+}else{document.getElementById('expiryInfo').style.display='none'}
+toast('Token generated!');
+}
+function formatDuration(s){
+if(s<60)return s+'s';if(s<3600)return Math.floor(s/60)+'m '+s%60+'s';
+if(s<86400)return Math.floor(s/3600)+'h '+Math.floor((s%3600)/60)+'m';
+return Math.floor(s/86400)+'d '+Math.floor((s%86400)/3600)+'h';
+}
+function copyToken(){const t=document.getElementById('tokenDisplay').dataset.token;if(t){navigator.clipboard.writeText(t).then(()=>toast('Copied!'))}}
+function decodeJwt(){
+const token=document.getElementById('decodeInput').value.trim();
+if(!token)return toast('Paste a token');
+const parts=token.split('.');
+if(parts.length!==3)return toast('Invalid JWT format');
+try{
+const header=JSON.parse(b64urlDecode(parts[0]));
+const payload=JSON.parse(b64urlDecode(parts[1]));
+let html=`<div style="margin-top:12px"><strong style="color:#FF6B00">Header:</strong><pre style="background:#f8f8f8;padding:12px;border-radius:8px;font-size:13px">${JSON.stringify(header,null,2)}</pre></div>`;
+html+=`<div><strong style="color:#2ecc71">Payload:</strong><pre style="background:#f8f8f8;padding:12px;border-radius:8px;font-size:13px">${JSON.stringify(payload,null,2)}</pre></div>`;
+if(payload.exp){
+const exp=new Date(payload.exp*1000);
+const expired=payload.exp<Math.floor(Date.now()/1000);
+html+=`<div style="padding:8px;background:${expired?'#ffebee':'#e8f5e9'};border-radius:8px;font-size:13px">${expired?'⚠️ EXPIRED':'✅ Valid'} — Expires: ${exp.toLocaleString()}</div>`;
+}
+document.getElementById('decodedResult').innerHTML=html;
+toast('Decoded!');
+}catch(e){toast('Failed to decode: '+e.message)}
+}
+</script>
+</body>
+</html>

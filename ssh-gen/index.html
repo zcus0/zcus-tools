@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SSH Config Generator - ZCUs Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
+.header{background:#1a1d27;border-bottom:1px solid #2a2d3a;padding:16px 24px;display:flex;align-items:center;gap:16px}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header h1{font-size:20px;font-weight:700;color:#fff}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#1a1d27;border:1px solid #2a2d3a;border-radius:12px;padding:24px;margin-bottom:20px}
+.card h2{font-size:18px;font-weight:600;color:#fff;margin-bottom:16px}
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:14px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:12px;font-weight:500;color:#aaa;text-transform:uppercase;letter-spacing:.5px}
+select,input{background:#0f1117;border:1px solid #3a3d4a;border-radius:8px;padding:10px 12px;color:#e0e0e0;font-family:'Inter',sans-serif;font-size:14px;width:100%}
+select:focus,input:focus{outline:none;border-color:#FF6B00}
+.output-box{background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;padding:16px;font-family:monospace;font-size:13px;color:#8ae6a0;white-space:pre-wrap;max-height:500px;overflow-y:auto}
+button{background:#FF6B00;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+button:hover{opacity:.85}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.checkbox-row{display:flex;align-items:center;gap:8px;margin:6px 0}
+.checkbox-row input[type=checkbox]{width:auto;accent-color:#FF6B00}
+.checkbox-row label{font-size:14px;color:#ccc;text-transform:none;letter-spacing:0}
+.preset-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.preset-btn{background:#2a2d3a;color:#e0e0e0;border:1px solid #3a3d4a;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif}
+.preset-btn:hover{border-color:#FF6B00;color:#FF6B00}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">🔑</span><h1>SSH Config Generator</h1></div>
+<div class="container">
+<div class="card">
+<h2>Presets</h2>
+<div class="preset-row">
+<button class="preset-btn" onclick="applyPreset('basic')">Basic Host</button>
+<button class="preset-btn" onclick="applyPreset('jump')">Jump Host</button>
+<button class="preset-btn" onclick="applyPreset('aws')">AWS EC2</button>
+<button class="preset-btn" onclick="applyPreset('proxy')">Via Proxy</button>
+<button class="preset-btn" onclick="applyPreset('docker')">Docker SSH</button>
+</div>
+</div>
+<div class="card">
+<h2>SSH Config</h2>
+<div class="form-row">
+<div class="form-group"><label>Host Alias</label><input id="host" value="myserver" oninput="update()"></div>
+<div class="form-group"><label>Hostname</label><input id="hostname" value="192.168.1.100" oninput="update()"></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>User</label><input id="user" value="root" oninput="update()"></div>
+<div class="form-group"><label>Port</label><input id="port" type="number" value="22" oninput="update()"></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Identity File</label><input id="identityFile" placeholder="~/.ssh/id_rsa" oninput="update()"></div>
+<div class="form-group"><label>ProxyJump</label><input id="proxyJump" placeholder="bastion.example.com" oninput="update()"></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>ProxyCommand</label><input id="proxyCommand" placeholder="ssh -W %h:%p jump.example.com" oninput="update()"></div>
+<div class="form-group"><label>Local Forward (lport:host:port)</label><input id="localForward" placeholder="8080:localhost:80" oninput="update()"></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Remote Forward (rport:host:port)</label><input id="remoteForward" placeholder="" oninput="update()"></div>
+<div class="form-group"><label>Dynamic Forward (SOCKS proxy port)</label><input id="dynamicForward" placeholder="1080" oninput="update()"></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>ServerAliveInterval (seconds)</label><input id="keepAlive" type="number" value="60" oninput="update()"></div>
+<div class="form-group"><label>ServerAliveCountMax</label><input id="keepAliveCount" type="number" value="3" oninput="update()"></div>
+</div>
+<div style="margin-top:8px">
+<div class="checkbox-row"><input type="checkbox" id="forwardAgent" onchange="update()"><label>ForwardAgent</label></div>
+<div class="checkbox-row"><input type="checkbox" id="compression" onchange="update()"><label>Compression</label></div>
+<div class="checkbox-row"><input type="checkbox" id="strictHostKeyChecking" onchange="update()"><label>StrictHostKeyChecking no</label></div>
+<div class="checkbox-row"><input type="checkbox" id="tcpKeepAlive" checked onchange="update()"><label>TCPKeepAlive</label></div>
+</div>
+</div>
+<div class="card">
+<h2>Generated SSH Config</h2>
+<div class="output-box" id="output"></div>
+<div class="btn-row">
+<button onclick="copyOutput()">📋 Copy</button>
+<button onclick="downloadOutput()">⬇️ Download</button>
+</div>
+</div>
+</div>
+<script>
+function toast(msg){const t=document.createElement('div');t.textContent=msg;Object.assign(t.style,{position:'fixed',bottom:'20px',right:'20px',background:'#FF6B00',color:'#fff',padding:'12px 20px',borderRadius:'8px',fontFamily:'Inter',sans-serif',fontSize:'14px',zIndex:'9999',transition:'opacity .3s'});document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},2500)}
+
+function applyPreset(p){
+const presets={
+'basic':{host:'production',hostname:'prod.example.com',user:'deploy',port:'22',identityFile:'~/.ssh/id_rsa',proxyJump:'',proxyCommand:'',localForward:'',remoteForward:'',dynamicForward:'',keepAlive:'60',keepAliveCount:'3',forwardAgent:false,compression:false,strictHostKeyChecking:false,tcpKeepAlive:true},
+'jump':{host:'app-via-bastion',hostname:'app.internal',user:'admin',port:'22',identityFile:'~/.ssh/id_rsa',proxyJump:'bastion.example.com',proxyCommand:'',localForward:'',remoteForward:'',dynamicForward:'',keepAlive:'60',keepAliveCount:'3',forwardAgent:true,compression:false,strictHostKeyChecking:false,tcpKeepAlive:true},
+'aws':{host:'aws-ec2',hostname:'ec2-12-34-56-78.compute.amazonaws.com',user:'ec2-user',port:'22',identityFile:'~/.ssh/aws-key.pem',proxyJump:'',proxyCommand:'',localForward:'',remoteForward:'',dynamicForward:'',keepAlive:'60',keepAliveCount:'3',forwardAgent:false,compression:true,strictHostKeyChecking:false,tcpKeepAlive:true},
+'proxy':{host:'behind-proxy',hostname:'10.0.0.50',user:'root',port:'22',identityFile:'',proxyJump:'',proxyCommand:'ssh -W %h:%p proxy.example.com',localForward:'',remoteForward:'',dynamicForward:'1080',keepAlive:'120',keepAliveCount:'2',forwardAgent:false,compression:false,strictHostKeyChecking:true,tcpKeepAlive:true},
+'docker':{host:'docker-host',hostname:'172.17.0.2',user:'app',port:'2222',identityFile:'~/.ssh/docker_rsa',proxyJump:'',proxyCommand:'',localForward:'3000:localhost:3000',remoteForward:'',dynamicForward:'',keepAlive:'30',keepAliveCount:'5',forwardAgent:false,compression:true,strictHostKeyChecking:false,tcpKeepAlive:true}
+};
+const pr=presets[p];
+Object.keys(pr).forEach(k=>{const el=document.getElementById(k);if(!el)return;if(el.type==='checkbox')el.checked=pr[k];else el.value=pr[k]});
+update();
+}
+
+function update(){
+let cfg=`Host ${document.getElementById('host').value||'myserver'}\n`;
+const hn=document.getElementById('hostname').value;if(hn)cfg+=`    HostName ${hn}\n`;
+const u=document.getElementById('user').value;if(u)cfg+=`    User ${u}\n`;
+const p=document.getElementById('port').value;if(p&&p!=='22')cfg+=`    Port ${p}\n`;
+const id=document.getElementById('identityFile').value;if(id)cfg+=`    IdentityFile ${id}\n`;
+const pj=document.getElementById('proxyJump').value;if(pj)cfg+=`    ProxyJump ${pj}\n`;
+const pc=document.getElementById('proxyCommand').value;if(pc)cfg+=`    ProxyCommand ${pc}\n`;
+const lf=document.getElementById('localForward').value;if(lf)cfg+=`    LocalForward ${lf}\n`;
+const rf=document.getElementById('remoteForward').value;if(rf)cfg+=`    RemoteForward ${rf}\n`;
+const df=document.getElementById('dynamicForward').value;if(df)cfg+=`    DynamicForward ${df}\n`;
+const ka=document.getElementById('keepAlive').value;if(ka)cfg+=`    ServerAliveInterval ${ka}\n`;
+const kac=document.getElementById('keepAliveCount').value;if(kac)cfg+=`    ServerAliveCountMax ${kac}\n`;
+if(document.getElementById('forwardAgent').checked)cfg+=`    ForwardAgent yes\n`;
+if(document.getElementById('compression').checked)cfg+=`    Compression yes\n`;
+if(document.getElementById('strictHostKeyChecking').checked)cfg+=`    StrictHostKeyChecking no\n`;
+if(document.getElementById('tcpKeepAlive').checked)cfg+=`    TCPKeepAlive yes\n`;
+document.getElementById('output').textContent=cfg;
+}
+
+function copyOutput(){navigator.clipboard.writeText(document.getElementById('output').textContent);toast('Copied!')}
+function downloadOutput(){const b=new Blob([document.getElementById('output').textContent],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='ssh-config';a.click();toast('Downloaded!')}
+update();
+</script>
+</body>
+</html>

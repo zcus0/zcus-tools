@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IP Subnet Calculator - ZCUs Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
+.header{background:#1a1d27;border-bottom:1px solid #2a2d3a;padding:16px 24px;display:flex;align-items:center;gap:16px}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header h1{font-size:20px;font-weight:700;color:#fff}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#1a1d27;border:1px solid #2a2d3a;border-radius:12px;padding:24px;margin-bottom:20px}
+.card h2{font-size:18px;font-weight:600;color:#fff;margin-bottom:16px}
+.form-row{display:flex;gap:12px;margin-bottom:16px;align-items:flex-end}
+.form-group{display:flex;flex-direction:column;gap:4px;flex:1}
+.form-group label{font-size:12px;font-weight:500;color:#aaa;text-transform:uppercase;letter-spacing:.5px}
+input{background:#0f1117;border:1px solid #3a3d4a;border-radius:8px;padding:10px 12px;color:#e0e0e0;font-family:'Inter',sans-serif;font-size:14px;width:100%}
+input:focus{outline:none;border-color:#FF6B00}
+button{background:#FF6B00;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+button:hover{opacity:.85}
+.result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.result-item{background:#0f1117;border-radius:8px;padding:14px}
+.result-label{font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.result-value{font-size:15px;font-weight:600;color:#FF6B00;font-family:monospace}
+.result-value.sm{font-size:13px}
+.binary-row{margin-top:12px;padding:12px;background:#0f1117;border-radius:8px;font-family:monospace;font-size:12px;line-height:2}
+.binary-net{color:#8ae6a0}
+.binary-host{color:#ff9999}
+.binary-label{font-size:11px;color:#aaa;font-family:'Inter',sans-serif}
+.presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.preset-btn{background:#2a2d3a;color:#e0e0e0;border:1px solid #3a3d4a;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif}
+.preset-btn:hover{border-color:#FF6B00;color:#FF6B00}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">🧮</span><h1>IP Subnet Calculator</h1></div>
+<div class="container">
+<div class="card">
+<h2>Quick Examples</h2>
+<div class="presets">
+<button class="preset-btn" onclick="calc('192.168.1.100/24')">192.168.1.100/24</button>
+<button class="preset-btn" onclick="calc('10.0.0.1/8')">10.0.0.1/8</button>
+<button class="preset-btn" onclick="calc('172.16.0.5/16')">172.16.0.5/16</button>
+<button class="preset-btn" onclick="calc('192.168.1.100/28')">192.168.1.100/28</button>
+<button class="preset-btn" onclick="calc('192.168.1.100/30')">192.168.1.100/30</button>
+<button class="preset-btn" onclick="calc('8.8.8.8/32')">8.8.8.8/32</button>
+<button class="preset-btn" onclick="calc('192.168.1.100/17')">192.168.1.100/17</button>
+</div>
+</div>
+<div class="card">
+<h2>Calculate</h2>
+<div class="form-row">
+<div class="form-group">
+<label>IP Address / CIDR</label>
+<input id="input" placeholder="192.168.1.100/24" value="192.168.1.100/24" onkeypress="if(event.key==='Enter')doCalc()">
+</div>
+<button onclick="doCalc()" style="margin-bottom:14px">Calculate</button>
+</div>
+</div>
+<div id="results"></div>
+</div>
+<script>
+function toast(msg){const t=document.createElement('div');t.textContent=msg;Object.assign(t.style,{position:'fixed',bottom:'20px',right:'20px',background:'#FF6B00',color:'#fff',padding:'12px 20px',borderRadius:'8px',fontFamily:'Inter',sans-serif',fontSize:'14px',zIndex:'9999',transition:'opacity .3s'});document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0',setTimeout(()=>t.remove(),300)},2500)}
+
+function ip2long(ip){return ip.split('.').reduce((acc,oct)=>(acc<<8)+parseInt(oct),0)>>>0}
+function long2ip(l){return[(l>>>24)&255,(l>>>16)&255,(l>>>8)&255,l&255].join('.')}
+function pad(n){return n.toString().padStart(3,'0')}
+function toBin(l){return pad((l>>>24)&255)+'.'+pad((l>>>16)&255)+'.'+pad((l>>>8)&255)+'.'+pad(l&255)}
+
+function calc(ipCidr){
+document.getElementById('input').value=ipCidr;
+doCalc();
+}
+
+function doCalc(){
+const val=document.getElementById('input').value.trim();
+const match=val.match(/^(\d+\.\d+\.\d+\.\d+)\/(\d+)$/);
+if(!match){toast('Format: IP/CIDR (e.g. 192.168.1.100/24)');return}
+const ip=ip2long(match[1]);
+const cidr=parseInt(match[2]);
+if(cidr<0||cidr>32){toast('CIDR must be 0-32');return}
+
+const mask=cidr===0?0:(0xFFFFFFFF<<(32-cidr))>>>0;
+const network=(ip&mask)>>>0;
+const broadcast=(network|(~mask>>>0))>>>0;
+const wildcard=(~mask)>>>0;
+const hostsTotal=Math.pow(2,32-cidr)-2;
+const firstHost=network+1;
+const lastHost=broadcast-1;
+
+// Class
+let cls,clsRange;
+if((ip>>>24)>=240){cls='E';clsRange='240.0.0.0 - 255.255.255.255'}
+else if((ip>>>24)>=224){cls='D (Multicast)';clsRange='224.0.0.0 - 239.255.255.255'}
+else if((ip>>>24)>=192){cls='C';clsRange='192.0.0.0 - 223.255.255.255'}
+else if((ip>>>24)>=128){cls='B';clsRange='128.0.0.0 - 191.255.255.255'}
+else{cls='A';clsRange='1.0.0.0 - 126.255.255.255'}
+
+let priv='Public';
+if((ip>>>24)===10)priv='Private (10.0.0.0/8)';
+else if((ip>>>24)===172&&((ip>>>16)&0xFF)>=16&&((ip>>>16)&0xFF)<=31)priv='Private (172.16.0.0/12)';
+else if((ip>>>24)===192&&(ip>>>16)&0xFF===168)priv='Private (192.168.0.0/16)';
+else if(ip===0x7F000001)priv='Loopback';
+
+let html=`<div class="card"><h2>Results</h2>
+<div class="result-grid">
+<div class="result-item"><div class="result-label">IP Address</div><div class="result-value">${match[1]}</div></div>
+<div class="result-item"><div class="result-label">CIDR Notation</div><div class="result-value">/${cidr}</div></div>
+<div class="result-item"><div class="result-label">Subnet Mask</div><div class="result-value">${long2ip(mask)}</div></div>
+<div class="result-item"><div class="result-label">Wildcard Mask</div><div class="result-value">${long2ip(wildcard)}</div></div>
+<div class="result-item"><div class="result-label">Network Address</div><div class="result-value">${long2ip(network)}</div></div>
+<div class="result-item"><div class="result-label">Broadcast Address</div><div class="result-value">${long2ip(broadcast)}</div></div>
+<div class="result-item"><div class="result-label">First Host</div><div class="result-value">${cidr>=31?long2ip(network):long2ip(firstHost)}</div></div>
+<div class="result-item"><div class="result-label">Last Host</div><div class="result-value">${cidr>=31?long2ip(broadcast):long2ip(lastHost)}</div></div>
+<div class="result-item"><div class="result-label">Total Hosts</div><div class="result-value">${cidr>=31?(cidr===32?1:2):hostsTotal.toLocaleString()}</div></div>
+<div class="result-item"><div class="result-label">IP Class</div><div class="result-value sm">${cls}</div><div class="result-label" style="margin-top:4px">${clsRange}</div></div>
+<div class="result-item"><div class="result-label">Classification</div><div class="result-value sm">${priv}</div></div>
+<div class="result-item"><div class="result-label">Binary Mask</div><div class="result-value sm" style="word-break:break-all">${toBin(mask)}</div></div>
+</div>
+</div>
+
+<div class="card">
+<h2>Binary Visualization</h2>
+<div class="binary-row">
+<div class="binary-label">IP:</div>
+<div>${toBin(ip).split('.').map((o,i)=>{
+const bits=o.replace(/^0+/,'')||'0';
+const maskBits=i<Math.floor(cidr/8)?8:(i===Math.floor(cidr/8)?cidr%8:0);
+const netBits=bits.slice(0,maskBits).split('').map(b=>`<span class="binary-net">${b}</span>`).join('');
+const hostBits=bits.slice(maskBits).split('').map(b=>`<span class="binary-host">${b}</span>`).join('');
+return netBits+hostBits}).join('<span style="color:#555">.</span>')}</div>
+</div>
+<div class="binary-row" style="margin-top:8px">
+<div class="binary-label">Mask:</div>
+<div>${toBin(mask).split('.').map((o,i)=>{
+const bits=o.replace(/^0+/,'')||'0';
+return bits.split('').map(b=>`<span class="binary-net">${b}</span>`).join('')}).join('<span style="color:#555">.</span>')}</div>
+</div>
+</div>
+
+<div class="card">
+<h2>CIDR Table</h2>
+<table style="width:100%;font-size:12px;border-collapse:collapse">
+<tr style="color:#FF6B00"><th style="padding:6px;text-align:left">CIDR</th><th>Mask</th><th>Hosts</th><th>Block Size</th></tr>
+`;
+for(let c=0;c<=32;c++){
+const m=c===0?0:(0xFFFFFFFF<<(32-c))>>>0;
+const hosts=Math.pow(2,32-c);
+const highlight=c===cidr?'background:#1a1d27;color:#FF6B00;font-weight:600':'';
+html+=`<tr style="${highlight}"><td style="padding:4px 6px">/${c}</td><td>${long2ip(m)}</td><td>${hosts>1000000?hosts.toLocaleString():hosts}</td><td>${hosts}</td></tr>`;
+}
+html+=`</table></div>`;
+document.getElementById('results').innerHTML=html;
+}
+
+doCalc();
+</script>
+</body>
+</html>

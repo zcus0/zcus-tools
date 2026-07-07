@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendar Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#fff;min-height:100vh;padding:16px}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.header a{color:#FF6B00;text-decoration:none;font-size:14px}
+.header h1{font-size:20px;font-weight:700}
+.header span{font-size:24px}
+.container{max-width:700px;margin:0 auto}
+.card{background:#16213e;border-radius:12px;padding:24px;border:1px solid #233554;margin-bottom:16px}
+.controls{display:flex;gap:12px;align-items:end;flex-wrap:wrap}
+select{padding:10px;background:#0f0f23;border:1px solid #233554;border-radius:8px;color:#fff;font-family:'Inter',sans-serif;font-size:14px}
+.btn{padding:10px 20px;background:#FF6B00;border:none;color:#fff;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.btn:hover{background:#e65c00}
+.btn-sm{padding:6px 12px;font-size:12px;background:#233554}
+.cal-title{font-size:24px;font-weight:700;text-align:center;margin-bottom:16px;color:#FF6B00}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-header{background:#233554;padding:8px;text-align:center;font-size:12px;font-weight:600;color:#888}
+.cal-day{background:#0f0f23;padding:8px;text-align:center;font-size:14px;min-height:40px;position:relative;border-radius:4px}
+.cal-day.today{background:#FF6B00;color:#fff;border-radius:50%}
+.cal-day.holiday{color:#FF6B00}
+.cal-day .holiday-dot{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;background:#FF6B00;border-radius:50%}
+.cal-day.other-month{color:#333}
+.holidays-section{margin-top:16px}
+.holiday-item{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid #233554;font-size:13px}
+.holiday-item .date{color:#FF6B00;font-weight:600;width:80px}
+.holiday-item .name{color:#888}
+.add-holiday{display:flex;gap:8px;margin-top:12px}
+.add-holiday input{flex:1;padding:8px;background:#0f0f23;border:1px solid #233554;border-radius:6px;color:#fff;font-family:'Inter',sans-serif;font-size:13px}
+@media print{body{background:#fff;color:#000}.card{background:#fff;border:1px solid #ddd}.cal-day{background:#fff;border:1px solid #eee}.cal-day.today{background:#FF6B00;color:#fff}.cal-header{background:#f5f5f5}.header,.controls,.add-holiday,.btn,.holidays-section{display:none!important}.cal-title{color:#000}}
+.toast{position:fixed;bottom:20px;right:20px;background:#FF6B00;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span>📅</span><h1>Calendar Generator</h1></div>
+<div class="container">
+<div class="card">
+<div class="controls">
+<select id="monthSel"></select>
+<select id="yearSel"></select>
+<button class="btn" onclick="generate()">Generate</button>
+<button class="btn btn-sm" onclick="window.print()">🖨 Print</button>
+</div>
+</div>
+<div class="card" id="calCard">
+<div class="cal-title" id="calTitle"></div>
+<div class="cal-grid" id="calGrid"></div>
+</div>
+<div class="card holidays-section">
+<h3 style="font-size:14px;color:#888;margin-bottom:8px">US Holidays</h3>
+<div id="holidayList"></div>
+<div class="add-holiday">
+<input type="text" id="holName" placeholder="Holiday name">
+<input type="date" id="holDate">
+<button class="btn btn-sm" onclick="addHoliday()">Add</button>
+</div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const usHolidays={1:[[1,"New Year's Day"],[3,3,"Martin Luther King Jr. Day"]],2:[[3,2,"Presidents' Day"]],5:[[3,4,"Memorial Day"]],6:[[19,4,"Juneteenth"]],7:[[4,4,"Independence Day"]],9:[[1,1,"Labor Day"]],10:[[2,1,"Columbus Day"]],11:[[11,4,"Veterans Day"],[4,4,"Thanksgiving"]],12:[[25,4,"Christmas Day"]],11:[[1,1,"Election Day (approx)"]],5:[[14,3,"Mother's Day"]],6:[[15,3,"Father's Day"]],12:[[31,4,"New Year's Eve"]],2:[[14,4,"Valentine's Day"]],3:[[17,4,"St. Patrick's Day"]],10:[[31,4,"Halloween"]],11:[[24,4,"Christmas Eve"]],2:[[2,4,"Groundhog Day"]],11:[[22,4,"Hanukkah (approx)"]],12:[[26,4,"Kwanzaa (approx)"]],10:[[1,4,"International Music Day"]]};
+let customHolidays=JSON.parse(localStorage.getItem('cal_holidays')||'[]');
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function init(){const ms=document.getElementById('monthSel');const ys=document.getElementById('yearSel');
+ms.innerHTML=months.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+const now=new Date();ms.value=now.getMonth();
+for(let y=now.getFullYear()-5;y<=now.getFullYear()+5;y++)ys.innerHTML+=`<option value="${y}"${y===now.getFullYear()?' selected':''}>${y}</option>`}
+function getHolidays(y,m){const hols=[];
+Object.entries(usHolidays).forEach(([mo,entries])=>{if(parseInt(mo)===m+1)entries.forEach(e=>{const d=e.length===3?e[0]:e[1];hols.push({day:d,name:e[e.length-1]})})});
+customHolidays.forEach(h=>{const hd=new Date(h.date);if(hd.getFullYear()===y&&hd.getMonth()===m)hols.push({day:hd.getDate(),name:h.name})});
+return hols}
+function generate(){
+const m=parseInt(document.getElementById('monthSel').value),y=parseInt(document.getElementById('yearSel').value);
+document.getElementById('calTitle').textContent=months[m]+' '+y;
+const grid=document.getElementById('calGrid');
+grid.innerHTML=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="cal-header">${d}</div>`).join('');
+const first=new Date(y,m,1);const last=new Date(y,m+1,0);const startDay=first.getDay();
+const today=new Date();const hols=getHolidays(y,m);const holDays=hols.map(h=>h.day);
+const prevLast=new Date(y,m,0).getDate();
+for(let i=startDay-1;i>=0;i--)grid.innerHTML+=`<div class="cal-day other-month">${prevLast-i}</div>`;
+for(let d=1;d<=last.getDate();d++){
+const isToday=d===today.getDate()&&m===today.getMonth()&&y===today.getFullYear();
+const isHol=holDays.includes(d);const holName=hols.find(h=>h.day===d);
+grid.innerHTML+=`<div class="cal-day${isToday?' today':''}${isHol?' holiday':''}" title="${holName?holName.name:''}">${d}${isHol?'<div class="holiday-dot"></div>':''}</div>`}
+const remaining=7-((startDay+last.getDate())%7);
+if(remaining<7)for(let i=1;i<=remaining;i++)grid.innerHTML+=`<div class="cal-day other-month">${i}</div>`;
+const list=document.getElementById('holidayList');
+list.innerHTML=hols.sort((a,b)=>a.day-b.day).map(h=>`<div class="holiday-item"><span class="date">${months[m].slice(0,3)} ${h.day}</span><span class="name">${h.name}</span></div>`).join('')}
+function addHoliday(){const name=document.getElementById('holName').value,date=document.getElementById('holDate').value;if(!name||!date){toast('Fill both fields');return}customHolidays.push({name,date});localStorage.setItem('cal_holidays',JSON.stringify(customHolidays));document.getElementById('holName').value='';document.getElementById('holDate').value='';generate();toast('Holiday added')}
+init();generate();
+</script>
+</body>
+</html>

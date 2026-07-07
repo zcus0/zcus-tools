@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chart Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333}
+.header{background:#fff;padding:16px 24px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+.header a{color:#FF6B00;text-decoration:none;font-weight:600}
+.header h1{font-size:20px;font-weight:700}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card h2{font-size:16px;font-weight:600;margin-bottom:12px}
+textarea{width:100%;height:120px;border:1px solid #e0e0e0;border-radius:8px;padding:12px;font-family:monospace;font-size:13px;resize:vertical}
+textarea:focus{outline:2px solid #FF6B00;border-color:#FF6B00}
+select{padding:10px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px}
+select:focus{outline:2px solid #FF6B00}
+.btn{background:#FF6B00;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-family:'Inter';font-weight:600;font-size:14px;cursor:pointer}
+.btn:hover{opacity:.9}
+.btn-secondary{background:#eee;color:#333}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.chart-container{background:#f8f8f8;border-radius:8px;padding:20px;text-align:center;margin:12px 0}
+canvas{max-width:100%;border-radius:8px;background:#fff}
+.color-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.color-input{width:36px;height:36px;border:2px solid #e0e0e0;border-radius:8px;cursor:pointer;padding:0}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:1000;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">📊</span><h1>Chart Generator</h1></div>
+<div class="container">
+<div class="card">
+<h2>Data</h2>
+<label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px">Labels (one per line)</label>
+<textarea id="labels" placeholder="January&#10;February&#10;March&#10;April&#10;May">January
+February
+March
+April
+May</textarea>
+<label style="font-size:13px;font-weight:600;display:block;margin:8px 0 4px">Values (one per line, matching labels)</label>
+<textarea id="values" placeholder="30&#10;45&#10;28&#10;80&#10;52">30
+45
+28
+80
+52</textarea>
+</div>
+<div class="card">
+<h2>Options</h2>
+<div class="btn-row" style="margin-bottom:12px">
+<button class="btn btn-secondary chart-type active" data-t="bar" onclick="setType('bar')">📊 Bar</button>
+<button class="btn btn-secondary chart-type" data-t="line" onclick="setType('line')">📈 Line</button>
+<button class="btn btn-secondary chart-type" data-t="pie" onclick="setType('pie')">🥧 Pie</button>
+</div>
+<label style="font-size:13px;font-weight:600">Chart Title</label>
+<input type="text" id="title" value="My Chart" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:8px;margin:8px 0" placeholder="Chart title">
+<label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px">Colors</label>
+<div class="color-row" id="colorRow"></div>
+<div class="btn-row">
+<button class="btn btn-secondary btn-sm" onclick="addColor()">+ Add Color</button>
+</div>
+</div>
+<div class="btn-row">
+<button class="btn" onclick="renderChart()">Generate Chart</button>
+<button class="btn btn-secondary" onclick="exportPNG()">📥 Export PNG</button>
+</div>
+<div class="chart-container">
+<canvas id="canvas" width="800" height="450"></canvas>
+</div>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+let chartType='bar';
+let colors=['#FF6B00','#3498DB','#2ECC71','#E74C3C','#9B59B6','#F39C12','#1ABC9C','#E91E63','#00BCD4','#8BC34A'];
+function setType(t){chartType=t;document.querySelectorAll('.chart-type').forEach(b=>b.classList.toggle('active',b.dataset.t===t))}
+function renderColors(){
+document.getElementById('colorRow').innerHTML=colors.map((c,i)=>`<input type="color" class="color-input" value="${c}" onchange="colors[${i}]=this.value;renderChart()"><button class="btn btn-sm" onclick="colors.splice(${i},1);renderColors();renderChart()" style="padding:2px 6px;font-size:10px">✕</button>`).join('');
+}
+function addColor(){colors.push('#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0'));renderColors();renderChart()}
+function renderChart(){
+const canvas=document.getElementById('canvas');
+const ctx=canvas.getContext('2d');
+const labels=document.getElementById('labels').value.split('\n').filter(l=>l.trim());
+const values=document.getElementById('values').value.split('\n').filter(l=>l.trim()).map(Number);
+const title=document.getElementById('title').value;
+if(labels.length!==values.length){toast('Labels and values must match!');return}
+const W=canvas.width,H=canvas.height;
+ctx.clearRect(0,0,W,H);
+ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+// Title
+if(title){ctx.fillStyle='#333';ctx.font='bold 18px Inter,sans-serif';ctx.textAlign='center';ctx.fillText(title,W/2,30)}
+if(chartType==='pie')drawPie(ctx,W,H,labels,values);
+else if(chartType==='line')drawLine(ctx,W,H,labels,values);
+else drawBar(ctx,W,H,labels,values);
+}
+function drawBar(ctx,W,H,labels,values){
+const pad={t:60,r:30,b:80,l:60};
+const cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
+const max=Math.max(...values)*1.1||1;
+const barW=Math.min(60,cw/labels.length*0.7);
+const gap=(cw-barW*labels.length)/(labels.length+1);
+// Grid
+ctx.strokeStyle='#e0e0e0';ctx.lineWidth=1;
+for(let i=0;i<=5;i++){
+const y=pad.t+ch*(1-i/5);
+ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();
+ctx.fillStyle='#999';ctx.font='11px Inter,sans-serif';ctx.textAlign='right';
+ctx.fillText(Math.round(max*i/5),pad.l-8,y+4);
+}
+// Bars
+labels.forEach((label,i)=>{
+const x=pad.l+gap+(barW+gap)*i;
+const h=(values[i]/max)*ch;
+const y=pad.t+ch-h;
+const c=colors[i%colors.length];
+// Bar shadow
+ctx.fillStyle='rgba(0,0,0,0.05)';ctx.fillRect(x+2,y+2,barW,h);
+// Bar
+ctx.fillStyle=c;roundRect(ctx,x,y,barW,h,4);ctx.fill();
+// Value
+ctx.fillStyle='#333';ctx.font='bold 12px Inter,sans-serif';ctx.textAlign='center';
+ctx.fillText(values[i],x+barW/2,y-6);
+// Label
+ctx.save();ctx.translate(x+barW/2,H-pad.b+12);ctx.rotate(labels.length>6?-0.4:0);
+ctx.fillStyle='#666';ctx.font='11px Inter,sans-serif';ctx.textAlign=labels.length>6?'right':'center';
+ctx.fillText(label,0,0);ctx.restore();
+});
+}
+function drawLine(ctx,W,H,labels,values){
+const pad={t:60,r:30,b:80,l:60};
+const cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
+const max=Math.max(...values)*1.1||1;
+const stepX=cw/(labels.length-1||1);
+// Grid
+ctx.strokeStyle='#e0e0e0';ctx.lineWidth=1;
+for(let i=0;i<=5;i++){
+const y=pad.t+ch*(1-i/5);
+ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();
+ctx.fillStyle='#999';ctx.font='11px Inter,sans-serif';ctx.textAlign='right';
+ctx.fillText(Math.round(max*i/5),pad.l-8,y+4);
+}
+// Line
+ctx.strokeStyle=colors[0];ctx.lineWidth=3;ctx.lineJoin='round';
+ctx.beginPath();
+values.forEach((v,i)=>{
+const x=pad.l+stepX*i;
+const y=pad.t+ch*(1-v/max);
+i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+});
+ctx.stroke();
+// Area fill
+ctx.fillStyle=colors[0]+'20';ctx.beginPath();
+values.forEach((v,i)=>{
+const x=pad.l+stepX*i;const y=pad.t+ch*(1-v/max);
+i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+});
+ctx.lineTo(pad.l+stepX*(values.length-1),pad.t+ch);
+ctx.lineTo(pad.l,pad.t+ch);ctx.fill();
+// Dots
+values.forEach((v,i)=>{
+const x=pad.l+stepX*i;const y=pad.t+ch*(1-v/max);
+ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fillStyle=colors[0];ctx.fill();
+ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x,y,2.5,0,Math.PI*2);ctx.fill();
+ctx.fillStyle='#333';ctx.font='bold 11px Inter,sans-serif';ctx.textAlign='center';
+ctx.fillText(v,x,y-10);
+});
+// Labels
+labels.forEach((label,i)=>{
+const x=pad.l+stepX*i;
+ctx.save();ctx.translate(x,H-pad.b+12);ctx.rotate(labels.length>6?-0.4:0);
+ctx.fillStyle='#666';ctx.font='11px Inter,sans-serif';ctx.textAlign=labels.length>6?'right':'center';
+ctx.fillText(label,0,0);ctx.restore();
+});
+}
+function drawPie(ctx,W,H,labels,values){
+const cx=W/2,cy=H/2+20,r=Math.min(W,H)*0.32;
+const total=values.reduce((a,b)=>a+b,0)||1;
+let angle=-Math.PI/2;
+labels.forEach((label,i)=>{
+const slice=(values[i]/total)*Math.PI*2;
+ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,angle,angle+slice);ctx.fillStyle=colors[i%colors.length];ctx.fill();
+ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+// Label line
+const mid=angle+slice/2;
+const lx=cx+Math.cos(mid)*(r+20);
+const ly=cy+Math.sin(mid)*(r+20);
+ctx.fillStyle='#333';ctx.font='bold 11px Inter,sans-serif';ctx.textAlign=Math.cos(mid)>0?'left':'right';
+ctx.fillText(label,lx,ly);
+ctx.fillStyle='#666';ctx.font='11px Inter,sans-serif';
+ctx.fillText(Math.round(values[i]/total*100)+'%',lx,ly+14);
+angle+=slice;
+});
+}
+function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath()}
+function exportPNG(){const c=document.getElementById('canvas');const link=document.createElement('a');link.download='chart.png';link.href=c.toDataURL('image/png');link.click();toast('Exported as PNG!')}
+renderColors();renderChart();
+</script>
+</body>
+</html>

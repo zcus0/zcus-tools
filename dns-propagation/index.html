@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DNS Propagation Checker - ZCUs Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
+.header{background:#1a1d27;border-bottom:1px solid #2a2d3a;padding:16px 24px;display:flex;align-items:center;gap:16px}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header h1{font-size:20px;font-weight:700;color:#fff}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#1a1d27;border:1px solid #2a2d3a;border-radius:12px;padding:24px;margin-bottom:20px}
+.card h2{font-size:18px;font-weight:600;color:#fff;margin-bottom:16px}
+.form-row{display:flex;gap:12px;margin-bottom:16px;align-items:flex-end}
+.form-group{display:flex;flex-direction:column;gap:4px;flex:1}
+.form-group label{font-size:12px;font-weight:500;color:#aaa;text-transform:uppercase;letter-spacing:.5px}
+input,select{background:#0f1117;border:1px solid #3a3d4a;border-radius:8px;padding:10px 12px;color:#e0e0e0;font-family:'Inter',sans-serif;font-size:14px;width:100%}
+input:focus,select:focus{outline:none;border-color:#FF6B00}
+button{background:#FF6B00;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+button:hover{opacity:.85}
+.dns-result{background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:16px}
+.dns-server{font-weight:600;color:#FF6B00;font-size:13px;min-width:160px}
+.dns-ips{font-family:monospace;font-size:13px;color:#8ae6a0;flex:1;word-break:break-all}
+.dns-status{min-width:80px;text-align:right}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.badge-green{background:#0d6832;color:#8ae6a0}
+.badge-red{background:#6b0000;color:#ff9999}
+.badge-yellow{background:#6b5b00;color:#f0e68c}
+.badge-blue{background:#003366;color:#88bbee}
+.loading{text-align:center;padding:20px;color:#aaa}
+.summary{margin-top:12px;padding:12px;background:#0f1117;border-radius:8px;font-size:13px;color:#aaa}
+.type-tabs{display:flex;gap:8px;margin-bottom:12px}
+.type-tab{background:#2a2d3a;color:#e0e0e0;border:1px solid #3a3d4a;border-radius:6px;padding:6px 14px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif}
+.type-tab.active{background:#FF6B00;color:#fff;border-color:#FF6B00}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">🌍</span><h1>DNS Propagation Checker</h1></div>
+<div class="container">
+<div class="card">
+<h2>Check DNS Propagation</h2>
+<div class="form-row">
+<div class="form-group">
+<label>Domain</label>
+<input id="domain" placeholder="example.com" value="github.com" onkeypress="if(event.key==='Enter')check()">
+</div>
+<div class="form-group" style="flex:0">
+<label>&nbsp;</label>
+<button onclick="check()">🔍 Check DNS</button>
+</div>
+</div>
+<div class="type-tabs" id="typeTabs">
+<button class="type-tab active" onclick="setType('A',this)">A</button>
+<button class="type-tab" onclick="setType('AAAA',this)">AAAA</button>
+<button class="type-tab" onclick="setType('CNAME',this)">CNAME</button>
+<button class="type-tab" onclick="setType('MX',this)">MX</button>
+<button class="type-tab" onclick="setType('TXT',this)">TXT</button>
+<button class="type-tab" onclick="setType('NS',this)">NS</button>
+</div>
+</div>
+<div class="card">
+<h2>Results</h2>
+<div id="results">
+<div style="font-size:13px;color:#666;text-align:center;padding:20px">Enter a domain and click Check DNS</div>
+</div>
+</div>
+</div>
+<script>
+function toast(msg){const t=document.createElement('div');t.textContent=msg;Object.assign(t.style,{position:'fixed',bottom:'20px',right:'20px',background:'#FF6B00',color:'#fff',padding:'12px 20px',borderRadius:'8px',fontFamily:'Inter',sans-serif',fontSize:'14px',zIndex:'9999',transition:'opacity .3s'});document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},2500)}
+
+const DNS_SERVERS=[
+{name:'Google DNS',ip:'8.8.8.8',flag:'🇺🇸'},
+{name:'Cloudflare DNS',ip:'1.1.1.1',flag:'🇺🇸'},
+{name:'Quad9',ip:'9.9.9.9',flag:'🇺🇸'},
+{name:'OpenDNS',ip:'208.67.222.222',flag:'🇺🇸'},
+{name:'Comodo DNS',ip:'8.26.56.26',flag:'🇺🇸'},
+{name:'Level3',ip:'4.2.2.1',flag:'🇺🇸'},
+{name:'AdGuard',ip:'94.140.14.14',flag:'🌍'},
+{name:'CleanBrowsing',ip:'185.228.168.168',flag:'🌍'}
+];
+
+let currentType='A';
+function setType(type,el){
+currentType=type;
+document.querySelectorAll('.type-tab').forEach(b=>b.classList.remove('active'));
+el.classList.add('active');
+}
+
+async function check(){
+const domain=document.getElementById('domain').value.trim().replace(/^https?:\/\//,'').replace(/\/.*$/,'');
+if(!domain){toast('Enter a domain');return}
+const res=document.getElementById('results');
+res.innerHTML='<div class="loading">🔍 Querying DNS servers...</div>';
+const allResults=[];
+const promises=DNS_SERVERS.map(async(server)=>{
+try{
+const url=`https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=${currentType}`;
+const r=await fetch(url);
+const data=await r.json();
+const answers=data.Answer||[];
+const ips=answers.filter(a=>a.type===(currentType==='A'?1:currentType==='AAAA'?28:currentType==='CNAME'?5:currentType==='MX'?15:currentType==='TXT'?16:currentType==='NS'?2?1:0)).map(a=>a.data);
+allResults.push({...server,ips:data.Answer?answers.map(a=>a.data):['No records'],status:answers.length>0?'ok':'empty'});
+}catch(e){
+allResults.push({...server,ips:['Error: '+e.message],status:'error'});
+}
+});
+await Promise.all(promises);
+let html='';
+let propagated=true;
+const firstResult=JSON.stringify(allResults[0]?.ips||[]);
+allResults.forEach(r=>{
+const match=JSON.stringify(r.ips)===firstResult;
+if(!match&&r.status==='ok')propagated=false;
+const statusBadge=r.status==='ok'?'<span class="badge badge-green">OK</span>':r.status==='empty'?'<span class="badge badge-yellow">No Records</span>':'<span class="badge badge-red">Error</span>';
+html+=`<div class="dns-result">
+<div class="dns-server">${r.flag} ${r.name}<br><span style="font-size:11px;color:#aaa">${r.ip}</span></div>
+<div class="dns-ips">${r.ips.join('<br>')}</div>
+<div class="dns-status">${statusBadge}</div>
+</div>`;
+});
+html+=`<div class="summary">
+<strong>Propagation Status:</strong> ${propagated?'<span class="badge badge-green">Fully Propagated ✓</span>':'<span class="badge badge-yellow">Propagation In Progress</span>'} — ${currentType} records for <strong>${domain}</strong>
+</div>`;
+res.innerHTML=html;
+toast('DNS check complete');
+}
+</script>
+</body>
+</html>

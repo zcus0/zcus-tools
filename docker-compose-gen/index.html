@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Docker Compose Generator - ZCUs Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
+.header{background:#1a1d27;border-bottom:1px solid #2a2d3a;padding:16px 24px;display:flex;align-items:center;gap:16px}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header h1{font-size:20px;font-weight:700;color:#fff}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#1a1d27;border:1px solid #2a2d3a;border-radius:12px;padding:24px;margin-bottom:20px}
+.card h2{font-size:18px;font-weight:600;color:#fff;margin-bottom:16px}
+.service-card{background:#0f1117;border:1px solid #3a3d4a;border-radius:8px;padding:16px;margin-bottom:12px}
+.service-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.service-header h3{font-size:15px;color:#FF6B00}
+.remove-btn{background:#e53e3e;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer}
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:10px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:11px;font-weight:500;color:#aaa;text-transform:uppercase;letter-spacing:.5px}
+select,input,textarea{background:#0f1117;border:1px solid #3a3d4a;border-radius:8px;padding:8px 10px;color:#e0e0e0;font-family:'Inter',sans-serif;font-size:13px;width:100%}
+select:focus,input:focus,textarea:focus{outline:none;border-color:#FF6B00}
+textarea{min-height:60px;resize:vertical;font-family:monospace;font-size:12px}
+.output-box{background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;padding:16px;font-family:monospace;font-size:13px;color:#8ae6a0;white-space:pre-wrap;max-height:500px;overflow-y:auto}
+button{background:#FF6B00;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+button:hover{opacity:.85}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.add-btn{background:#2a2d3a;border:1px dashed #FF6B00;color:#FF6B00;width:100%;padding:12px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">🐳</span><h1>Docker Compose Generator</h1></div>
+<div class="container">
+<div class="card">
+<h2>Services</h2>
+<div id="services"></div>
+<button class="add-btn" onclick="addService()">+ Add Service</button>
+</div>
+<div class="card">
+<h2>Generated docker-compose.yml</h2>
+<div class="output-box" id="output"></div>
+<div class="btn-row">
+<button onclick="copyOutput()">📋 Copy</button>
+<button onclick="downloadOutput()">⬇️ Download docker-compose.yml</button>
+</div>
+</div>
+</div>
+<script>
+function toast(msg){const t=document.createElement('div');t.textContent=msg;Object.assign(t.style,{position:'fixed',bottom:'20px',right:'20px',background:'#FF6B00',color:'#fff',padding:'12px 20px',borderRadius:'8px',fontFamily:'Inter',sans-serif',fontSize:'14px',zIndex:'9999',transition:'opacity .3s'});document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},2500)}
+
+let services=[];let idCounter=0;
+
+function addService(name,image,ports,volumes,env,restart){
+const id=idCounter++;
+services.push({id,name:name||`service${services.length+1}`,image:image||'nginx:latest',ports:ports||'80:80',volumes:volumes||'',env:env||'',restart:restart||'unless-stopped'});
+render();
+}
+
+function removeService(id){
+services=services.filter(s=>s.id!==id);
+render();
+}
+
+function updateService(id,field,val){
+const s=services.find(s=>s.id===id);
+if(s)s[field]=val;
+updateOutput();
+}
+
+function render(){
+const div=document.getElementById('services');
+div.innerHTML='';
+services.forEach(s=>{
+const card=document.createElement('div');card.className='service-card';
+card.innerHTML=`
+<div class="service-header"><h3>${s.name}</h3><button class="remove-btn" onclick="removeService(${s.id})">Remove</button></div>
+<div class="form-row">
+<div class="form-group"><label>Name</label><input value="${s.name}" onchange="updateService(${s.id},'name',this.value);updateService(${s.id},'name',this.value);render()"></div>
+<div class="form-group"><label>Image</label><input value="${s.image}" onchange="updateService(${s.id},'image',this.value)"></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Ports (host:container)</label><input value="${s.ports}" placeholder="80:80" onchange="updateService(${s.id},'ports',this.value)"></div>
+<div class="form-group"><label>Volumes (/host:/container)</label><input value="${s.volumes}" placeholder="/data:/app/data" onchange="updateService(${s.id},'volumes',this.value)"></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Environment (KEY=VAL, one per line)</label><textarea onchange="updateService(${s.id},'env',this.value)">${s.env}</textarea></div>
+<div class="form-group"><label>Restart Policy</label>
+<select onchange="updateService(${s.id},'restart',this.value)">
+<option value="unless-stopped"${s.restart==='unless-stopped'?' selected':''}>unless-stopped</option>
+<option value="always"${s.restart==='always'?' selected':''}>always</option>
+<option value="on-failure"${s.restart==='on-failure'?' selected':''}>on-failure</option>
+<option value="no"${s.restart==='no'?' selected':''}>no</option>
+</select>
+</div>
+</div>`;
+div.appendChild(card);
+});
+updateOutput();
+}
+
+function updateOutput(){
+let yml=`version: '3.8'\n\nservices:\n`;
+services.forEach(s=>{
+yml+=`  ${s.name}:\n    image: ${s.image}\n    restart: ${s.restart}\n`;
+if(s.ports){s.ports.split(',').filter(p=>p.trim()).forEach(p=>{yml+=`    ports:\n      - "${p.trim()}"\n`})}
+if(s.volumes){s.volumes.split(',').filter(v=>v.trim()).forEach(v=>{yml+=`    volumes:\n      - "${v.trim()}"\n`})}
+const envs=s.env.split('\n').filter(l=>l.trim());
+if(envs.length){yml+=`    environment:\n`;envs.forEach(e=>{yml+=`      - ${e.trim()}\n`})}
+});
+document.getElementById('output').textContent=yml;
+}
+
+function copyOutput(){navigator.clipboard.writeText(document.getElementById('output').textContent);toast('Copied!')}
+function downloadOutput(){const b=new Blob([document.getElementById('output').textContent],{type:'text/yaml'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='docker-compose.yml';a.click();toast('Downloaded!')}
+
+addService('web','nginx:latest','80:80','','','unless-stopped');
+addService('app','node:18-alpine','3000:3000','./app:/app','NODE_ENV=production','unless-stopped');
+addService('db','postgres:15','5432:5432','pgdata:/var/lib/postgresql/data','POSTGRES_DB=myapp\nPOSTGRES_PASSWORD=secret','unless-stopped');
+</script>
+</body>
+</html>

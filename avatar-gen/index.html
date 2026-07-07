@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avatar Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #e0e0e0;padding:16px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header .icon{font-size:24px}
+.header h1{font-size:18px;font-weight:600;flex:1}
+.container{max-width:800px;margin:0 auto;padding:24px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:24px;margin-bottom:20px}
+.card h2{font-size:16px;font-weight:600;margin-bottom:16px}
+.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;transition:all .2s}
+.btn-primary{background:#FF6B00;color:#fff}.btn-primary:hover{background:#e55a00}
+.btn-outline{background:transparent;border:1px solid #ddd;color:#555}.btn-outline:hover{border-color:#FF6B00;color:#FF6B00}
+.btn-sm{padding:5px 10px;font-size:12px}
+input[type=text],input[type=number],input[type=color],select{font-family:'Inter',sans-serif;font-size:14px;padding:10px 12px;border:1px solid #ddd;border-radius:8px;outline:none;width:100%}
+input:focus,select:focus{border-color:#FF6B00}
+input[type=color]{width:50px;height:44px;padding:4px;cursor:pointer}
+label{display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#555}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+.row{display:flex;gap:16px;flex-wrap:wrap}
+.row>*{flex:1;min-width:150px}
+.preview-wrap{display:flex;justify-content:center;padding:32px;background:#fafafa;border-radius:12px;border:1px solid #eee;margin-bottom:16px}
+.preview-wrap canvas{border:1px solid #ddd}
+.color-presets{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.color-preset{width:32px;height:32px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:all .2s}
+.color-preset:hover,.color-preset.active{border-color:#FF6B00;transform:scale(1.1)}
+.style-options{display:flex;gap:8px;margin-top:8px}
+.style-opt{padding:8px 16px;border:2px solid #eee;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;transition:all .2s}
+.style-opt.active{border-color:#FF6B00;color:#FF6B00;background:#fff5f0}
+.size-options{display:flex;gap:8px;margin-top:8px}
+.size-opt{padding:6px 12px;border:1px solid #eee;border-radius:6px;cursor:pointer;font-size:12px;transition:all .2s}
+.size-opt.active{border-color:#FF6B00;color:#FF6B00}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/">← Home</a>
+  <span class="icon">👤</span>
+  <h1>Avatar Generator</h1>
+</div>
+<div class="container">
+  <div class="card">
+    <h2>Preview</h2>
+    <div class="preview-wrap"><canvas id="canvas" width="200" height="200"></canvas></div>
+  </div>
+  <div class="card">
+    <h2>Settings</h2>
+    <div class="row">
+      <div><label>Initials</label><input type="text" id="initials" value="JD" maxlength="2" oninput="update()" placeholder="2 characters max"></div>
+      <div><label>Font Size</label><input type="number" id="fontSize" value="72" min="20" max="200" oninput="update()"></div>
+    </div>
+    <div style="margin-top:12px"><label>Style</label>
+      <div class="style-options">
+        <div class="style-opt active" onclick="setStyle('circle',this)">⭕ Circle</div>
+        <div class="style-opt" onclick="setStyle('square',this)">⬜ Square</div>
+        <div class="style-opt" onclick="setStyle('rounded',this)">🔲 Rounded</div>
+      </div>
+    </div>
+    <div style="margin-top:12px"><label>Size</label>
+      <div class="size-options">
+        <div class="size-opt" onclick="setSize(64,this)">64px</div>
+        <div class="size-opt" onclick="setSize(128,this)">128px</div>
+        <div class="size-opt active" onclick="setSize(200,this)">200px</div>
+        <div class="size-opt" onclick="setSize(400,this)">400px</div>
+        <div class="size-opt" onclick="setSize(512,this)">512px</div>
+      </div>
+    </div>
+    <div style="margin-top:12px"><label>Background Color</label>
+      <div style="display:flex;gap:8px;align-items:center"><input type="color" id="bg" value="#FF6B00" oninput="update()"></div>
+      <div class="color-presets" id="colorPresets"></div>
+    </div>
+    <div style="margin-top:12px"><label>Text Color</label>
+      <div style="display:flex;gap:8px;align-items:center"><input type="color" id="textColor" value="#ffffff" oninput="update()"></div>
+    </div>
+    <div style="margin-top:12px"><label>Font Weight</label>
+      <select id="fontWeight" onchange="update()"><option value="400">Regular</option><option value="500">Medium</option><option value="600" selected>Semibold</option><option value="700">Bold</option></select>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:8px">
+      <button class="btn btn-primary" onclick="download()">💾 Download PNG</button>
+      <button class="btn btn-outline" onclick="copyDataURL()">📋 Copy Data URL</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let style='circle';
+const colors=['#FF6B00','#E53E3E','#DD6B20','#D69E2E','#38A169','#319795','#3182CE','#5A67D8','#805AD5','#D53F8C','#718096','#2D3748','#E2E8F0','#FED7D7','#FEFCBF','#C6F6D5','#BEE3F8','#E9D8FD','#FED7E2','#F7FAFC'];
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function renderPresets(){
+  document.getElementById('colorPresets').innerHTML=colors.map(c=>`<div class="color-preset${c===document.getElementById('bg').value?' active':''}" style="background:${c}" onclick="document.getElementById('bg').value='${c}';update()"></div>`).join('');
+}
+function setStyle(s,el){style=s;document.querySelectorAll('.style-opt').forEach(e=>e.classList.remove('active'));el.classList.add('active');update()}
+function setSize(s,el){document.querySelectorAll('.size-opt').forEach(e=>e.classList.remove('active'));el.classList.add('active');document.getElementById('canvas').width=s;document.getElementById('canvas').height=s;update()}
+function update(){
+  const canvas=document.getElementById('canvas');const ctx=canvas.getContext('2d');
+  const w=canvas.width,h=canvas.height;
+  const initials=(document.getElementById('initials').value||'JD').toUpperCase();
+  const bg=document.getElementById('bg').value;const fg=document.getElementById('textColor').value;
+  const fontSize=+document.getElementById('fontSize').value;const fw=document.getElementById('fontWeight').value;
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle=bg;
+  if(style==='circle'){ctx.beginPath();ctx.arc(w/2,h/2,w/2,0,Math.PI*2);ctx.fill()}
+  else if(style==='square'){ctx.fillRect(0,0,w,h)}
+  else{const r=w*0.15;ctx.beginPath();ctx.moveTo(r,0);ctx.lineTo(w-r,0);ctx.quadraticCurveTo(w,0,w,r);ctx.lineTo(w,h-r);ctx.quadraticCurveTo(w,h,w-r,h);ctx.lineTo(r,h);ctx.quadraticCurveTo(0,h,0,h-r);ctx.lineTo(0,r);ctx.quadraticCurveTo(0,0,r,0);ctx.fill()}
+  ctx.fillStyle=fg;ctx.font=`${fw} ${fontSize}px Inter, sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(initials,w/2,h/2);
+  renderPresets();
+}
+function download(){const c=document.getElementById('canvas');const l=document.createElement('a');l.download='avatar.png';l.href=c.toDataURL('image/png');l.click();toast('Downloaded!')}
+function copyDataURL(){navigator.clipboard.writeText(document.getElementById('canvas').toDataURL('image/png'));toast('Data URL copied!')}
+renderPresets();update();
+</script>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Port Reference - ZCUs Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
+.header{background:#1a1d27;border-bottom:1px solid #2a2d3a;padding:16px 24px;display:flex;align-items:center;gap:16px}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header h1{font-size:20px;font-weight:700;color:#fff}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#1a1d27;border:1px solid #2a2d3a;border-radius:12px;padding:24px;margin-bottom:20px}
+.card h2{font-size:18px;font-weight:600;color:#fff;margin-bottom:16px}
+.form-row{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+select,input{background:#0f1117;border:1px solid #3a3d4a;border-radius:8px;padding:10px 12px;color:#e0e0e0;font-family:'Inter',sans-serif;font-size:14px}
+select:focus,input:focus{outline:none;border-color:#FF6B00}
+.results-info{font-size:12px;color:#aaa;margin-bottom:12px}
+.ref-table{width:100%;border-collapse:collapse;font-size:13px}
+.ref-table th{text-align:left;padding:8px 12px;background:#0f1117;color:#FF6B00;border-bottom:1px solid #3a3d4a;position:sticky;top:0}
+.ref-table td{padding:8px 12px;border-bottom:1px solid #1a1d27}
+.ref-table tr:hover{background:#1a1d27}
+.port-num{color:#FF6B00;font-weight:600;font-family:monospace}
+.service-name{color:#e0e0e0}
+.category{font-size:11px;padding:2px 6px;border-radius:4px;background:#2a2d3a;color:#aaa}
+.table-scroll{max-height:600px;overflow-y:auto;border-radius:8px;border:1px solid #2a2d3a}
+.badge-tcp{background:#0d6832;color:#8ae6a0;font-size:10px;padding:1px 4px;border-radius:3px}
+.badge-udp{background:#003366;color:#88bbee;font-size:10px;padding:1px 4px;border-radius:3px}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">🔢</span><h1>Port Number Reference</h1></div>
+<div class="container">
+<div class="card">
+<div class="form-row">
+<input id="search" placeholder="Search ports, services, protocols..." style="flex:3" oninput="filterTable()">
+<select id="protoFilter" style="flex:1" onchange="filterTable()">
+<option value="">All Protocols</option>
+<option value="TCP">TCP Only</option>
+<option value="UDP">UDP Only</option>
+<option value="TCP/UDP">Both</option>
+</select>
+<select id="catFilter" style="flex:1" onchange="filterTable()">
+<option value="">All Categories</option>
+<option value="Web">Web</option>
+<option value="Database">Database</option>
+<option value="Email">Email</option>
+<option value="Remote">Remote Access</option>
+<option value="File">File Transfer</option>
+<option value="Game">Gaming</option>
+<option value="Streaming">Streaming</option>
+<option value="DNS">DNS</option>
+<option value="Messaging">Messaging</option>
+<option value="Security">Security</option>
+<option value="Container">Containers</option>
+<option value="DevOps">DevOps</option>
+</select>
+</div>
+<div class="results-info" id="resultsInfo">Showing all ports</div>
+<div class="table-scroll">
+<table class="ref-table" id="portTable">
+<thead><tr><th>Port</th><th>Service</th><th>Protocol</th><th>Category</th><th>Description</th></tr></thead>
+<tbody id="portBody"></tbody>
+</table>
+</div>
+</div>
+</div>
+<script>
+function toast(msg){const t=document.createElement('div');t.textContent=msg;Object.assign(t.style,{position:'fixed',bottom:'20px',right:'20px',background:'#FF6B00',color:'#fff',padding:'12px 20px',borderRadius:'8px',fontFamily:'Inter',sans-serif',fontSize:'14px',zIndex:'9999',transition:'opacity .3s'});document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},2500)}
+
+const ports=[
+[20,"FTP Data","TCP","File","FTP data transfer"],
+[21,"FTP Control","TCP","File","FTP command/control"],
+[22,"SSH","TCP","Remote","Secure Shell"],
+[23,"Telnet","TCP","Remote","Telnet remote access"],
+[25,"SMTP","TCP","Email","Simple Mail Transfer Protocol"],
+[53,"DNS","TCP/UDP","DNS","Domain Name System"],
+[67,"DHCP Server","UDP","Network","DHCP server"],
+[68,"DHCP Client","UDP","Network","DHCP client"],
+[69,"TFTP","UDP","File","Trivial File Transfer Protocol"],
+[80,"HTTP","TCP","Web","Hypertext Transfer Protocol"],
+[110,"POP3","TCP","Email","Post Office Protocol v3"],
+[111,"RPCBind","TCP/UDP","DevOps","ONC RPC portmapper"],
+[135,"MSRPC","TCP/UDP","Remote","Microsoft RPC"],
+[137,"NetBIOS","TCP/UDP","Networking","NetBIOS Name Service"],
+[138,"NetBIOS","TCP/UDP","Networking","NetBIOS Datagram Service"],
+[139,"NetBIOS","TCP/UDP","Networking","NetBIOS Session Service"],
+[143,"IMAP","TCP","Email","Internet Message Access Protocol"],
+[161,"SNMP","UDP","DevOps","Simple Network Management Protocol"],
+[162,"SNMP Trap","UDP","DevOps","SNMP trap notifications"],
+[389,"LDAP","TCP","Security","Lightweight Directory Access Protocol"],
+[443,"HTTPS","TCP","Web","HTTP Secure (TLS/SSL)"],
+[445,"SMB","TCP","File","Server Message Block"],
+[465,"SMTPS","TCP","Email","SMTP over SSL"],
+[514,"Syslog","UDP","DevOps","System logging"],
+[554,"RTSP","TCP/UDP","Streaming","Real Time Streaming Protocol"],
+[587,"Submission","TCP","Email","SMTP submission (mail)"],
+[636,"LDAPS","TCP","Security","LDAP over SSL"],
+[993,"IMAPS","TCP","Email","IMAP over SSL"],
+[995,"POP3S","TCP","Email","POP3 over SSL"],
+[1080,"SOCKS","TCP","Proxy","SOCKS proxy"],
+[1433,"MSSQL","TCP","Database","Microsoft SQL Server"],
+[1434,"MSSQL Browser","UDP","Database","MS SQL Server Browser"],
+[1521,"Oracle DB","TCP","Database","Oracle database listener"],
+[1723,"PPTP","TCP","VPN","Point-to-Point Tunneling"],
+[2049,"NFS","TCP/UDP","File","Network File System"],
+[2181,"ZooKeeper","TCP","DevOps","Apache ZooKeeper"],
+[3000,"Node.js/Dev","TCP","DevOps","Node.js default / Grafana"],
+[3306,"MySQL","TCP","Database","MySQL database"],
+[3389,"RDP","TCP","Remote","Remote Desktop Protocol"],
+[4000,"Angular Dev","TCP","Web","Angular dev server"],
+[4200,"Angular Dev","TCP","Web","Angular CLI server"],
+[5432,"PostgreSQL","TCP","Database","PostgreSQL database"],
+[5601,"Kibana","TCP","DevOps","Elasticsearch Kibana"],
+[5900,"VNC","TCP","Remote","Virtual Network Computing"],
+[6379,"Redis","TCP","Database","Redis key-value store"],
+[6443,"K8s API","TCP","Container","Kubernetes API server"],
+[8080,"HTTP Alt","TCP","Web","Alternative HTTP / proxy"],
+[8443,"HTTPS Alt","TCP","Web","Alternative HTTPS"],
+[8888,"Jupyter","TCP","DevOps","Jupyter notebook / proxy"],
+[9090,"Prometheus","TCP","DevOps","Prometheus monitoring"],
+[9200,"Elasticsearch","TCP","DevOps","Elasticsearch REST API"],
+[9300,"Elasticsearch","TCP","DevOps","Elasticsearch transport"],
+[9418,"Git","TCP","File","Git protocol"],
+[11211,"Memcached","TCP/UDP","Database","Memcached"],
+[15672,"RabbitMQ","TCP","Messaging","RabbitMQ management"],
+[27017,"MongoDB","TCP","Database","MongoDB"],
+[50000,"SAP","TCP","DevOps","SAP"],
+];
+
+function renderTable(data){
+const body=document.getElementById('portBody');
+body.innerHTML='';
+data.forEach(([port,proto,name,cat,desc])=>{
+const tr=document.createElement('tr');
+const protoBadge=proto==='TCP'?'badge-tcp':proto==='UDP'?'badge-udp':'badge-tcp';
+tr.innerHTML=`<td class="port-num">${port}</td><td class="service-name">${name}</td><td><span class="${protoBadge}">${proto}</span></td><td><span class="category">${cat}</span></td><td style="color:#aaa;font-size:12px">${desc}</td>`;
+body.appendChild(tr);
+});
+document.getElementById('resultsInfo').textContent=`Showing ${data.length} of ${ports.length} ports`;
+}
+
+function filterTable(){
+const q=document.getElementById('search').value.toLowerCase();
+const proto=document.getElementById('protoFilter').value;
+const cat=document.getElementById('catFilter').value;
+let filtered=ports;
+if(q)filtered=filtered.filter(([port,proto,name,cat,desc])=>`${port} ${proto} ${name} ${cat} ${desc}`.toLowerCase().includes(q));
+if(proto)filtered=filtered.filter(([,p])=>p.includes(proto));
+if(cat)filtered=filtered.filter(([,,,c])=>c===cat);
+renderTable(filtered);
+}
+
+renderTable(ports);
+</script>
+</body>
+</html>

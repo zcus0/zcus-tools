@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BMI Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#fff;min-height:100vh;padding:16px}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.header a{color:#FF6B00;text-decoration:none;font-size:14px}
+.header h1{font-size:20px;font-weight:700}
+.header span{font-size:24px}
+.container{max-width:600px;margin:0 auto}
+.card{background:#16213e;border-radius:12px;padding:24px;border:1px solid #233554;margin-bottom:16px}
+label{display:block;color:#888;font-size:13px;margin-bottom:6px}
+select,input[type=number]{width:100%;padding:12px;background:#0f0f23;border:1px solid #233554;border-radius:8px;color:#fff;font-size:16px;font-family:'Inter',sans-serif;margin-bottom:12px}
+select:focus,input:focus{outline:none;border-color:#FF6B00}
+.input-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn{width:100%;padding:14px;background:#FF6B00;border:none;color:#fff;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;margin-top:8px}
+.btn:hover{background:#e65c00}
+.bmi-result{text-align:center;padding:20px}
+.bmi-value{font-size:48px;font-weight:700;color:#FF6B00}
+.bmi-category{font-size:18px;margin-top:8px;font-weight:600}
+.bmi-scale{height:16px;border-radius:8px;background:linear-gradient(to right,#3498db,#2ecc71,#f1c40f,#e74c3c);margin:16px 0;position:relative}
+.bmi-marker{width:4px;height:28px;background:#fff;border-radius:2px;position:absolute;top:-6px;transition:left .5s}
+.bmi-labels{display:flex;justify-content:space-between;font-size:11px;color:#888}
+.history-item{display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid #233554;font-size:13px}
+.history-item .hi-date{color:#888}
+.history-item .hi-bmi{font-weight:600}
+.toast{position:fixed;bottom:20px;right:20px;background:#FF6B00;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span>⚖️</span><h1>BMI Calculator</h1></div>
+<div class="container">
+<div class="card">
+<label>Height Unit</label>
+<select id="heightUnit" onchange="toggleHeight()">
+<option value="cm">Centimeters</option>
+<option value="ft">Feet/Inches</option>
+</select>
+<div class="input-row" id="heightCm">
+<div><label>Height (cm)</label><input type="number" id="cm" placeholder="170" oninput="calc()"></div>
+</div>
+<div class="input-row" id="heightFt" style="display:none">
+<div><label>Feet</label><input type="number" id="ft" placeholder="5" oninput="calc()"></div>
+<div><label>Inches</label><input type="number" id="inch" placeholder="9" oninput="calc()"></div>
+</div>
+<label>Weight Unit</label>
+<select id="weightUnit" onchange="toggleWeight()">
+<option value="kg">Kilograms</option>
+<option value="lbs">Pounds</option>
+</select>
+<div class="input-row" id="weightKg">
+<div><label>Weight (kg)</label><input type="number" id="kg" placeholder="70" oninput="calc()"></div>
+</div>
+<div class="input-row" id="weightLbs" style="display:none">
+<div><label>Weight (lbs)</label><input type="number" id="lbs" placeholder="154" oninput="calc()"></div>
+</div>
+<button class="btn" onclick="calc()">Calculate BMI</button>
+</div>
+<div class="card" id="resultCard" style="display:none">
+<div class="bmi-result">
+<div class="bmi-value" id="bmiValue">0</div>
+<div class="bmi-category" id="bmiCat">—</div>
+<div class="bmi-scale"><div class="bmi-marker" id="bmiMarker"></div></div>
+<div class="bmi-labels"><span>Underweight</span><span>Normal</span><span>Overweight</span><span>Obese</span></div>
+</div>
+</div>
+<div class="card">
+<h3 style="margin-bottom:10px;font-size:14px;color:#888">History</h3>
+<div id="history"></div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let history=JSON.parse(localStorage.getItem('bmi_history')||'[]');
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function toggleHeight(){document.getElementById('heightCm').style.display=document.getElementById('heightUnit').value==='cm'?'grid':'none';document.getElementById('heightFt').style.display=document.getElementById('heightUnit').value==='ft'?'grid':'none'}
+function toggleWeight(){document.getElementById('weightKg').style.display=document.getElementById('weightUnit').value==='kg'?'grid':'none';document.getElementById('weightLbs').style.display=document.getElementById('weightUnit').value==='lbs'?'grid':'none'}
+function getHeightM(){if(document.getElementById('heightUnit').value==='cm'){return(parseFloat(document.getElementById('cm').value)||0)/100}const ft=parseFloat(document.getElementById('ft').value)||0;const inch=parseFloat(document.getElementById('inch').value)||0;return(ft*12+inch)*0.0254}
+function getWeightKg(){if(document.getElementById('weightUnit').value==='kg')return parseFloat(document.getElementById('kg').value)||0;return parseFloat(document.getElementById('lbs').value)||0*0.453592}
+function calc(){
+const h=getHeightM();const w=getWeightKg();
+if(!h||!w)return;
+const bmi=w/(h*h);
+const rounded=Math.round(bmi*10)/10;
+let cat,color;
+if(bmi<18.5){cat='Underweight';color='#3498db'}else if(bmi<25){cat='Normal weight';color='#2ecc71'}else if(bmi<30){cat='Overweight';color='#f1c40f'}else{cat='Obese';color='#e74c3c'}
+document.getElementById('bmiValue').textContent=rounded;
+document.getElementById('bmiValue').style.color=color;
+document.getElementById('bmiCat').textContent=cat;
+document.getElementById('bmiCat').style.color=color;
+const pct=Math.min(100,Math.max(0,(bmi-10)/30*100));
+document.getElementById('bmiMarker').style.left=pct+'%';
+document.getElementById('resultCard').style.display='block';
+history.unshift({date:new Date().toLocaleDateString(),bmi:rounded,cat});
+localStorage.setItem('bmi_history',JSON.stringify(history.slice(0,50)));
+renderHistory();
+toast('BMI: '+rounded+' - '+cat);
+}
+function renderHistory(){document.getElementById('history').innerHTML=history.slice(0,20).map(h=>`<div class="history-item"><span class="hi-date">${h.date}</span><span class="hi-bmi" style="color:${h.bmi<18.5?'#3498db':h.bmi<25?'#2ecc71':h.bmi<30?'#f1c40f':'#e74c3c'}">${h.bmi} (${h.cat})</span></div>`).join('')}
+renderHistory();
+</script>
+</body>
+</html>

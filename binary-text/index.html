@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Binary ↔ Text Converter</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #e0e0e0;padding:16px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header .icon{font-size:24px}
+.header h1{font-size:18px;font-weight:600;flex:1}
+.container{max-width:1000px;margin:0 auto;padding:24px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:24px;margin-bottom:20px}
+.card h2{font-size:16px;font-weight:600;margin-bottom:16px}
+.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;transition:all .2s}
+.btn-primary{background:#FF6B00;color:#fff}.btn-primary:hover{background:#e55a00}
+.btn-outline{background:transparent;border:1px solid #ddd;color:#555}.btn-outline:hover{border-color:#FF6B00;color:#FF6B00}
+.btn-sm{padding:5px 10px;font-size:12px}
+textarea{font-family:'Fira Code','Courier New',monospace;font-size:14px;padding:12px;border:1px solid #ddd;border-radius:8px;width:100%;resize:vertical;outline:none;transition:border .2s;min-height:120px}
+textarea:focus{border-color:#FF6B00}
+label{display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#555}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+.grid-2{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:start}
+@media(max-width:768px){.grid-2{grid-template-columns:1fr}}
+.arrow-btns{display:flex;flex-direction:column;gap:8px;padding-top:30px}
+.char-table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13px}
+.char-table th,.char-table td{padding:6px 10px;border-bottom:1px solid #eee;text-align:center}
+.char-table th{font-weight:600;color:#555;font-size:11px;text-transform:uppercase;background:#f9f9f9}
+.char-table td{font-family:'Fira Code',monospace}
+.char-table .char-col{font-weight:600;color:#FF6B00}
+.stats{font-size:12px;color:#888;margin-top:8px}
+.encoding-toggle{display:flex;gap:8px;margin-bottom:16px}
+.encoding-toggle .btn.active{background:#FF6B00;color:#fff}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/">← Home</a>
+  <span class="icon">🔢</span>
+  <h1>Binary ↔ Text Converter</h1>
+</div>
+<div class="container">
+  <div class="card">
+    <div class="encoding-toggle">
+      <button class="btn active" onclick="setEncoding('ascii',this)">ASCII</button>
+      <button class="btn" onclick="setEncoding('utf8',this)">UTF-8</button>
+    </div>
+    <div class="grid-2">
+      <div>
+        <label>Text</label>
+        <textarea id="text-input" placeholder="Enter text..." oninput="textToBinary()"></textarea>
+        <div class="stats" id="text-stats"></div>
+      </div>
+      <div class="arrow-btns">
+        <button class="btn btn-primary" onclick="textToBinary()">→</button>
+        <button class="btn btn-outline" onclick="binaryToText()">←</button>
+      </div>
+      <div>
+        <label>Binary</label>
+        <textarea id="binary-input" placeholder="Enter binary (space-separated 8-bit chunks)..." oninput="binaryToText()"></textarea>
+        <div class="stats" id="binary-stats"></div>
+      </div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn btn-outline btn-sm" onclick="copyText()">📋 Copy Text</button>
+      <button class="btn btn-outline btn-sm" onclick="copyBinary()">📋 Copy Binary</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Character Breakdown</h2>
+    <div style="overflow-x:auto"><table class="char-table" id="char-table"><tr><th>Char</th><th>Code</th><th>Binary</th><th>Hex</th></tr></table></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let encoding='ascii';
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function setEncoding(enc,btn){encoding=enc;document.querySelectorAll('.encoding-toggle .btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');textToBinary()}
+function textToBinary(){
+  const text=document.getElementById('text-input').value;
+  const encoder=new TextEncoder();
+  const bytes=encoder.encode(text);
+  const binaryParts=[];const breakdown=[];
+  for(const byte of bytes){
+    binaryParts.push(byte.toString(2).padStart(8,'0'));
+    const char=byte<128?String.fromCharCode(byte):'·';
+    breakdown.push({char:byte<128?String.fromCharCode(byte):`[U+${byte.toString(16).toUpperCase().padStart(2,'0')}]`,code:byte,binary:byte.toString(2).padStart(8,'0'),hex:'0x'+byte.toString(16).toUpperCase().padStart(2,'0')});
+  }
+  document.getElementById('binary-input').value=binaryParts.join(' ');
+  document.getElementById('text-stats').textContent=`${text.length} chars, ${bytes.length} bytes`;
+  document.getElementById('binary-stats').textContent=`${binaryParts.length} bytes`;
+  renderTable(breakdown);
+}
+function binaryToText(){
+  const bin=document.getElementById('binary-input').value.trim();
+  if(!bin)return;
+  const parts=bin.split(/\s+/);const bytes=[];const breakdown=[];
+  for(const part of parts){
+    const val=parseInt(part,2);if(isNaN(val))continue;
+    bytes.push(val);
+    breakdown.push({char:val<128?String.fromCharCode(val):`·`,code:val,binary:part.padStart(8,'0'),hex:'0x'+val.toString(16).toUpperCase().padStart(2,'0')});
+  }
+  const text=new TextDecoder().decode(new Uint8Array(bytes));
+  document.getElementById('text-input').value=text;
+  document.getElementById('text-stats').textContent=`${text.length} chars, ${bytes.length} bytes`;
+  document.getElementById('binary-stats').textContent=`${parts.length} bytes`;
+  renderTable(breakdown);
+}
+function renderTable(data){
+  if(!data.length){document.getElementById('char-table').innerHTML='<tr><th>Char</th><th>Code</th><th>Binary</th><th>Hex</th></tr>';return}
+  document.getElementById('char-table').innerHTML='<tr><th>Char</th><th>Code</th><th>Binary</th><th>Hex</th></tr>'+data.map(d=>`<tr><td class="char-col">${d.char}</td><td>${d.code}</td><td>${d.binary}</td><td>${d.hex}</td></tr>`).join('');
+}
+function copyText(){navigator.clipboard.writeText(document.getElementById('text-input').value);toast('Text copied!')}
+function copyBinary(){navigator.clipboard.writeText(document.getElementById('binary-input').value);toast('Binary copied!')}
+</script>
+</body>
+</html>

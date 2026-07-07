@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Countdown Timer</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#fff;min-height:100vh;padding:16px}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.header a{color:#FF6B00;text-decoration:none;font-size:14px}
+.header h1{font-size:20px;font-weight:700}
+.header span{font-size:24px}
+.container{max-width:700px;margin:0 auto}
+.card{background:#16213e;border-radius:12px;padding:24px;border:1px solid #233554;margin-bottom:16px}
+.time-input{display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:16px}
+.time-input input{width:70px;text-align:center;padding:12px;background:#0f0f23;border:1px solid #233554;border-radius:8px;color:#fff;font-size:24px;font-family:'Inter',sans-serif;font-weight:700}
+.time-input input:focus{outline:none;border-color:#FF6B00}
+.time-input span{color:#888;font-size:20px}
+.btn{padding:12px 24px;border:none;color:#fff;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.btn-primary{background:#FF6B00}.btn-primary:hover{background:#e65c00}
+.btn-secondary{background:#233554}
+.btn-danger{background:#e74c3c}
+.btn-success{background:#00b894}
+.timers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.timer-card{background:#0f0f23;border-radius:12px;padding:16px;text-align:center;position:relative;border:1px solid #233554}
+.timer-card .ring-wrap{width:140px;height:140px;margin:0 auto 12px;position:relative}
+.timer-card svg{transform:rotate(-90deg)}
+.timer-card circle{fill:none;stroke-width:6}
+.timer-card .bg{stroke:#233554}
+.timer-card .prog{stroke:#FF6B00;stroke-linecap:round;transition:stroke-dashoffset .3s}
+.timer-card .time-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:24px;font-weight:700}
+.timer-card .label{font-size:12px;color:#888;margin-bottom:8px}
+.timer-card .btns{display:flex;gap:6px;justify-content:center}
+.timer-card .btn{padding:6px 12px;font-size:12px}
+.timer-card .close{position:absolute;top:8px;right:8px;background:none;border:none;color:#555;cursor:pointer;font-size:16px}
+.add-btn{width:100%;padding:16px;border:2px dashed #233554;border-radius:12px;background:transparent;color:#555;font-size:24px;cursor:pointer}
+.add-btn:hover{border-color:#FF6B00;color:#FF6B00}
+.toast{position:fixed;bottom:20px;right:20px;background:#FF6B00;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span>⏰</span><h1>Countdown Timer</h1></div>
+<div class="container">
+<div class="card">
+<div class="time-input">
+<input type="number" id="inH" value="0" min="0" max="23">
+<span>:</span>
+<input type="number" id="inM" value="5" min="0" max="59">
+<span>:</span>
+<input type="number" id="inS" value="0" min="0" max="59">
+</div>
+<button class="btn btn-primary" onclick="addTimer()" style="width:100%">+ Add Timer</button>
+</div>
+<div class="timers-grid" id="timersGrid"></div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let timers=[],tid=0;const CIRC=2*Math.PI*62;
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function addTimer(){
+const h=parseInt(document.getElementById('inH').value)||0,m=parseInt(document.getElementById('inM').value)||0,s=parseInt(document.getElementById('inS').value)||0;
+const total=h*3600+m*60+s;if(!total){toast('Set a time');return}
+const id=tid++;timers.push({id,total,remain:total,running:false,interval:null,label:`Timer ${id+1}`});renderTimers()}
+function renderTimers(){
+const g=document.getElementById('timersGrid');
+g.innerHTML=timers.map(t=>`<div class="timer-card" id="tc${t.id}">
+<button class="close" onclick="removeTimer(${t.id})">×</button>
+<div class="label">${t.label}</div>
+<div class="ring-wrap">
+<svg width="140" height="140"><circle class="bg" cx="70" cy="70" r="62"/><circle class="prog" id="prog${t.id}" cx="70" cy="70" r="62" stroke-dasharray="${CIRC}" stroke-dashoffset="0"/></svg>
+<div class="time-text" id="time${t.id}">${fmt(t.remain)}</div>
+</div>
+<div class="btns">
+<button class="btn ${t.running?'btn-secondary':'btn-success'}" onclick="toggleTimer(${t.id})">${t.running?'Pause':'Start'}</button>
+<button class="btn btn-danger" onclick="resetTimer(${t.id})">Reset</button>
+</div>
+</div>`).join('')}
+function fmt(s){const h=Math.floor(s/3600),m=Math.floor(s%3600/60),sec=s%60;return(h?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0')}
+function updateDisplay(t){const el=document.getElementById('prog'+t.id);if(!el)return;const pct=1-t.remain/t.total;el.setAttribute('stroke-dashoffset',CIRC*pct);document.getElementById('time'+t.id).textContent=fmt(t.remain)}
+function toggleTimer(id){const t=timers.find(x=>x.id===id);if(!t)return;if(t.running){clearInterval(t.interval);t.running=false}else{t.running=true;t.interval=setInterval(()=>{t.remain--;updateDisplay(t);if(t.remain<=0){clearInterval(t.interval);t.running=false;playSound();toast(t.label+' done!');renderTimers()}},1000)}renderTimers()}
+function resetTimer(id){const t=timers.find(x=>x.id===id);if(!t)return;clearInterval(t.interval);t.remain=t.total;t.running=false;renderTimers()}
+function removeTimer(id){const t=timers.find(x=>x.id===id);if(t&&t.running)clearInterval(t.interval);timers=timers.filter(x=>x.id!==id);renderTimers()}
+function playSound(){try{const ctx=new(window.AudioContext||window.webkitAudioContext)();[800,1000,1200].forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=f;g.gain.value=0.2;o.start(ctx.currentTime+i*0.2);o.stop(ctx.currentTime+i*0.2+0.15)})}catch(e){}}
+</script>
+</body>
+</html>

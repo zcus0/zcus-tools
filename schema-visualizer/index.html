@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schema Visualizer</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#fff;min-height:100vh;padding:16px}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.header a{color:#FF6B00;text-decoration:none;font-size:14px}
+.header h1{font-size:20px;font-weight:700}
+.header span{font-size:24px}
+.container{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:320px 1fr;gap:16px}
+.card{background:#16213e;border-radius:12px;padding:24px;border:1px solid #233554}
+label{display:block;color:#888;font-size:12px;margin-bottom:4px}
+input,select{width:100%;padding:8px;background:#0f0f23;border:1px solid #233554;border-radius:6px;color:#fff;font-family:'Inter',sans-serif;font-size:13px;margin-bottom:8px}
+input:focus,select:focus{outline:none;border-color:#FF6B00}
+.btn{padding:8px 16px;background:#FF6B00;border:none;color:#fff;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.btn:hover{background:#e65c00}
+.btn-sm{padding:4px 10px;font-size:11px}
+.btn-secondary{background:#233554}
+.table-editor{background:#0f0f23;border-radius:8px;padding:12px;margin-bottom:12px;border:1px solid #233554}
+.table-editor .tname-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.table-editor .tname-row input{margin:0;flex:1;font-weight:600;color:#FF6B00}
+.col-row{display:flex;gap:4px;margin-bottom:4px}
+.col-row input{margin:0;padding:6px;font-size:12px}
+.col-row .cname{flex:2}.col-row .ctype{flex:1.5}.col-row .cfk{flex:1.5}
+.canvas-wrap{overflow:auto;background:#0f0f23;border-radius:8px;min-height:400px}
+canvas{display:block}
+.toast{position:fixed;bottom:20px;right:20px;background:#FF6B00;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+@media(max-width:700px){.container{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span>🔍</span><h1>Schema Visualizer</h1></div>
+<div class="container">
+<div style="max-height:80vh;overflow-y:auto">
+<div class="card" style="margin-bottom:12px">
+<h3 style="font-size:14px;color:#888;margin-bottom:8px">Tables</h3>
+<div id="tableEditors"></div>
+<button class="btn btn-sm btn-secondary" onclick="addTable()" style="margin-top:8px">+ Add Table</button>
+</div>
+<div class="card">
+<button class="btn" onclick="renderER()" style="width:100%;margin-bottom:8px">Generate ER Diagram</button>
+<button class="btn btn-sm btn-secondary" onclick="exportSVG()" style="width:100%">Export SVG</button>
+<button class="btn btn-sm btn-secondary" onclick="exportPNG()" style="width:100%;margin-top:4px">Export PNG</button>
+<button class="btn btn-sm btn-secondary" onclick="loadSample()" style="width:100%;margin-top:4px">Load Sample Schema</button>
+</div>
+</div>
+<div class="card canvas-wrap">
+<canvas id="erCanvas" width="700" height="500"></canvas>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let tables=[];
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function addTable(name='',columns=[]){tables.push({name:name||`table_${tables.length+1}`,columns:columns.length?columns:[{name:'id',type:'INTEGER',pk:true,ref:''}]);renderEditors()}
+function removeTable(i){tables.splice(i,1);renderEditors()}
+function addColumn(ti){tables[ti].columns.push({name:'col',type:'TEXT',pk:false,ref:''});renderEditors()}
+function removeColumn(ti,ci){tables[ti].columns.splice(ci,1);renderEditors()}
+function updateTable(ti,field,val){tables[ti][field]=val}
+function updateCol(ti,ci,field,val){tables[ti].columns[ci][field]=val}
+function renderEditors(){
+document.getElementById('tableEditors').innerHTML=tables.map((t,i)=>`<div class="table-editor">
+<div class="tname-row"><input class="tname-input" value="${t.name}" onchange="updateTable(${i},'name',this.value)"><button class="btn btn-sm btn-secondary" onclick="removeTable(${i})">✕</button></div>
+${t.columns.map((c,ci)=>`<div class="col-row"><input class="cname" value="${c.name}" placeholder="name" onchange="updateCol(${i},${ci},'name',this.value)"><input class="ctype" value="${c.type}" placeholder="type" onchange="updateCol(${i},${ci},'type',this.value)"><input class="cfk" value="${c.ref}" placeholder="FK ref" onchange="updateCol(${i},${ci},'ref',this.value)" title="Foreign key: table.column"><button class="btn btn-sm" style="padding:4px 6px;font-size:10px" onclick="removeColumn(${i},${ci})">×</button></div>`).join('')}
+<button class="btn btn-sm" style="font-size:11px;padding:4px 8px;margin-top:4px" onclick="addColumn(${i})">+ Column</button></div>`).join('')}
+function renderER(){
+const canvas=document.getElementById('erCanvas');const ctx=canvas.getContext('2d');
+const tw=180,rowH=22,pad=16,headerH=28;
+const positions=[];let x=20,y=20;
+tables.forEach((t,i)=>{const h=headerH+t.columns.length*rowH+pad;
+if(y+h>canvas.height-20){y=20;x+=tw+60}
+positions.push({x,y,w:tw,h});y+=h+40});
+canvas.width=Math.max(700,x+tw+40);canvas.height=Math.max(500,y+40);
+ctx.fillStyle='#0f0f23';ctx.fillRect(0,0,canvas.width,canvas.height);
+// draw FK lines first
+tables.forEach((t,i)=>{t.columns.forEach((c,ci)=>{
+if(c.ref&&c.ref.includes('.')){const [refTable,refCol]=c.ref.split('.');
+const rtIdx=tables.findIndex(t=>t.name===refTable);if(rtIdx===-1)return;
+const from=positions[i];const to=positions[rtIdx];if(!from||!to)return;
+const fx=from.x+from.w;const fy=from.y+headerH+ci*rowH+rowH/2;
+const tx=to.x;const ty=to.y+headerH+tables[rtIdx].columns.findIndex(c=>c.name===refCol)*rowH+rowH/2;
+ctx.beginPath();ctx.strokeStyle='#FF6B00';ctx.lineWidth=2;ctx.setLineDash([6,4]);
+const mx=(fx+tx)/2;ctx.moveTo(fx,fy);ctx.bezierCurveTo(mx,fy,mx,ty,tx,ty);ctx.stroke();ctx.setLineDash([]);
+// arrow
+ctx.beginPath();ctx.moveTo(tx-8,ty-5);ctx.lineTo(tx,ty);ctx.lineTo(tx-8,ty+5);ctx.fillStyle='#FF6B00';ctx.fill()}})});
+// draw tables
+tables.forEach((t,i)=>{
+const p=positions[i];
+ctx.fillStyle='#16213e';ctx.strokeStyle='#233554';ctx.lineWidth=2;
+ctx.beginPath();ctx.roundRect(p.x,p.y,p.w,p.h,8);ctx.fill();ctx.stroke();
+ctx.fillStyle='#FF6B00';ctx.beginPath();ctx.roundRect(p.x,p.y,p.w,headerH,[8,8,0,0]);ctx.fill();
+ctx.fillStyle='#fff';ctx.font='bold 13px Inter';ctx.textAlign='center';ctx.fillText(t.name,p.x+p.w/2,p.y+18);
+t.columns.forEach((c,ci)=>{
+const cy=p.y+headerH+ci*rowH;
+ctx.fillStyle=ci%2===0?'#0f0f23':'#131b2e';ctx.fillRect(p.x+1,cy,p.w-2,rowH);
+ctx.font='12px Courier New';ctx.textAlign='left';ctx.fillStyle=c.pk?'#FF6B00':'#ccc';
+ctx.fillText((c.pk?'🔑 ':'')+c.name,p.x+8,cy+15);
+ctx.textAlign='right';ctx.fillStyle='#3498db';ctx.fillText(c.type,p.x+p.w-8,cy+15)})})}
+function exportSVG(){
+const c=document.getElementById('erCanvas');const a=document.createElement('a');
+a.href=c.toDataURL('image/png');a.download='er-diagram.png';a.click();toast('Exported as PNG')}
+function exportPNG(){exportSVG()}
+function loadSample(){
+tables=[];
+addTable('users',[{name:'id',type:'INTEGER PK',pk:true,ref:''},{name:'name',type:'VARCHAR(100)',pk:false,ref:''},{name:'email',type:'VARCHAR(100)',pk:false,ref:''},{name:'created_at',type:'TIMESTAMP',pk:false,ref:''}]);
+addTable('posts',[{name:'id',type:'INTEGER PK',pk:true,ref:''},{name:'user_id',type:'INTEGER',pk:false,ref:'users.id'},{name:'title',type:'VARCHAR(200)',pk:false,ref:''},{name:'body',type:'TEXT',pk:false,ref:''}]);
+addTable('comments',[{name:'id',type:'INTEGER PK',pk:true,ref:''},{name:'post_id',type:'INTEGER',pk:false,ref:'posts.id'},{name:'user_id',type:'INTEGER',pk:false,ref:'users.id'},{name:'body',type:'TEXT',pk:false,ref:''}]);
+renderEditors();renderER();toast('Sample schema loaded')}
+addTable('users',[{name:'id',type:'INTEGER PK',pk:true,ref:''},{name:'name',type:'VARCHAR',pk:false,ref:''},{name:'email',type:'VARCHAR',pk:false,ref:''}]);
+addTable('posts',[{name:'id',type:'INTEGER PK',pk:true,ref:''},{name:'user_id',type:'INTEGER',pk:false,ref:'users.id'},{name:'title',type:'VARCHAR',pk:false,ref:''}]);
+renderEditors();renderER();
+</script>
+</body>
+</html>

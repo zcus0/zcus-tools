@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iptables Rule Builder - ZCUs Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
+.header{background:#1a1d27;border-bottom:1px solid #2a2d3a;padding:16px 24px;display:flex;align-items:center;gap:16px}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header h1{font-size:20px;font-weight:700;color:#fff}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#1a1d27;border:1px solid #2a2d3a;border-radius:12px;padding:24px;margin-bottom:20px}
+.card h2{font-size:18px;font-weight:600;color:#fff;margin-bottom:16px}
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:14px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:12px;font-weight:500;color:#aaa;text-transform:uppercase;letter-spacing:.5px}
+select,input{background:#0f1117;border:1px solid #3a3d4a;border-radius:8px;padding:10px 12px;color:#e0e0e0;font-family:'Inter',sans-serif;font-size:14px}
+select:focus,input:focus{outline:none;border-color:#FF6B00}
+.output-box{background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;padding:16px;font-family:monospace;font-size:13px;color:#8ae6a0;white-space:pre-wrap;max-height:500px;overflow-y:auto}
+button{background:#FF6B00;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+button:hover{opacity:.85}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.rule-list{margin-top:12px}
+.rule-item{background:#0f1117;border:1px solid #3a3d4a;border-radius:8px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;font-family:monospace;font-size:13px;color:#8ae6a0}
+.remove-rule{background:#e53e3e;color:#fff;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer}
+.preset-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.preset-btn{background:#2a2d3a;color:#e0e0e0;border:1px solid #3a3d4a;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif}
+.preset-btn:hover{border-color:#FF6B00;color:#FF6B00}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">🔥</span><h1>iptables Rule Builder</h1></div>
+<div class="container">
+<div class="card">
+<h2>Quick Presets</h2>
+<div class="preset-row">
+<button class="preset-btn" onclick="addPreset('allow-ssh')">Allow SSH</button>
+<button class="preset-btn" onclick="addPreset('allow-http')">Allow HTTP</button>
+<button class="preset-btn" onclick="addPreset('allow-https')">Allow HTTPS</button>
+<button class="preset-btn" onclick="addPreset('drop-all-input')">Drop All Input</button>
+<button class="preset-btn" onclick="addPreset('allow-loopback')">Allow Loopback</button>
+<button class="preset-btn" onclick="addPreset('allow-established')">Allow Established</button>
+</div>
+</div>
+<div class="card">
+<h2>Add Rule</h2>
+<div class="form-row">
+<div class="form-group"><label>Chain</label>
+<select id="chain"><option value="-A INPUT">INPUT</option><option value="-A OUTPUT">OUTPUT</option><option value="-A FORWARD">FORWARD</option></select>
+</div>
+<div class="form-group"><label>Protocol</label>
+<select id="protocol"><option value="">any</option><option value="-p tcp">TCP</option><option value="-p udp">UDP</option><option value="-p icmp">ICMP</option></select>
+</div>
+<div class="form-group"><label>Source IP</label><input id="srcIP" placeholder="0.0.0.0/0"></div>
+<div class="form-group"><label>Dest IP</label><input id="dstIP" placeholder="any"></div>
+<div class="form-group"><label>Source Port</label><input id="srcPort" placeholder="any"></div>
+<div class="form-group"><label>Dest Port</label><input id="dstPort" placeholder="e.g. 80"></div>
+<div class="form-group"><label>Action</label>
+<select id="action"><option value="-j ACCEPT">ACCEPT</option><option value="-j DROP">DROP</option><option value="-j REJECT">REJECT</option><option value="-j LOG --log-prefix &quot;iptables: &quot;">LOG</option></select>
+</div>
+<div class="form-group"><label>Interface</label><input id="iface" placeholder="e.g. eth0"></div>
+<div class="form-group"><label>State</label>
+<select id="state"><option value="">any</option><option value="-m state --state NEW">NEW</option><option value="-m state --state ESTABLISHED,RELATED">ESTABLISHED,RELATED</option><option value="-m state --state INVALID">INVALID</option></select>
+</div>
+</div>
+<button onclick="addRule()">+ Add Rule</button>
+</div>
+<div class="card">
+<h2>Rules</h2>
+<div class="rule-list" id="ruleList"></div>
+</div>
+<div class="card">
+<h2>Generated Script</h2>
+<div class="output-box" id="output"></div>
+<div class="btn-row">
+<button onclick="copyOutput()">📋 Copy</button>
+<button onclick="downloadOutput()">⬇️ Download Script</button>
+<button onclick="clearAll()" style="background:#e53e3e">🗑️ Clear All</button>
+</div>
+</div>
+</div>
+<script>
+function toast(msg){const t=document.createElement('div');t.textContent=msg;Object.assign(t.style,{position:'fixed',bottom:'20px',right:'20px',background:'#FF6B00',color:'#fff',padding:'12px 20px',borderRadius:'8px',fontFamily:'Inter',sans-serif',fontSize:'14px',zIndex:'9999',transition:'opacity .3s'});document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},2500)}
+
+let rules=[];
+function buildCmd(){
+let cmd='sudo iptables ';
+cmd+=document.getElementById('chain').value+' ';
+const proto=document.getElementById('protocol').value;if(proto)cmd+=proto+' ';
+const src=document.getElementById('srcIP').value;if(src)cmd+=`-s ${src} `;
+const dst=document.getElementById('dstIP').value;if(dst)cmd+=`-d ${dst} `;
+const sp=document.getElementById('srcPort').value;if(sp)cmd+=`--sport ${sp} `;
+const dp=document.getElementById('dstPort').value;if(dp)cmd+=`--dport ${dp} `;
+const iface=document.getElementById('iface').value;if(iface)cmd+=`-i ${iface} `;
+const state=document.getElementById('state').value;if(state)cmd+=state+' ';
+cmd+=document.getElementById('action').value;
+return cmd;
+}
+function addRule(){rules.push(buildCmd());render();toast('Rule added')}
+function removeRule(i){rules.splice(i,1);render()}
+function render(){
+const list=document.getElementById('ruleList');
+list.innerHTML='';
+rules.forEach((r,i)=>{
+const el=document.createElement('div');el.className='rule-item';
+el.innerHTML=`<span>${r}</span><button class="remove-rule" onclick="removeRule(${i})">✕</button>`;
+list.appendChild(el);
+});
+updateOutput();
+}
+function updateOutput(){
+let s=`#!/bin/bash\n# iptables rules - Generated by ZCUs Tools\n\n# Flush existing rules\nsudo iptables -F\nsudo iptables -X\n\n# Default policies\nsudo iptables -P INPUT DROP\nsudo iptables -P FORWARD DROP\nsudo iptables -P OUTPUT ACCEPT\n\n# Rules\n`;
+rules.forEach(r=>{s+=`${r}\n`});
+s+=`\n# Save rules\nsudo iptables-save > /etc/iptables.rules\n`;
+document.getElementById('output').textContent=s;
+}
+function addPreset(name){
+const presets={
+'allow-ssh':['-A INPUT -p tcp --dport 22 -j ACCEPT'],
+'allow-http':['-A INPUT -p tcp --dport 80 -j ACCEPT'],
+'allow-https':['-A INPUT -p tcp --dport 443 -j ACCEPT'],
+'drop-all-input':['-A INPUT -j DROP'],
+'allow-loopback':['-A INPUT -i lo -j ACCEPT'],
+'allow-established':['-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT']
+};
+rules.push(`sudo iptables ${(presets[name]||[''])[0]}`);
+render();
+}
+function clearAll(){rules=[];render()}
+function copyOutput(){navigator.clipboard.writeText(document.getElementById('output').textContent);toast('Copied!')}
+function downloadOutput(){const b=new Blob([document.getElementById('output').textContent],{type:'text/x-shellscript'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='iptables-rules.sh';a.click();toast('Downloaded!')}
+updateOutput();
+</script>
+</body>
+</html>

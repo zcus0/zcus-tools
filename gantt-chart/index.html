@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gantt Chart</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#fff;min-height:100vh;padding:16px}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.header a{color:#FF6B00;text-decoration:none;font-size:14px}
+.header h1{font-size:20px;font-weight:700}
+.header span{font-size:24px}
+.container{max-width:1000px;margin:0 auto}
+.card{background:#16213e;border-radius:12px;padding:24px;border:1px solid #233554;margin-bottom:16px}
+.form-row{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:12px}
+.form-row label{font-size:12px;color:#888;display:block;margin-bottom:4px}
+.form-row input,.form-row select{padding:8px;background:#0f0f23;border:1px solid #233554;border-radius:6px;color:#fff;font-family:'Inter',sans-serif;font-size:13px}
+.btn{padding:8px 16px;background:#FF6B00;border:none;color:#fff;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.btn:hover{background:#e65c00}
+.btn-sm{padding:4px 8px;font-size:11px}
+.btn-secondary{background:#233554}
+.gantt-wrap{overflow-x:auto;position:relative}
+.gantt-canvas{background:#0f0f23;border-radius:8px;min-height:200px}
+.task-list{min-width:200px;flex-shrink:0}
+.task-header,.task-row{display:grid;grid-template-columns:1fr auto auto;padding:8px 12px;font-size:13px;border-bottom:1px solid #233554;align-items:center}
+.task-header{font-weight:600;color:#888;font-size:12px}
+.toast{position:fixed;bottom:20px;right:20px;background:#FF6B00;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span>📊</span><h1>Gantt Chart</h1></div>
+<div class="container">
+<div class="card">
+<div class="form-row">
+<div><label>Task Name</label><input type="text" id="taskName" placeholder="Task..."></div>
+<div><label>Start Date</label><input type="date" id="taskStart"></div>
+<div><label>End Date</label><input type="date" id="taskEnd"></div>
+<div><label>Color</label><input type="color" id="taskColor" value="#FF6B00"></div>
+<button class="btn" onclick="addTask()">Add Task</button>
+<button class="btn btn-secondary" onclick="exportImage()">Export Image</button>
+</div>
+</div>
+<div class="card">
+<div class="gantt-wrap">
+<canvas id="ganttCanvas" class="gantt-canvas"></canvas>
+</div>
+<div id="taskList"></div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let tasks=JSON.parse(localStorage.getItem('gantt_tasks')||'[]');
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function addTask(){
+const name=document.getElementById('taskName').value.trim();const start=document.getElementById('taskStart').value;const end=document.getElementById('taskEnd').value;const color=document.getElementById('taskColor').value;
+if(!name||!start||!end){toast('Fill all fields');return}
+if(new Date(end)<new Date(start)){toast('End must be after start');return}
+tasks.push({id:Date.now(),name,start,end,color});localStorage.setItem('gantt_tasks',JSON.stringify(tasks));
+document.getElementById('taskName').value='';draw();toast('Task added')}
+function removeTask(id){tasks=tasks.filter(t=>t.id!==id);localStorage.setItem('gantt_tasks',JSON.stringify(tasks));draw()}
+function draw(){
+const canvas=document.getElementById('ganttCanvas');const ctx=canvas.getContext('2d');
+if(!tasks.length){canvas.width=600;canvas.height=100;ctx.fillStyle='#555';ctx.font='14px Inter';ctx.textAlign='center';ctx.fillText('No tasks yet',300,55);document.getElementById('taskList').innerHTML='';return}
+const taskH=40,pad=20,labelW=150,rowH=taskH+8;
+const dates=tasks.flatMap(t=>[new Date(t.start),new Date(t.end)]);
+const minDate=new Date(Math.min(...dates));minDate.setDate(minDate.getDate()-2);
+const maxDate=new Date(Math.max(...dates));maxDate.setDate(maxDate.getDate()+2);
+const totalDays=Math.ceil((maxDate-minDate)/(86400000));
+const barW=Math.max(400,window.innerWidth-200-labelW);
+canvas.width=labelW+barW+pad*2;canvas.height=pad+tasks.length*rowH+30;
+ctx.fillStyle='#0f0f23';ctx.fillRect(0,0,canvas.width,canvas.height);
+// grid
+ctx.strokeStyle='#233554';ctx.lineWidth=1;
+const dayW=barW/totalDays;
+for(let i=0;i<=totalDays;i++){const x=labelW+pad+i*dayW;ctx.beginPath();ctx.moveTo(x,pad);ctx.lineTo(x,pad+tasks.length*rowH);ctx.stroke();
+const d=new Date(minDate);d.setDate(d.getDate()+i);if(d.getDate()===1||i===0||i===totalDays){ctx.fillStyle='#555';ctx.font='10px Inter';ctx.textAlign='center';ctx.fillText(d.toLocaleDateString('en-US',{month:'short',day:'numeric'}),x,pad+tasks.length*rowH+15)}}
+// bars
+tasks.forEach((t,i)=>{
+const y=pad+i*rowH+8;
+ctx.fillStyle='#fff';ctx.font='13px Inter';ctx.textAlign='left';ctx.fillText(t.name.slice(0,18),pad,y+taskH/2+4);
+const sx=labelW+pad+Math.max(0,(new Date(t.start)-minDate)/86400000)*dayW;
+const ex=labelW+pad+Math.min(barW,(new Date(t.end)-minDate)/86400000)*dayW;
+ctx.fillStyle=t.color;ctx.beginPath();ctx.roundRect(sx,y,Math.max(ex-sx,4),taskH,4);ctx.fill();
+ctx.fillStyle='#fff';ctx.font='11px Inter';ctx.textAlign='center';const dur=Math.ceil((new Date(t.end)-new Date(t.start))/86400000)+1;
+if(ex-sx>30)ctx.fillText(dur+'d',(sx+ex)/2,y+taskH/2+4)});
+// task list
+document.getElementById('taskList').innerHTML=`<div class="task-header"><div>Task</div><div>Duration</div><div></div></div>`+tasks.map(t=>{
+const dur=Math.ceil((new Date(t.end)-new Date(t.start))/86400000)+1;
+return`<div class="task-row"><div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;border-radius:3px;background:${t.color}"></div>${t.name}</div><div>${dur} days</div><button class="btn btn-sm btn-secondary" onclick="removeTask(${t.id})">✕</button></div>`}).join('')}
+function exportImage(){const c=document.getElementById('ganttCanvas');const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='gantt-chart.png';a.click();toast('Exported')}
+draw();
+</script>
+</body>
+</html>

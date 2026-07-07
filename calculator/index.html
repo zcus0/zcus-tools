@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scientific Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#fff;min-height:100vh;padding:16px}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.header a{color:#FF6B00;text-decoration:none;font-size:14px}
+.header h1{font-size:20px;font-weight:700}
+.header span{font-size:24px}
+.container{max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr 280px;gap:16px}
+.card{background:#16213e;border-radius:12px;padding:20px;border:1px solid #233554}
+.display{background:#0f0f23;border-radius:8px;padding:16px;text-align:right;margin-bottom:12px;min-height:70px}
+.display .expr{color:#888;font-size:14px;min-height:20px;word-break:break-all}
+.display .result{color:#FF6B00;font-size:32px;font-weight:700;word-break:break-all}
+.btn-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.btn{background:#233554;border:none;color:#fff;padding:12px 4px;border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;cursor:pointer;transition:all .15s}
+.btn:hover{background:#2d4a6f}
+.btn.op{background:#FF6B00;color:#fff}
+.btn.op:hover{background:#e65c00}
+.btn.eq{background:#00b894}
+.btn.eq:hover{background:#00a381}
+.btn.mem{background:#6c5ce7}
+.btn.mem:hover{background:#5a4bd1}
+.mem-indicator{color:#6c5ce7;font-size:12px;margin-bottom:8px}
+.history-panel h3{margin-bottom:10px;font-size:14px;color:#888}
+.history-list{max-height:400px;overflow-y:auto;font-size:13px}
+.history-item{padding:8px;border-bottom:1px solid #233554;cursor:pointer}
+.history-item:hover{background:#233554;border-radius:6px}
+.history-item .h-expr{color:#888}
+.history-item .h-result{color:#FF6B00;font-weight:600}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .2s ease}
+@media(max-width:700px){.container{grid-template-columns:1fr}.btn-grid{grid-template-columns:repeat(5,1fr)}}
+.toast{position:fixed;bottom:20px;right:20px;background:#FF6B00;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header">
+<a href="/">← Home</a>
+<span>🔢</span>
+<h1>Scientific Calculator</h1>
+</div>
+<div class="container">
+<div class="card">
+<div class="mem-indicator" id="memInd"></div>
+<div class="display">
+<div class="expr" id="expr"></div>
+<div class="result" id="result">0</div>
+</div>
+<div class="btn-grid">
+<button class="btn mem" onclick="memClear()">MC</button>
+<button class="btn mem" onclick="memRecall()">MR</button>
+<button class="btn mem" onclick="memAdd()">M+</button>
+<button class="btn mem" onclick="memSub()">M−</button>
+<button class="btn" onclick="clearAll()">AC</button>
+<button class="btn" onclick="inputFn('sin(')">sin</button>
+<button class="btn" onclick="inputFn('cos(')">cos</button>
+<button class="btn" onclick="inputFn('tan(')">tan</button>
+<button class="btn" onclick="inputFn('log(')">log</button>
+<button class="btn" onclick="inputFn('ln(')">ln</button>
+<button class="btn" onclick="inputFn('sqrt(')">√</button>
+<button class="btn" onclick="inputOp('^')">^</button>
+<button class="btn" onclick="inputOp('/')">÷</button>
+<button class="btn" onclick="inputFn('fact(')">n!</button>
+<button class="btn" onclick="input('(')">(</button>
+<button class="btn" onclick="input('7')">7</button>
+<button class="btn" onclick="input('8')">8</button>
+<button class="btn" onclick="input('9')">9</button>
+<button class="btn" onclick="inputOp('*')">×</button>
+<button class="btn" onclick="input(')')">)</button>
+<button class="btn" onclick="input('4')">4</button>
+<button class="btn" onclick="input('5')">5</button>
+<button class="btn" onclick="input('6')">6</button>
+<button class="btn" onclick="inputOp('-')">−</button>
+<button class="btn" onclick="input('%')">%</button>
+<button class="btn" onclick="input('1')">1</button>
+<button class="btn" onclick="input('2')">2</button>
+<button class="btn" onclick="input('3')">3</button>
+<button class="btn" onclick="inputOp('+')">+</button>
+<button class="btn" onclick="backspace()">⌫</button>
+<button class="btn" onclick="input('00')">00</button>
+<button class="btn" onclick="input('0')">0</button>
+<button class="btn" onclick="input('.')">.</button>
+<button class="btn op" onclick="negate()">±</button>
+<button class="btn eq" onclick="calculate()">=</button>
+</div>
+</div>
+<div class="card history-panel">
+<h3>History</h3>
+<div class="history-list" id="historyList"><div style="color:#555;text-align:center;padding:20px">No calculations yet</div></div>
+<button class="btn" style="width:100%;margin-top:10px;background:#e74c3c" onclick="clearHistory()">Clear History</button>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let current='',expression='',memory=0,history=[];
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function updateDisplay(){document.getElementById('expr').textContent=expression;document.getElementById('result').textContent=current||'0'}
+function input(v){current+=v;updateDisplay()}
+function inputOp(op){expression=current+op;current='';updateDisplay()}
+function inputFn(fn){current+=fn;updateDisplay()}
+function backspace(){current=current.slice(0,-1);updateDisplay()}
+function clearAll(){current='';expression='';updateDisplay()}
+function negate(){if(current){current=String(-parseFloat(current))}}
+function fact(n){if(n<0)return NaN;if(n===0||n===1)return 1;let r=1;for(let i=2;i<=n;i++)r*=i;return r}
+function memAdd(){memory+=parseFloat(current)||0;document.getElementById('memInd').textContent='M: '+memory;toast('M+')}
+function memSub(){memory-=parseFloat(current)||0;document.getElementById('memInd').textContent='M: '+memory;toast('M−')}
+function memRecall(){current=String(memory);updateDisplay();toast('MR')}
+function memClear(){memory=0;document.getElementById('memInd').textContent='';toast('MC')}
+function calculate(){
+try{
+let expr=expression+current;
+expr=expr.replace(/sin\(/g,'Math.sin(').replace(/cos\(/g,'Math.cos(').replace(/tan\(/g,'Math.tan(')
+.replace(/log\(/g,'Math.log10(').replace(/ln\(/g,'Math.log(').replace(/sqrt\(/g,'Math.sqrt(')
+.replace(/\^/g,'**').replace(/fact\(/g,'fact(').replace(/%/g,'/100');
+let result=eval(expr);
+if(!isFinite(result))throw 'Error';
+current=String(Math.round(result*1e10)/1e10);
+expression=expression+current+' =';
+history.unshift({expr:expression,result:current});
+renderHistory();
+updateDisplay();
+expression='';current=current;
+}catch(e){toast('Error');current='';expression='';updateDisplay()}
+}
+function renderHistory(){
+const el=document.getElementById('historyList');
+if(!history.length){el.innerHTML='<div style="color:#555;text-align:center;padding:20px">No calculations yet</div>';return}
+el.innerHTML=history.slice(0,50).map((h,i)=>`<div class="history-item" onclick="recallHist(${i})"><div class="h-expr">${h.expr}</div><div class="h-result">${h.result}</div></div>`).join('')
+}
+function recallHist(i){current=history[i].result;updateDisplay()}
+function clearHistory(){history=[];renderHistory();toast('History cleared')}
+document.addEventListener('keydown',e=>{
+const key=e.key;
+if('0123456789.'.includes(key))input(key);
+else if('+-*/'.includes(key))inputOp(key);
+else if(key==='Enter')calculate();
+else if(key==='Backspace')backspace();
+else if(key==='Escape')clearAll();
+else if(key==='('||key===')')input(key);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ROT13 / Cipher</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333}
+.header{background:#fff;padding:16px 24px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+.header a{color:#FF6B00;text-decoration:none;font-weight:600}
+.header h1{font-size:20px;font-weight:700}
+.header .icon{font-size:24px}
+.container{max-width:800px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card h2{font-size:16px;font-weight:600;margin-bottom:12px}
+textarea{width:100%;height:120px;border:1px solid #e0e0e0;border-radius:8px;padding:12px;font-family:monospace;font-size:14px;resize:vertical}
+textarea:focus{outline:2px solid #FF6B00;border-color:#FF6B00}
+.btn{background:#FF6B00;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-family:'Inter';font-weight:600;font-size:14px;cursor:pointer}
+.btn:hover{opacity:.9}
+.btn-secondary{background:#eee;color:#333}
+.btn-sm{padding:6px 14px;font-size:13px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.shift-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+input[type=range]{accent-color:#FF6B00;flex:1;min-width:150px}
+.shift-val{font-weight:700;font-size:20px;color:#FF6B00;min-width:40px}
+.preview{background:#1e1e1e;color:#d4d4d4;padding:16px;border-radius:8px;font-family:monospace;font-size:14px;min-height:80px;white-space:pre-wrap;word-break:break-word}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:1000;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">🔤</span><h1>ROT13 / Cipher</h1></div>
+<div class="container">
+<div class="card">
+<h2>Input Text</h2>
+<textarea id="input" placeholder="Enter text to encode/decode..."></textarea>
+<div class="btn-row">
+<button class="btn btn-sm" onclick="apply('rot13')">ROT13</button>
+<button class="btn btn-sm btn-secondary" onclick="apply('rot5')">ROT5</button>
+<button class="btn btn-sm btn-secondary" onclick="apply('rot47')">ROT47</button>
+</div>
+<div class="shift-row">
+<label style="font-weight:600;font-size:13px">Custom Shift:</label>
+<input type="range" id="shiftSlider" min="1" max="25" value="13" oninput="updateShift()">
+<span class="shift-val" id="shiftVal">13</span>
+<button class="btn btn-sm" onclick="apply('custom')">Apply</button>
+</div>
+</div>
+<div class="card">
+<h2>Result</h2>
+<div class="preview" id="output">Result will appear here...</div>
+<div class="btn-row">
+<button class="btn btn-secondary" onclick="copyResult()">📋 Copy</button>
+<button class="btn btn-secondary" onclick="swapResult()">↔ Swap</button>
+</div>
+</div>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function updateShift(){document.getElementById('shiftVal').textContent=document.getElementById('shiftSlider').value}
+function rot(str,n){
+return[...str].map(c=>{
+if(c>='A'&&c<='Z')return String.fromCharCode(((c.charCodeAt(0)-65+n)%26)+65);
+if(c>='a'&&c<='z')return String.fromCharCode(((c.charCodeAt(0)-97+n)%26)+97);
+return c;
+}).join('');
+}
+function rot47(str){
+return[...str].map(c=>{
+const code=c.charCodeAt(0);
+if(code>=33&&code<=126)return String.fromCharCode(33+((code-33+47)%94));
+return c;
+}).join('');
+}
+function apply(type){
+const text=document.getElementById('input').value;
+if(!text)return toast('Enter text');
+let result='';
+switch(type){
+case'rot13':result=rot(text,13);break;
+case'rot5':result=rot(text,5);break;
+case'rot47':result=rot47(text);break;
+case'custom':result=rot(text,parseInt(document.getElementById('shiftSlider').value));break;
+}
+document.getElementById('output').textContent=result;
+toast(type.toUpperCase()+' applied!');
+}
+function copyResult(){
+navigator.clipboard.writeText(document.getElementById('output').textContent).then(()=>toast('Copied!'));
+}
+function swapResult(){
+document.getElementById('input').value=document.getElementById('output').textContent;
+document.getElementById('output').textContent='';
+}
+</script>
+</body>
+</html>

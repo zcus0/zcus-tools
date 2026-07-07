@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Age Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#fff;min-height:100vh;padding:16px}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.header a{color:#FF6B00;text-decoration:none;font-size:14px}
+.header h1{font-size:20px;font-weight:700}
+.header span{font-size:24px}
+.container{max-width:500px;margin:0 auto}
+.card{background:#16213e;border-radius:12px;padding:24px;border:1px solid #233554;margin-bottom:16px}
+label{display:block;color:#888;font-size:13px;margin-bottom:6px}
+input[type=date]{width:100%;padding:12px;background:#0f0f23;border:1px solid #233554;border-radius:8px;color:#fff;font-size:16px;font-family:'Inter',sans-serif;margin-bottom:12px}
+input:focus{outline:none;border-color:#FF6B00}
+.btn{width:100%;padding:14px;background:#FF6B00;border:none;color:#fff;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.btn:hover{background:#e65c00}
+.age-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+.age-box{text-align:center;padding:16px;background:#0f0f23;border-radius:8px}
+.age-box .num{font-size:36px;font-weight:700;color:#FF6B00}
+.age-box .lbl{font-size:12px;color:#888;margin-top:4px}
+.info-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #233554;font-size:14px}
+.info-row .label{color:#888}
+.toast{position:fixed;bottom:20px;right:20px;background:#FF6B00;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span>🎂</span><h1>Age Calculator</h1></div>
+<div class="container">
+<div class="card">
+<label>Date of Birth</label>
+<input type="date" id="dob" onchange="calc()">
+<button class="btn" onclick="calc()">Calculate Age</button>
+</div>
+<div class="card" id="result" style="display:none">
+<div class="age-grid">
+<div class="age-box"><div class="num" id="years">0</div><div class="lbl">Years</div></div>
+<div class="age-box"><div class="num" id="months">0</div><div class="lbl">Months</div></div>
+<div class="age-box"><div class="num" id="days">0</div><div class="lbl">Days</div></div>
+</div>
+<div style="margin-top:16px">
+<div class="info-row"><span class="label">Total Days Lived</span><span id="totalDays">—</span></div>
+<div class="info-row"><span class="label">Days Until Birthday</span><span id="nextBday">—</span></div>
+<div class="info-row"><span class="label">Day of Week Born</span><span id="dowBorn">—</span></div>
+<div class="info-row"><span class="label">Zodiac Sign</span><span id="zodiac">—</span></div>
+<div class="info-row"><span class="label">Total Hours Lived</span><span id="totalHours">—</span></div>
+</div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+const zodiacSigns=[
+{sign:'Capricorn',end:[1,19]},{sign:'Aquarius',end:[2,18]},{sign:'Pisces',end:[3,20]},
+{sign:'Aries',end:[4,19]},{sign:'Taurus',end:[5,20]},{sign:'Gemini',end:[6,20]},
+{sign:'Cancer',end:[7,22]},{sign:'Leo',end:[8,22]},{sign:'Virgo',end:[9,22]},
+{sign:'Libra',end:[10,22]},{sign:'Scorpio',end:[11,21]},{sign:'Sagittarius',end:[12,21]},
+{sign:'Capricorn',end:[12,31]}
+];
+function getZodiac(d){const m=d.getMonth()+1,dy=d.getDate();return zodiacSigns.find(z=>m<z.end[0]||(m===z.end[0]&&dy<=z.end[1])).sign}
+function calc(){
+const dob=new Date(document.getElementById('dob').value);
+if(isNaN(dob)){toast('Select a date');return}
+const now=new Date();
+let y=now.getFullYear()-dob.getFullYear(),m=now.getMonth()-dob.getMonth(),d=now.getDate()-dob.getDate();
+if(d<0){m--;const prev=new Date(now.getFullYear(),now.getMonth(),0);d+=prev.getDate()}
+if(m<0){y--;m+=12}
+document.getElementById('years').textContent=y;
+document.getElementById('months').textContent=m;
+document.getElementById('days').textContent=d;
+const totalDays=Math.floor((now-dob)/(1000*60*60*24));
+document.getElementById('totalDays').textContent=totalDays.toLocaleString();
+document.getElementById('totalHours').textContent=(totalDays*24).toLocaleString();
+let nb=new Date(now.getFullYear(),dob.getMonth(),dob.getDate());
+if(nb<=now)nb=new Date(now.getFullYear()+1,dob.getMonth(),dob.getDate());
+const daysUntil=Math.ceil((nb-now)/(1000*60*60*24));
+document.getElementById('nextBday').textContent=daysUntil+' days';
+document.getElementById('dowBorn').textContent=dob.toLocaleDateString('en-US',{weekday:'long'});
+document.getElementById('zodiac').textContent=getZodiac(dob);
+document.getElementById('result').style.display='block';
+toast('Age: '+y+' years');
+}
+</script>
+</body>
+</html>

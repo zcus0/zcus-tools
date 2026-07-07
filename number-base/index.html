@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Number Base Converter</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333}
+.header{background:#fff;padding:16px 24px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+.header a{color:#FF6B00;text-decoration:none;font-weight:600}
+.header h1{font-size:20px;font-weight:700}
+.header .icon{font-size:24px}
+.container{max-width:700px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card h2{font-size:16px;font-weight:600;margin-bottom:12px}
+.input-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+input[type=text],select{padding:10px 14px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;font-family:'Inter',sans-serif}
+input[type=text]{flex:1;min-width:200px}
+input[type=text]:focus,select:focus{outline:2px solid #FF6B00;border-color:#FF6B00}
+select{background:#fff}
+.btn{background:#FF6B00;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-family:'Inter';font-weight:600;font-size:14px;cursor:pointer}
+.btn:hover{opacity:.9}
+.result-grid{display:grid;gap:12px}
+.result-item{display:flex;align-items:center;gap:8px;background:#f8f8f8;border-radius:8px;padding:12px}
+.result-label{font-weight:600;font-size:12px;color:#FF6B00;min-width:100px;text-transform:uppercase}
+.result-value{font-family:monospace;font-size:14px;word-break:break-all;flex:1;user-select:all}
+.copy-btn{background:none;border:none;cursor:pointer;font-size:16px;padding:4px}
+.label-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+label{font-size:13px;font-weight:500}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:1000;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">🔢</span><h1>Number Base Converter</h1></div>
+<div class="container">
+<div class="card">
+<h2>Convert Number</h2>
+<div class="label-row"><label>Input:</label></div>
+<div class="input-row">
+<input type="text" id="numInput" placeholder="Enter a number" oninput="convert()">
+<select id="baseFrom" onchange="convert()">
+<option value="10" selected>Decimal (10)</option>
+<option value="2">Binary (2)</option>
+<option value="8">Octal (8)</option>
+<option value="16">Hexadecimal (16)</option>
+</select>
+</div>
+<div class="label-row">
+<label><input type="checkbox" id="isSigned"> Signed (2's complement)</label>
+</div>
+</div>
+<div class="card">
+<h2>All Bases</h2>
+<div class="result-grid" id="results"></div>
+</div>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function convert(){
+const input=document.getElementById('numInput').value.trim();
+const base=parseInt(document.getElementById('baseFrom').value);
+const signed=document.getElementById('isSigned').checked;
+const results=document.getElementById('results');
+if(!input){results.innerHTML='';return}
+try{
+let num;
+const isNeg=input[0]==='-';
+const absInput=isNeg?input.slice(1):input;
+num=parseInt(absInput,base);
+if(isNaN(num)||num<0)throw new Error('Invalid');
+if(signed&&num>2147483647)throw new Error('Too large for signed 32-bit');
+const display=isNeg?-num:num;
+const bases=[
+{label:'Decimal',base:10},{label:'Binary',base:2},{label:'Octal',base:8},{label:'Hexadecimal',base:16}
+];
+results.innerHTML=bases.map(b=>{
+const val=signed?(b.base===10?display.toString(b.base):(display>>>0).toString(b.base)):display.toString(b.base);
+const prefix=b.base===16?'0x':b.base===2?'0b':b.base===8?'0o':'';
+return`<div class="result-item"><span class="result-label">${b.label}</span><span class="result-value">${isNeg?'-':''}${prefix}${val}</span><button class="copy-btn" onclick="copy('${isNeg?'-':''}${prefix}${val}')">📋</button></div>`;
+}).join('');
+}catch(e){
+results.innerHTML='<div style="color:#e74c3c;font-size:14px">Invalid number for selected base</div>';
+}
+}
+function copy(v){navigator.clipboard.writeText(v).then(()=>toast('Copied!'))}
+</script>
+</body>
+</html>

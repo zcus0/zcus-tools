@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Morse Code Translator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #e0e0e0;padding:16px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header .icon{font-size:24px}
+.header h1{font-size:18px;font-weight:600;flex:1}
+.container{max-width:900px;margin:0 auto;padding:24px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:24px;margin-bottom:20px}
+.card h2{font-size:16px;font-weight:600;margin-bottom:16px}
+.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;transition:all .2s}
+.btn-primary{background:#FF6B00;color:#fff}.btn-primary:hover{background:#e55a00}
+.btn-outline{background:transparent;border:1px solid #ddd;color:#555}.btn-outline:hover{border-color:#FF6B00;color:#FF6B00}
+.btn-sm{padding:5px 10px;font-size:12px}
+textarea{font-family:'Inter',sans-serif;font-size:14px;padding:12px;border:1px solid #ddd;border-radius:8px;width:100%;resize:vertical;outline:none;transition:border .2s;min-height:100px}
+textarea:focus{border-color:#FF6B00}
+label{display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#555}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+.morse-display{padding:20px;background:#1e1e1e;color:#FF6B00;border-radius:8px;font-family:'Fira Code',monospace;font-size:18px;letter-spacing:3px;line-height:1.6;word-break:break-all;min-height:80px;margin:16px 0}
+.ref-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:16px}
+.ref-table th,.ref-table td{padding:6px 10px;border-bottom:1px solid #eee;text-align:center}
+.ref-table th{font-weight:600;color:#555;font-size:11px;text-transform:uppercase;background:#f9f9f9}
+.ref-table .morse-cell{font-family:'Fira Code',monospace;letter-spacing:2px;color:#FF6B00;font-weight:600}
+.controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:12px 0}
+.controls label{margin:0;white-space:nowrap}
+.controls input[type=range]{width:120px}
+.playing{animation:pulse .5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/">← Home</a>
+  <span class="icon">📡</span>
+  <h1>Morse Code Translator</h1>
+</div>
+<div class="container">
+  <div class="card">
+    <h2>Text → Morse</h2>
+    <textarea id="text-input" placeholder="Enter text to convert to Morse code..." oninput="textToMorse()"></textarea>
+    <div class="controls">
+      <label>Speed:</label><input type="range" id="speed" min="1" max="20" value="10" oninput="document.getElementById('speed-val').textContent=this.value+' WPM'">
+      <span id="speed-val" style="font-size:12px;color:#888">10 WPM</span>
+      <button class="btn btn-primary btn-sm" onclick="playMorse()">▶ Play Audio</button>
+      <button class="btn btn-outline btn-sm" onclick="stopAudio()">⏹ Stop</button>
+      <button class="btn btn-outline btn-sm" onclick="copyMorse()">📋 Copy</button>
+    </div>
+    <div class="morse-display" id="morse-output">Morse code will appear here...</div>
+  </div>
+  <div class="card">
+    <h2>Morse → Text</h2>
+    <textarea id="morse-input" placeholder="Enter Morse code (use spaces between letters, / for word break)..." oninput="morseToText()"></textarea>
+    <button class="btn btn-outline btn-sm" onclick="copyText()">📋 Copy Text</button>
+    <div style="padding:12px;background:#f9f9f9;border-radius:8px;margin-top:12px;font-size:14px;min-height:40px" id="text-output">Text will appear here...</div>
+  </div>
+  <div class="card">
+    <h2>Reference Table</h2>
+    <div style="overflow-x:auto"><table class="ref-table" id="ref-table"></table></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const MORSE={'A':'.-','B':'-...','C':'-.-.','D':'-..','E':'.','F':'..-.','G':'--.','H':'....','I':'..','J':'.---','K':'-.-','L':'.-..','M':'--','N':'-.','O':'---','P':'.--.','Q':'--.-','R':'.-.','S':'...','T':'-','U':'..-','V':'...-','W':'.--','X':'-..-','Y':'-.--','Z':'--..','0':'-----','1':'.----','2':'..---','3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.','.' :'.-.-.-',',':'--..--','?':'..--..','!':'-.-.--','-':'-....-','/':'-..-.','(':'-.--.',')':'-.--.-','&':'.-...',':':'---...',';':'-.-.-.','=':'-...-','+':'.-.-.','_':'..--.-','"':'.-..-.','$':'...-..-','@':'.--.-.',"'":'.----.'};
+const REVERSE=Object.fromEntries(Object.entries(MORSE).map(([k,v])=>[v,k]));
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function textToMorse(){
+  const text=document.getElementById('text-input').value.toUpperCase();
+  const morse=text.split('').map(c=>MORSE[c]||c===' '?'/':c).join(' ');
+  document.getElementById('morse-output').textContent=morse||'Morse code will appear here...';
+}
+function morseToText(){
+  const morse=document.getElementById('morse-input').value.trim();
+  if(!morse){document.getElementById('text-output').textContent='Text will appear here...';return}
+  const text=morse.split(' / ').map(word=>word.split(' ').map(code=>REVERSE[code]||'?').join('')).join(' ');
+  document.getElementById('text-output').textContent=text;
+}
+let audioCtx=null;let audioOsc=null;
+function playMorse(){
+  stopAudio();
+  const morse=document.getElementById('morse-output').textContent;
+  if(!morse||morse.includes('will appear'))return;
+  audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  const wpm=+document.getElementById('speed').value;
+  const dot=1.2/wpm;
+  let time=audioCtx.currentTime;
+  const freq=600;
+  for(const c of morse){
+    if(c==='.'){playTone(time,dot,freq);time+=dot*2}
+    else if(c==='-'){playTone(time,dot*3,freq);time+=dot*4}
+    else if(c===' '){time+=dot*2}
+    else if(c==='/'){time+=dot*6}
+  }
+}
+function playTone(start,dur,freq){
+  const osc=audioCtx.createOscillator();const gain=audioCtx.createGain();
+  osc.frequency.value=freq;osc.type='sine';
+  gain.gain.setValueAtTime(0.3,start);gain.gain.setValueAtTime(0,start+dur);
+  osc.connect(gain);gain.connect(audioCtx.destination);
+  osc.start(start);osc.stop(start+dur);
+}
+function stopAudio(){if(audioCtx){audioCtx.close();audioCtx=null}}
+function copyMorse(){navigator.clipboard.writeText(document.getElementById('morse-output').textContent);toast('Morse copied!')}
+function copyText(){navigator.clipboard.writeText(document.getElementById('text-output').textContent);toast('Text copied!')}
+// Reference table
+const tableEl=document.getElementById('ref-table');
+const chars='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,?!-/()&;=+$@'.split('');
+let html='<tr>';let count=0;
+for(const c of chars){
+  if(count===8){html+='</tr><tr>';count=0}
+  html+=`<td><strong>${c}</strong></td><td class="morse-cell">${MORSE[c]||''}</td>`;
+  count++;
+}
+html+='</tr>';
+tableEl.innerHTML='<tr><th>Char</th><th>Morse</th><th>Char</th><th>Morse</th><th>Char</th><th>Morse</th><th>Char</th><th>Morse</th><th>Char</th><th>Morse</th></tr>'+html;
+</script>
+</body>
+</html>

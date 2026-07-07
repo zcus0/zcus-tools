@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Goal Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#fff;min-height:100vh;padding:16px}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.header a{color:#FF6B00;text-decoration:none;font-size:14px}
+.header h1{font-size:20px;font-weight:700}
+.header span{font-size:24px}
+.container{max-width:700px;margin:0 auto}
+.card{background:#16213e;border-radius:12px;padding:24px;border:1px solid #233554;margin-bottom:16px}
+label{display:block;color:#888;font-size:12px;margin-bottom:4px}
+input,select{width:100%;padding:10px;background:#0f0f23;border:1px solid #233554;border-radius:8px;color:#fff;font-family:'Inter',sans-serif;font-size:14px;margin-bottom:10px}
+input:focus,select:focus{outline:none;border-color:#FF6B00}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{padding:10px 20px;background:#FF6B00;border:none;color:#fff;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.btn:hover{background:#e65c00}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-secondary{background:#233554}
+.btn-success{background:#00b894}
+.goal-card{background:#0f0f23;border-radius:8px;padding:16px;margin-bottom:12px;border:1px solid #233554}
+.goal-header{display:flex;justify-content:space-between;align-items:start;margin-bottom:8px}
+.goal-title{font-weight:600;font-size:16px}
+.goal-category{font-size:11px;padding:2px 8px;border-radius:4px;background:#233554;color:#888}
+.goal-meta{font-size:12px;color:#888;margin-bottom:8px}
+.progress-bar{height:8px;background:#233554;border-radius:4px;overflow:hidden;margin:8px 0}
+.progress-fill{height:100%;background:#FF6B00;border-radius:4px;transition:width .3s}
+.progress-text{font-size:13px;font-weight:600;color:#FF6B00}
+.milestones{margin-top:8px}
+.milestone{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px}
+.milestone input[type=checkbox]{accent-color:#FF6B00}
+.milestone.done{text-decoration:line-through;color:#555}
+.slider-row{display:flex;align-items:center;gap:8px}
+.slider-row input[type=range]{flex:1;margin:0;accent-color:#FF6B00}
+.toast{position:fixed;bottom:20px;right:20px;background:#FF6B00;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span>🎯</span><h1>Goal Tracker</h1></div>
+<div class="container">
+<div class="card">
+<label>Goal Name</label><input type="text" id="goalName" placeholder="My goal...">
+<div class="form-grid">
+<div><label>Target Date</label><input type="date" id="goalDate"></div>
+<div><label>Category</label><select id="goalCat"><option>Health</option><option>Career</option><option>Finance</option><option>Learning</option><option>Personal</option><option>Other</option></select></div>
+</div>
+<label>Milestones (one per line)</label><input type="text" id="goalMiles" placeholder="Step 1, Step 2, Step 3...">
+<button class="btn" onclick="addGoal()">Add Goal</button>
+</div>
+<div id="goalList"></div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let goals=JSON.parse(localStorage.getItem('goals')||'[]');
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function save(){localStorage.setItem('goals',JSON.stringify(goals))}
+function addGoal(){
+const name=document.getElementById('goalName').value.trim();const date=document.getElementById('goalDate').value;const cat=document.getElementById('goalCat').value;const miles=document.getElementById('goalMiles').value.split(',').map(s=>s.trim()).filter(Boolean);
+if(!name){toast('Enter a goal');return}
+goals.push({id:Date.now(),name,date,cat,progress:0,milestones:miles.map(m=>({text:m,done:false}))});
+document.getElementById('goalName').value='';document.getElementById('goalMiles').value='';save();render();toast('Goal added')}
+function removeGoal(id){goals=goals.filter(g=>g.id!==id);save();render()}
+function setProgress(id,val){const g=goals.find(x=>x.id===id);if(g){g.progress=parseInt(val);save();render()}}
+function toggleMilestone(goalId,mIdx){const g=goals.find(x=>x.id===goalId);if(!g)return;g.milestones[mIdx].done=!g.milestones[mIdx].done;
+const done=g.milestones.filter(m=>m.done).length;g.progress=g.milestones.length?Math.round(done/g.milestones.length*100):g.progress;save();render()}
+function render(){
+document.getElementById('goalList').innerHTML=goals.map(g=>{
+const daysLeft=g.date?Math.ceil((new Date(g.date)-new Date())/86400000):null;
+const color=g.progress>=100?'#00b894':g.progress>=50?'#FF6B00':'#e74c3c';
+return`<div class="card"><div class="goal-header"><div><div class="goal-title">${g.name}</div><div class="goal-meta">${g.cat}${g.date?' • Due: '+g.date:''}${daysLeft!==null?' • '+Math.max(0,daysLeft)+' days left':''}</div></div><div style="display:flex;gap:6px"><span class="goal-category">${g.cat}</span><button class="btn btn-sm btn-secondary" onclick="removeGoal(${g.id})">✕</button></div></div>
+<div class="slider-row"><input type="range" min="0" max="100" value="${g.progress}" oninput="setProgress(${g.id},this.value)"><span class="progress-text">${g.progress}%</span></div>
+<div class="progress-bar"><div class="progress-fill" style="width:${g.progress}%;background:${color}"></div></div>
+${g.milestones.length?`<div class="milestones">${g.milestones.map((m,i)=>`<div class="milestone ${m.done?'done':''}"><input type="checkbox" ${m.done?'checked':''} onchange="toggleMilestone(${g.id},${i})"><span>${m.text}</span></div>`).join('')}</div>`:''}</div>`}).join('')}
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Model Compare</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #e0e0e0;padding:16px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header .icon{font-size:24px}
+.header h1{font-size:18px;font-weight:600;flex:1}
+.container{max-width:1200px;margin:0 auto;padding:24px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:24px;margin-bottom:20px}
+.card h2{font-size:16px;font-weight:600;margin-bottom:16px}
+.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;transition:all .2s}
+.btn-primary{background:#FF6B00;color:#fff}.btn-primary:hover{background:#e55a00}
+.btn-outline{background:transparent;border:1px solid #ddd;color:#555}.btn-outline:hover{border-color:#FF6B00;color:#FF6B00}
+.btn-sm{padding:5px 10px;font-size:12px}
+textarea,input[type=text],input[type=password],select{font-family:'Inter',sans-serif;font-size:14px;padding:10px 12px;border:1px solid #ddd;border-radius:8px;width:100%;outline:none;transition:border .2s}
+textarea:focus,input:focus{border-color:#FF6B00}
+label{display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#555}
+.row{display:flex;gap:16px;flex-wrap:wrap}
+.row>*{flex:1;min-width:200px}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:768px){.compare-grid{grid-template-columns:1fr}}
+.model-panel{border:1px solid #eee;border-radius:12px;padding:20px;background:#fafafa}
+.model-panel h3{font-size:14px;font-weight:600;margin-bottom:12px;color:#FF6B00}
+.response-box{min-height:200px;max-height:400px;overflow-y:auto;padding:12px;background:#fff;border:1px solid #ddd;border-radius:8px;font-size:13px;white-space:pre-wrap;line-height:1.6}
+.stats{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap}
+.stat{background:#fff;border:1px solid #eee;border-radius:8px;padding:10px 14px;text-align:center;flex:1;min-width:80px}
+.stat .val{font-size:20px;font-weight:700;color:#FF6B00}
+.stat .lbl{font-size:11px;color:#888;margin-top:2px}
+.loading{color:#999;font-style:italic}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/">← Home</a>
+  <span class="icon">⚖️</span>
+  <h1>Model Compare</h1>
+</div>
+<div class="container">
+  <div class="card">
+    <h2>API Configuration</h2>
+    <div class="row">
+      <div><label>API Endpoint</label><input type="text" id="endpoint" value="https://api.openai.com/v1/chat/completions"></div>
+      <div><label>API Key</label><input type="password" id="apikey" placeholder="sk-..."></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Prompt</h2>
+    <textarea id="prompt" rows="3" placeholder="Enter a prompt to compare across models...">Explain quantum computing in simple terms.</textarea>
+    <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+      <button class="btn btn-primary" onclick="compare()">🔄 Compare Now</button>
+      <span style="font-size:12px;color:#888" id="status"></span>
+    </div>
+  </div>
+  <div class="compare-grid">
+    <div class="model-panel">
+      <h3>Model A</h3>
+      <div style="margin-bottom:12px"><label>Model Name</label><input type="text" id="modelA" value="gpt-4" placeholder="Model name"></div>
+      <div class="response-box" id="responseA"><span class="loading">Response will appear here...</span></div>
+      <div class="stats" id="statsA"></div>
+    </div>
+    <div class="model-panel">
+      <h3>Model B</h3>
+      <div style="margin-bottom:12px"><label>Model Name</label><input type="text" id="modelB" value="gpt-3.5-turbo" placeholder="Model name"></div>
+      <div class="response-box" id="responseB"><span class="loading">Response will appear here...</span></div>
+      <div class="stats" id="statsB"></div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+async function callModel(model,prompt){
+  const endpoint=document.getElementById('endpoint').value;
+  const apikey=document.getElementById('apikey').value;
+  const start=performance.now();
+  const resp=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apikey},body:JSON.stringify({model,messages:[{role:'user',content:prompt}],stream:true})});
+  if(!resp.ok)throw new Error(`HTTP ${resp.status}`);
+  const reader=resp.body.getReader();
+  const decoder=new TextDecoder();
+  let content='';let buffer='';
+  while(true){
+    const{done,value}=await reader.read();if(done)break;
+    buffer+=decoder.decode(value,{stream:true});
+    const lines=buffer.split('\n');buffer=lines.pop()||'';
+    for(const line of lines){
+      if(!line.startsWith('data: '))continue;
+      const data=line.slice(6).trim();if(data==='[DONE]')continue;
+      try{const j=JSON.parse(data);content+=j.choices?.[0]?.delta?.content||''}catch(e){}
+    }
+  }
+  const elapsed=((performance.now()-start)/1000).toFixed(2);
+  const tokens=content.split(/\s+/).length*1.3;
+  return{content,elapsed,tokens:Math.round(tokens)};
+}
+async function compare(){
+  const prompt=document.getElementById('prompt').value.trim();
+  if(!prompt){toast('Enter a prompt');return}
+  const modelA=document.getElementById('modelA').value;
+  const modelB=document.getElementById('modelB').value;
+  const rA=document.getElementById('responseA');
+  const rB=document.getElementById('responseB');
+  const sA=document.getElementById('statsA');
+  const sB=document.getElementById('statsB');
+  rA.innerHTML='<span class="loading">Generating...</span>';
+  rB.innerHTML='<span class="loading">Generating...</span>';
+  sA.innerHTML='';sB.innerHTML='';
+  document.getElementById('status').textContent='Running both models...';
+  const[ra,rb]=await Promise.allSettled([callModel(modelA,prompt),callModel(modelB,prompt)]);
+  if(ra.status==='fulfilled'){
+    rA.textContent=ra.value.content;
+    sA.innerHTML=`<div class="stat"><div class="val">${ra.value.elapsed}s</div><div class="lbl">Time</div></div><div class="stat"><div class="val">~${ra.value.tokens}</div><div class="lbl">Est. Tokens</div></div>`;
+  }else{rA.textContent='Error: '+ra.reason.message}
+  if(rb.status==='fulfilled'){
+    rB.textContent=rb.value.content;
+    sB.innerHTML=`<div class="stat"><div class="val">${rb.value.elapsed}s</div><div class="lbl">Time</div></div><div class="stat"><div class="val">~${rb.value.tokens}</div><div class="lbl">Est. Tokens</div></div>`;
+  }else{rB.textContent='Error: '+rb.reason.message}
+  document.getElementById('status').textContent='Comparison complete!';
+}
+</script>
+</body>
+</html>

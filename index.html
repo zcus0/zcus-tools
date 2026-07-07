@@ -1,11 +1,10 @@
 <!DOCTYPE html><html lang="id"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ZCUS Tools — Developer & Productivity Suite</title>
-<meta name="description" content="Free developer tools, productivity apps, and utilities. All browser-based, no signup required.">
+<title>ZCUS Tools — 100+ Developer & Productivity Suite</title>
+<meta name="description" content="100+ free developer tools, productivity apps, and utilities. Browser-based, no signup required.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--accent:#FF6B00;--accent2:#ff8c33;--bg:#f8f9fc;--card:#fff;--text:#1a1a2e;--text2:#6b7280;--border:#e5e7eb;--radius:16px}
+*{margin:0;padding:0;box-sizing:border-box}:root{--accent:#FF6B00;--bg:#f8f9fc;--card:#fff;--text:#1a1a2e;--text2:#6b7280;--border:#e5e7eb;--radius:16px}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 .hero{text-align:center;padding:60px 20px 40px;background:linear-gradient(135deg,#FF6B00 0%,#ff8c33 50%,#ffb366 100%);color:#fff}
 .hero h1{font-size:2.8rem;font-weight:800;margin-bottom:8px}
@@ -20,14 +19,18 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .categories{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:32px}
 .cat-btn{padding:8px 16px;border-radius:20px;border:1px solid var(--border);background:var(--card);font-size:0.85rem;font-weight:500;cursor:pointer;transition:all .2s;font-family:inherit;color:var(--text)}
 .cat-btn:hover,.cat-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
-.app-card{background:var(--card);border-radius:var(--radius);padding:20px;border:1px solid var(--border);text-decoration:none;color:var(--text);transition:all .2s;display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.app-card{background:var(--card);border-radius:var(--radius);padding:16px;border:1px solid var(--border);text-decoration:none;color:var(--text);transition:all .2s;display:block}
 .app-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.08);transform:translateY(-2px);border-color:var(--accent)}
-.app-icon{font-size:2rem;margin-bottom:8px}
-.app-name{font-weight:700;font-size:1rem;margin-bottom:4px}
-.app-desc{font-size:0.82rem;color:var(--text2);line-height:1.4}
-.app-tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.7rem;font-weight:600;margin-top:8px}
-.tag-dev{background:#dbeafe;color:#1d4ed8}.tag-util{background:#dcfce7;color:#166534}.tag-prod{background:#fef3c7;color:#92400e}.tag-data{background:#f3e8ff;color:#7c3aed}.tag-design{background:#fce7f3;color:#be185d}
+.app-icon{font-size:1.6rem;margin-bottom:6px}
+.app-name{font-weight:700;font-size:0.9rem;margin-bottom:3px}
+.app-desc{font-size:0.78rem;color:var(--text2);line-height:1.3}
+.app-tag{display:inline-block;padding:2px 7px;border-radius:12px;font-size:0.65rem;font-weight:600;margin-top:6px}
+.tag-dev{background:#dbeafe;color:#1d4ed8}.tag-util{background:#dcfce7;color:#166534}.tag-prod{background:#fef3c7;color:#92400e}
+.tag-data{background:#f3e8ff;color:#7c3aed}.tag-design{background:#fce7f3;color:#be185d}
+.tag-devops{background:#d1fae5;color:#065f46}.tag-security{background:#fee2e2;color:#991b1b}
+.tag-ai{background:#ede9fe;color:#5b21b6}.tag-network{background:#cffafe;color:#155e75}
+.tag-writing{background:#fff1f2;color:#9f1239}.tag-finance{background:#ecfdf5;color:#065f46}
 .empty{text-align:center;padding:60px 20px;color:var(--text2)}
 footer{text-align:center;padding:32px;color:var(--text2);font-size:0.8rem;border-top:1px solid var(--border);margin-top:40px}
 footer a{color:var(--accent);text-decoration:none}
@@ -35,93 +38,172 @@ footer a{color:var(--accent);text-decoration:none}
 </style></head><body>
 <div class="hero">
   <h1>⚡ ZCUS Tools</h1>
-  <p>30+ developer tools & productivity apps. Free, fast, browser-based. No signup needed.</p>
+  <p>100+ developer tools, productivity apps & utilities. Free, fast, browser-based. No signup.</p>
   <div class="stats">
-    <div><span id="tool-count">30</span><br>Tools</div>
+    <div><span id="count">103</span><br>Tools</div>
     <div><span>100%</span><br>Free</div>
     <div><span>0</span><br>Signups</div>
+    <div><span>0</span><br>Tracking</div>
   </div>
 </div>
 <div class="search-wrap">
   <span class="search-icon">🔍</span>
-  <input type="text" class="search" id="search" placeholder="Search tools... (e.g. JSON, password, QR)" oninput="filterApps()">
+  <input type="text" class="search" id="search" placeholder="Search 100+ tools... (e.g. JSON, password, calculator)" oninput="filter()">
 </div>
 <div class="container">
-  <div class="categories" id="categories"></div>
+  <div class="categories" id="cats"></div>
   <div class="grid" id="grid"></div>
-  <div class="empty" id="empty" style="display:none">
-    <div style="font-size:3rem;margin-bottom:8px">🔍</div>
-    <p>No tools found matching your search.</p>
-  </div>
+  <div class="empty" id="empty" style="display:none"><div style="font-size:3rem;margin-bottom:8px">🔍</div><p>No tools match your search.</p></div>
 </div>
-<footer>
-  <p>Built with ⚡ by <a href="https://github.com/zcus0">ZCUS</a> · All tools run in your browser · <a href="https://panel.zcus.dev">Panel</a></p>
-</footer>
+<footer>Built with ⚡ by <a href="https://github.com/zcus0">ZCUS</a> · All tools run in your browser · <a href="https://panel.zcus.dev">Panel</a> · <a href="https://github.com/zcus0/zcus-tools">Source</a></footer>
 <script>
-var apps=[
-  {name:'JSON Formatter',icon:'{ }',desc:'Format, validate, minify, convert JSON. Supports CSV & YAML export.',path:'/json-formatter/',tags:['dev']},
-  {name:'Regex Tester',icon:'.*',desc:'Test regular expressions with real-time highlighting, capture groups & flags.',path:'/regex-tester/',tags:['dev']},
-  {name:'Base64 Tool',icon:'B64',desc:'Encode/decode Base64, URL encode/decode, HTML entity encode.',path:'/base64-tool/',tags:['dev']},
-  {name:'Hash Generator',icon:'#',desc:'Generate MD5, SHA-1, SHA-256, SHA-384, SHA-512 hashes.',path:'/hash-generator/',tags:['dev']},
-  {name:'Password Generator',icon:'🔐',desc:'Secure password generator with strength meter & entropy calculation.',path:'/password-gen/',tags:['util']},
-  {name:'Text Transform',icon:'Aa',desc:'Transform text: camelCase, snake_case, kebab-case, title case & more.',path:'/text-transform/',tags:['dev']},
-  {name:'Markdown Editor',icon:'M↓',desc:'Live markdown editor with split-pane preview & export.',path:'/markdown-editor/',tags:['dev']},
-  {name:'Markdown → PDF',icon:'📄',desc:'Convert markdown to PDF or HTML with print-optimized styling.',path:'/markdown-pdf/',tags:['dev']},
-  {name:'Timestamp Converter',icon:'🕐',desc:'Unix timestamp ↔ human readable. Relative time & batch convert.',path:'/timestamp-converter/',tags:['dev']},
-  {name:'UUID Generator',icon:'🆔',desc:'Generate UUID v4 with batch mode & customizable format.',path:'/uuid-generator/',tags:['dev']},
-  {name:'JWT Decoder',icon:'🔑',desc:'Decode JWT tokens, view header/payload/signature & expiry status.',path:'/jwt-decoder/',tags:['dev']},
-  {name:'HTML Preview',icon:'🌐',desc:'Live HTML/CSS/JS editor with iframe preview & templates.',path:'/html-preview/',tags:['dev']},
-  {name:'CSS Playground',icon:'🎨',desc:'Interactive CSS property playground with live preview.',path:'/css-playground/',tags:['design']},
-  {name:'QR Generator',icon:'📱',desc:'Generate QR codes with custom colors & download as PNG.',path:'/qr-generator/',tags:['util']},
-  {name:'Color Palette',icon:'🎨',desc:'Generate random color palettes. Export as CSS vars or Tailwind.',path:'/color-palette/',tags:['design']},
-  {name:'Favicon Generator',icon:'⭐',desc:'Generate favicons from text/emoji. Export all required sizes.',path:'/favicon-gen/',tags:['design']},
-  {name:'CSV Viewer',icon:'📊',desc:'View, edit, sort & filter CSV data. Export as CSV or JSON.',path:'/csv-viewer/',tags:['data']},
-  {name:'JSON Diff',icon:'⚡',desc:'Compare two JSON objects. Visual diff with color coding.',path:'/json-diff/',tags:['dev']},
-  {name:'Text Diff',icon:'📝',desc:'Word-level and line-level text diff with split & unified views.',path:'/diff-viewer/',tags:['dev']},
-  {name:'Lorem Generator',icon:'📰',desc:'Generate placeholder text in English, Latin, or Indonesian.',path:'/lorem-generator/',tags:['util']},
-  {name:'HTML Entity',icon:'&#',desc:'Encode/decode HTML entities. Full entity reference table.',path:'/html-entity/',tags:['dev']},
-  {name:'SEO Meta Tags',icon:'🏷️',desc:'Generate OG tags, Twitter cards. Preview Google & social snippets.',path:'/meta-tags/',tags:['dev']},
-  {name:'Email Template',icon:'📧',desc:'Build email templates with sections. Export as HTML.',path:'/email-template/',tags:['design']},
-  {name:'DNS Lookup',icon:'🌍',desc:'DNS record lookup via Cloudflare DoH. A, AAAA, MX, NS, TXT records.',path:'/dns-lookup/',tags:['util']},
-  {name:'Expense Tracker',icon:'💰',desc:'Track income & expenses. Monthly charts & CSV export.',path:'/expense-tracker/',tags:['prod']},
-  {name:'Todo Kanban',icon:'📋',desc:'Kanban board with drag & drop. 3 columns: Todo, In Progress, Done.',path:'/todo-kanban/',tags:['prod']},
-  {name:'Notes App',icon:'📝',desc:'Rich text note-taking with search, pin, categories & auto-save.',path:'/notes-app/',tags:['prod']},
-  {name:'Bookmark Manager',icon:'🔖',desc:'Organize bookmarks with categories, search & favicon display.',path:'/bookmark-manager/',tags:['prod']},
-  {name:'API Health Check',icon:'🏥',desc:'Monitor API endpoints. Response time, status codes & auto-refresh.',path:'/api-health/',tags:['util']},
-  {name:'Image Compressor',icon:'🖼️',desc:'Compress images in-browser. Adjust quality & download.',path:'/image-compressor/',tags:['util']},
+var A=[
+// Developer Tools
+{n:"JSON Formatter",i:"{ }",d:"Format, validate, minify JSON. CSV & YAML export.",p:"/json-formatter/",t:["dev"]},
+{n:"Regex Tester",i:".*",d:"Real-time regex testing with capture groups & flags.",p:"/regex-tester/",t:["dev"]},
+{n:"Base64 Tool",i:"B64",d:"Base64/URL/HTML entity encode & decode.",p:"/base64-tool/",t:["dev"]},
+{n:"Hash Generator",i:"#",d:"MD5, SHA-1/256/384/512 hash generation.",p:"/hash-generator/",t:["dev"]},
+{n:"Text Transform",i:"Aa",d:"camelCase, snake_case, kebab-case & more.",p:"/text-transform/",t:["dev"]},
+{n:"Markdown Editor",i:"M↓",d:"Live split-pane markdown editor & preview.",p:"/markdown-editor/",t:["dev"]},
+{n:"Markdown → PDF",i:"📄",d:"Convert markdown to PDF/HTML.",p:"/markdown-pdf/",t:["dev"]},
+{n:"Timestamp Converter",i:"🕐",d:"Unix ↔ human readable, relative time.",p:"/timestamp-converter/",t:["dev"]},
+{n:"UUID Generator",i:"🆔",d:"UUID v4 batch generation.",p:"/uuid-generator/",t:["dev"]},
+{n:"JWT Decoder",i:"🔑",d:"Decode JWT tokens with expiry check.",p:"/jwt-decoder/",t:["dev"]},
+{n:"JWT Builder",i:"🔨",d:"Build JWT tokens with custom claims.",p:"/jwt-builder/",t:["dev","security"]},
+{n:"HTML Preview",i:"🌐",d:"Live HTML/CSS/JS editor with preview.",p:"/html-preview/",t:["dev"]},
+{n:"CSS Playground",i:"🎨",d:"Interactive CSS property playground.",p:"/css-playground/",t:["dev","design"]},
+{n:"Text Diff",i:"📝",d:"Line-level text comparison.",p:"/diff-viewer/",t:["dev"]},
+{n:"HTML Entity",i:"&",d:"HTML entity encode/decode & reference.",p:"/html-entity/",t:["dev"]},
+{n:"Lorem Generator",i:"📰",d:"Placeholder text in EN/LN/ID.",p:"/lorem-generator/",t:["dev"]},
+{n:"HTML Minifier",i:"🗜️",d:"Minify HTML, remove whitespace.",p:"/html-minifier/",t:["dev"]},
+{n:"CSS Minifier",i:"🗜️",d:"Minify CSS, shorten properties.",p:"/css-minifier/",t:["dev"]},
+{n:"JS Minifier",i:"🗜️",d:"Minify JavaScript code.",p:"/js-minifier/",t:["dev"]},
+{n:"Code Beautifier",i:"✨",d:"Beautify HTML/CSS/JS code.",p:"/code-beautifier/",t:["dev"]},
+{n:"JS Console",i:"▶️",d:"JavaScript REPL / console.",p:"/js-console/",t:["dev"]},
+// Design & SEO
+{n:"SEO Meta Tags",i:"🏷️",d:"OG tags, Twitter cards generator.",p:"/meta-tags/",t:["dev","design"]},
+{n:"Email Template",i:"📧",d:"Email template builder with preview.",p:"/email-template/",t:["design"]},
+{n:"QR Generator",i:"📱",d:"QR codes with custom colors.",p:"/qr-generator/",t:["util"]},
+{n:"Color Palette",i:"🎨",d:"Random color palette generator.",p:"/color-palette/",t:["design"]},
+{n:"Favicon Generator",i:"⭐",d:"Generate favicons from text/emoji.",p:"/favicon-gen/",t:["design"]},
+{n:"Gradient Generator",i:"🌈",d:"CSS gradient builder.",p:"/gradient-gen/",t:["design"]},
+{n:"Box Shadow",i:"🔲",d:"CSS box-shadow generator.",p:"/box-shadow-gen/",t:["design"]},
+{n:"Text Shadow",i:"🔤",d:"CSS text-shadow generator.",p:"/text-shadow-gen/",t:["design"]},
+{n:"Pattern Generator",i:"🔳",d:"CSS/SVG pattern generator.",p:"/pattern-gen/",t:["design"]},
+{n:"SVG Editor",i:"✏️",d:"Simple SVG shape editor.",p:"/svg-editor/",t:["design"]},
+{n:"Icon Search",i:"🔍",d:"Icon library with SVG copy.",p:"/icon-search/",t:["design"]},
+{n:"Contrast Checker",i:"👁️",d:"WCAG color contrast checker.",p:"/contrast-checker/",t:["design"]},
+{n:"Font Pair",i:"🔤",d:"Google Fonts pairing generator.",p:"/font-pair/",t:["design"]},
+{n:"Avatar Generator",i:"👤",d:"Profile picture generator.",p:"/avatar-gen/",t:["design"]},
+{n:"Image Placeholder",i:"🖼️",d:"Placeholder image generator.",p:"/image-placeholder/",t:["design"]},
+// Data & Analysis
+{n:"CSV Viewer",i:"📊",d:"View, sort, filter CSV data.",p:"/csv-viewer/",t:["data"]},
+{n:"JSON Diff",i:"⚡",d:"Compare JSON objects visually.",p:"/json-diff/",t:["data"]},
+{n:"Chart Generator",i:"📈",d:"Bar/line/pie charts from data.",p:"/chart-gen/",t:["data"]},
+{n:"Data Cleaner",i:"🧹",d:"Clean messy CSV/JSON data.",p:"/data-cleaner/",t:["data"]},
+{n:"Table Editor",i:"📋",d:"Interactive spreadsheet editor.",p:"/table-editor/",t:["data"]},
+{n:"Mock Data Gen",i:"🎲",d:"Generate fake data for testing.",p:"/mock-data-gen/",t:["data"]},
+{n:"SQL Formatter",i:"💾",d:"Format & beautify SQL queries.",p:"/sql-formatter/",t:["data"]},
+{n:"SQL Editor",i:"💻",d:"SQL editor with syntax highlighting.",p:"/sql-editor/",t:["data"]},
+{n:"Schema Visualizer",i:"📐",d:"Database ER diagram generator.",p:"/schema-visualizer/",t:["data"]},
+{n:"Query Builder",i:"🔧",d:"Visual SQL query builder.",p:"/query-builder/",t:["data"]},
+// Network & DevOps
+{n:"DNS Lookup",i:"🌍",d:"DNS record lookup via DoH.",p:"/dns-lookup/",t:["network"]},
+{n:"DNS Propagation",i:"📡",d:"Check DNS across servers.",p:"/dns-propagation/",t:["network"]},
+{n:"API Health",i:"🏥",d:"Monitor API endpoints.",p:"/api-health/",t:["network","util"]},
+{n:"API Playground",i:"🧪",d:"Test APIs with custom requests.",p:"/api-playground/",t:["network"]},
+{n:"WebSocket Tester",i:"🔌",d:"Test WebSocket connections.",p:"/ws-tester/",t:["network"]},
+{n:"SSL Checker",i:"🔒",d:"SSL certificate information.",p:"/ssl-checker/",t:["network"]},
+{n:"HTTP Headers",i:"📋",d:"HTTP headers analyzer & reference.",p:"/http-headers/",t:["network"]},
+{n:"User Agent Parse",i:"🔎",d:"Parse user agent strings.",p:"/user-agent-parse/",t:["network"]},
+{n:"IP Calculator",i:"🖧",d:"IP/subnet calculator.",p:"/ip-calc/",t:["network"]},
+{n:"CIDR Calculator",i:"🖧",d:"CIDR/subnet calculator.",p:"/cidr-calc/",t:["network"]},
+{n:"MAC Lookup",i:"🖧",d:"MAC address vendor lookup.",p:"/mac-lookup/",t:["network"]},
+{n:"Port Reference",i:"🚪",d:"Well-known ports reference.",p:"/port-reference/",t:["network"]},
+{n:"Bandwidth Calc",i:"📶",d:"Download time & speed calculator.",p:"/bandwidth-calc/",t:["network"]},
+{n:"Log Parser",i:"📜",d:"Apache/Nginx log analyzer.",p:"/log-parser/",t:["network"]},
+{n:"Curl Builder",i:"🔧",d:"Build cURL commands visually.",p:"/curl-builder/",t:["devops"]},
+{n:"SSH Config Gen",i:"🔑",d:"SSH config file generator.",p:"/ssh-gen/",t:["devops"]},
+{n:"Cron Builder",i:"⏰",d:"Visual cron expression builder.",p:"/cron-builder/",t:["devops"]},
+{n:"Systemd Gen",i:"⚙️",d:"Systemd unit file generator.",p:"/systemd-gen/",t:["devops"]},
+{n:"Nginx Gen",i:"🌐",d:"Nginx config generator.",p:"/nginx-gen/",t:["devops"]},
+{n:"Docker Compose",i:"🐳",d:"Docker Compose YAML generator.",p:"/docker-compose-gen/",t:["devops"]},
+{n:"K8s Generator",i:"☸️",d:"Kubernetes YAML generator.",p:"/k8s-gen/",t:["devops"]},
+{n:"iptables Builder",i:"🔥",d:"iptables rule builder.",p:"/iptables-gen/",t:["devops"]},
+{n:"UFW Builder",i:"🛡️",d:"UFW firewall rule builder.",p:"/ufw-gen/",t:["devops"]},
+// Security
+{n:"Password Generator",i:"🔐",d:"Secure passwords with strength meter.",p:"/password-gen/",t:["util","security"]},
+{n:"Password Strength",i:"💪",d:"Password strength analyzer.",p:"/password-strength/",t:["security"]},
+{n:"Encryption Tool",i:"🔒",d:"AES encrypt/decrypt text.",p:"/encryption-tool/",t:["security"]},
+{n:"XSS Tester",i:"⚠️",d:"XSS payload reference & tester.",p:"/xss-tester/",t:["security"]},
+{n:"ROT13",i:"🔄",d:"ROT13/ROT47 encoder/decoder.",p:"/rot13/",t:["security","dev"]},
+{n:"Caesar Cipher",i:"🏛️",d:"Caesar cipher with brute force.",p:"/caesar-cipher/",t:["security","dev"]},
+{n:"Binary Converter",i:"💻",d:"Binary/text converter.",p:"/binary-converter/",t:["dev"]},
+{n:"Number Base",i:"🔢",d:"Number base converter.",p:"/number-base/",t:["dev"]},
+{n:"ASCII Table",i:"📜",d:"ASCII character reference.",p:"/ascii-table/",t:["dev"]},
+{n:"Unicode Table",i:"📜",d:"Unicode character reference.",p:"/unicode-table/",t:["dev"]},
+{n:"URL Encode",i:"🔗",d:"URL encoder/decoder.",p:"/url-encode/",t:["dev"]},
+{n:"HTML Escape",i:"&",d:"HTML escape/unescape.",p:"/html-escape/",t:["dev"]},
+// AI & LLM
+{n:"Prompt Builder",i:"🤖",d:"LLM prompt templates & builder.",p:"/prompt-builder/",t:["ai"]},
+{n:"Chat Playground",i:"💬",d:"LLM chat playground.",p:"/chat-playground/",t:["ai"]},
+{n:"Model Compare",i:"⚖️",d:"Compare LLM models side-by-side.",p:"/model-compare/",t:["ai"]},
+{n:"AI Cost Calculator",i:"💰",d:"AI API cost calculator.",p:"/ai-cost-calc/",t:["ai"]},
+// Writing & Social
+{n:"Word Counter",i:"📝",d:"Advanced word/character counter.",p:"/word-counter/",t:["writing"]},
+{n:"Sentence Case",i:"Aa",d:"Text case converter.",p:"/sentence-case/",t:["writing"]},
+{n:"Text Statistics",i:"📊",d:"Text analysis & readability.",p:"/text-stats/",t:["writing"]},
+{n:"Social Counter",i:"📱",d:"Character counter per platform.",p:"/social-counter/",t:["writing"]},
+{n:"Hashtag Generator",i:"#️⃣",d:"Social media hashtag generator.",p:"/hashtag-gen/",t:["writing"]},
+{n:"Morse Code",i:"📡",d:"Morse code translator with audio.",p:"/morse-code/",t:["writing"]},
+{n:"Pig Latin",i:"🐷",d:"Pig Latin translator.",p:"/pig-latin/",t:["writing"]},
+{n:"Emoji Translate",i:"😀",d:"Text to emoji translator.",p:"/emoji-translate/",t:["writing"]},
+{n:"Binary Text",i:"💾",d:"Binary ↔ text converter.",p:"/binary-text/",t:["writing","dev"]},
+// Productivity
+{n:"Expense Tracker",i:"💰",d:"Income/expense tracking & charts.",p:"/expense-tracker/",t:["prod"]},
+{n:"Todo Kanban",i:"📋",d:"Kanban board with drag & drop.",p:"/todo-kanban/",t:["prod"]},
+{n:"Notes App",i:"📝",d:"Rich text notes with search.",p:"/notes-app/",t:["prod"]},
+{n:"Bookmark Manager",i:"🔖",d:"Organize bookmarks with categories.",p:"/bookmark-manager/",t:["prod"]},
+{n:"Calculator",i:"🔢",d:"Scientific calculator.",p:"/calculator/",t:["prod","util"]},
+{n:"Pomodoro",i:"🍅",d:"Pomodoro focus timer.",p:"/pomodoro/",t:["prod"]},
+{n:"Countdown Timer",i:"⏳",d:"Visual countdown timer.",p:"/countdown-timer/",t:["prod"]},
+{n:"Stopwatch",i:"⏱️",d:"Stopwatch with lap times.",p:"/stopwatch/",t:["prod"]},
+{n:"World Clock",i:"🌍",d:"Multi-timezone clock dashboard.",p:"/world-clock/",t:["prod"]},
+{n:"Timezone Converter",i:"🕐",d:"Timezone converter tool.",p:"/timezone-converter/",t:["prod"]},
+{n:"Calendar Gen",i:"📅",d:"Printable calendar generator.",p:"/calendar-gen/",t:["prod"]},
+{n:"Gantt Chart",i:"📊",d:"Simple Gantt chart builder.",p:"/gantt-chart/",t:["prod"]},
+{n:"Habit Tracker",i:"✅",d:"Daily habit tracker with heatmap.",p:"/habit-tracker/",t:["prod"]},
+{n:"Habit Calendar",i:"🟩",d:"GitHub-style contribution heatmap.",p:"/habit-calendar/",t:["prod"]},
+{n:"Goal Tracker",i:"🎯",d:"Goal & milestone tracker.",p:"/goal-tracker/",t:["prod"]},
+{n:"Reading List",i:"📚",d:"Book/article reading list.",p:"/reading-list/",t:["prod"]},
+{n:"Invoice Generator",i:"🧾",d:"Professional invoice builder.",p:"/invoice-gen/",t:["prod","finance"]},
+{n:"Receipt Generator",i:"🧾",d:"Receipt builder & printer.",p:"/receipt-gen/",t:["prod","finance"]},
+{n:"Tip Calculator",i:"💸",d:"Tip & bill splitter.",p:"/tip-calc/",t:["util","finance"]},
+{n:"BMI Calculator",i:"⚖️",d:"Body mass index calculator.",p:"/bmi-calc/",t:["util"]},
+{n:"Age Calculator",i:"🎂",d:"Exact age calculator.",p:"/age-calc/",t:["util"]},
+{n:"Date Difference",i:"📆",d:"Date difference calculator.",p:"/date-diff/",t:["util"]},
+{n:"Image Compressor",i:"🖼️",d:"Compress images in-browser.",p:"/image-compressor/",t:["util"]},
+{n:"Color Converter",i:"🎨",d:"HEX/RGB/HSL/CMYK converter.",p:"/color-convert/",t:["util","design"]},
 ];
-var activeFilter='all';
-function render(){
+var activeCat='all';
+function filter(){
   var q=document.getElementById('search').value.toLowerCase();
-  var filtered=apps.filter(function(a){
-    var matchSearch=!q||a.name.toLowerCase().includes(q)||a.desc.toLowerCase().includes(q)||a.tags.some(function(t){return t.includes(q)});
-    var matchCat=activeFilter==='all'||a.tags.includes(activeFilter);
-    return matchSearch&&matchCat;
+  var f=A.filter(function(a){
+    var ms=!q||a.n.toLowerCase().indexOf(q)>=0||a.d.toLowerCase().indexOf(q)>=0||a.t.some(function(t){return t.indexOf(q)>=0});
+    var mc=activeCat==='all'||a.t.indexOf(activeCat)>=0;
+    return ms&&mc;
   });
-  var grid=document.getElementById('grid');
-  document.getElementById('empty').style.display=filtered.length?'none':'block';
-  grid.innerHTML=filtered.map(function(a){
-    var tagHTML=a.tags.map(function(t){return '<span class="app-tag tag-'+t+'">'+t.toUpperCase()+'</span>'}).join(' ');
-    return '<a class="app-card" href="'+a.path+'">'+
-      '<div class="app-icon">'+a.icon+'</div>'+
-      '<div class="app-name">'+a.name+'</div>'+
-      '<div class="app-desc">'+a.desc+'</div>'+
-      tagHTML+'</a>';
+  document.getElementById('grid').innerHTML=f.map(function(a){
+    return '<a class="app-card" href="'+a.p+'"><div class="app-icon">'+a.i+'</div><div class="app-name">'+a.n+'</div><div class="app-desc">'+a.d+'</div>'+a.t.map(function(t){return '<span class="app-tag tag-'+t+'">'+t.toUpperCase()+'</span>'}).join(' ')+'</a>';
   }).join('');
+  document.getElementById('empty').style.display=f.length?'none':'block';
 }
-function filterApps(){render()}
-var catNames={all:'All',dev:'Developer',util:'Utility',prod:'Productivity',data:'Data',design:'Design'};
-Object.keys(catNames).forEach(function(c){
-  var btn=document.createElement('button');
-  btn.className='cat-btn'+(c==='all'?' active':'');
-  btn.textContent=catNames[c];
-  btn.onclick=function(){
-    activeFilter=c;
-    document.querySelectorAll('.cat-btn').forEach(function(b){b.classList.remove('active')});
-    btn.classList.add('active');render();
-  };
-  document.getElementById('categories').appendChild(btn);
+var cats={all:'All',dev:'Developer',design:'Design',data:'Data',network:'Network',devops:'DevOps',security:'Security',ai:'AI/LLM',writing:'Writing',prod:'Productivity',util:'Utility',finance:'Finance'};
+Object.keys(cats).forEach(function(c){
+  var b=document.createElement('button');b.className='cat-btn'+(c==='all'?' active':'');b.textContent=cats[c];
+  b.onclick=function(){activeCat=c;document.querySelectorAll('.cat-btn').forEach(function(x){x.classList.remove('active')});b.classList.add('active');filter()};
+  document.getElementById('cats').appendChild(b);
 });
-document.getElementById('tool-count').textContent=apps.length;
-render();
+document.getElementById('count').textContent=A.length;
+filter();
 </script></body></html>

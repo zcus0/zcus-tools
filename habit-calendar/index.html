@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Habit Calendar</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#fff;min-height:100vh;padding:16px}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.header a{color:#FF6B00;text-decoration:none;font-size:14px}
+.header h1{font-size:20px;font-weight:700}
+.header span{font-size:24px}
+.container{max-width:800px;margin:0 auto}
+.card{background:#16213e;border-radius:12px;padding:24px;border:1px solid #233554;margin-bottom:16px}
+label{display:block;color:#888;font-size:12px;margin-bottom:4px}
+input{padding:10px;background:#0f0f23;border:1px solid #233554;border-radius:8px;color:#fff;font-family:'Inter',sans-serif;font-size:14px}
+input:focus{outline:none;border-color:#FF6B00}
+.btn{padding:10px 20px;background:#FF6B00;border:none;color:#fff;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.btn:hover{background:#e65c00}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-secondary{background:#233554}
+.btn-success{background:#00b894}
+.add-row{display:flex;gap:8px;align-items:end;margin-bottom:12px}
+.add-row div{flex:1}
+.heatmap-container{overflow-x:auto;padding:8px 0}
+.month-labels{display:flex;padding-left:32px;margin-bottom:4px}
+.month-label{font-size:10px;color:#555}
+.week-labels{display:inline-flex;flex-direction:column;gap:3px;margin-right:4px}
+.week-label{height:14px;font-size:10px;color:#555;text-align:right;line-height:14px;padding-right:4px}
+.heatmap{display:inline-flex;gap:3px}
+.week-col{display:flex;flex-direction:column;gap:3px}
+.day-cell{width:14px;height:14px;border-radius:2px;cursor:pointer;transition:transform .1s}
+.day-cell:hover{transform:scale(1.3);outline:2px solid rgba(255,255,255,0.3)}
+.day-cell[data-level="0"]{background:#161b22}
+.day-cell[data-level="1"]{background:#0e4429}
+.day-cell[data-level="2"]{background:#006d32}
+.day-cell[data-level="3"]{background:#26a641}
+.day-cell[data-level="4"]{background:#39d353}
+.legend{display:flex;gap:4px;align-items:center;margin-top:16px;font-size:11px;color:#555}
+.legend .box{width:12px;height:12px;border-radius:2px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+.stat-box{background:#0f0f23;padding:12px;border-radius:8px;text-align:center}
+.stat-box .val{font-size:24px;font-weight:700;color:#FF6B00}
+.stat-box .lbl{font-size:11px;color:#888;margin-top:4px}
+.tooltip{position:fixed;background:#333;color:#fff;padding:6px 10px;border-radius:4px;font-size:11px;pointer-events:none;z-index:9999;display:none}
+.toast{position:fixed;bottom:20px;right:20px;background:#FF6B00;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span>📅</span><h1>Habit Calendar</h1></div>
+<div class="container">
+<div class="card">
+<div class="add-row">
+<div><label>Date</label><input type="date" id="dataDate"></div>
+<div><label>Value (0-4)</label><input type="number" id="dataValue" value="1" min="0" max="4"></div>
+<div><button class="btn" onclick="addData()">Add Data</button></div>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn btn-sm btn-secondary" onclick="clearAllData()">Clear All</button>
+<button class="btn btn-sm btn-success" onclick="exportData()">Export CSV</button>
+<button class="btn btn-sm btn-secondary" onclick="importSample()">Import Sample</button>
+</div>
+</div>
+<div class="card">
+<div class="heatmap-container" id="heatmapWrap"></div>
+<div class="legend">
+<span>Less</span>
+<div class="box" style="background:#161b22"></div>
+<div class="box" style="background:#0e4429"></div>
+<div class="box" style="background:#006d32"></div>
+<div class="box" style="background:#26a641"></div>
+<div class="box" style="background:#39d353"></div>
+<span>More</span>
+</div>
+</div>
+<div class="card">
+<div class="stats-grid">
+<div class="stat-box"><div class="val" id="statTotal">0</div><div class="lbl">Total Entries</div></div>
+<div class="stat-box"><div class="val" id="statStreak">0</div><div class="lbl">Current Streak</div></div>
+<div class="stat-box"><div class="val" id="statMaxStreak">0</div><div class="lbl">Max Streak</div></div>
+<div class="stat-box"><div class="val" id="statActive">0</div><div class="lbl">Active Days</div></div>
+</div>
+</div>
+</div>
+<div class="tooltip" id="tooltip"></div>
+<div class="toast" id="toast"></div>
+<script>
+let data=JSON.parse(localStorage.getItem('habit_cal_data')||'{}');
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function save(){localStorage.setItem('habit_cal_data',JSON.stringify(data))}
+function addData(){
+const date=document.getElementById('dataDate').value;const val=parseInt(document.getElementById('dataValue').value)||0;
+if(!date){toast('Select a date');return}
+data[date]=Math.max(0,Math.min(4,val));save();render();toast(`Set ${date} = ${val}`)}
+function toggleDay(date){const cur=data[date]||0;data[date]=(cur+1)%5;if(!data[date])delete data[date];save();render()}
+function clearAllData(){if(!confirm('Clear all data?'))return;data={};save();render();toast('Cleared')}
+function exportData(){
+let csv='date,value\n'+Object.entries(data).sort().map(([d,v])=>`${d},${v}`).join('\n');
+const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='habit-calendar.csv';a.click();toast('Exported')}
+function importSample(){
+const today=new Date();
+for(let i=0;i<365;i++){const d=new Date(today);d.setDate(d.getDate()-i);data[d.toISOString().split('T')[0]]=Math.floor(Math.random()*5)}
+save();render();toast('Sample data loaded')}
+function getLevel(date){return data[date]||0}
+function render(){
+const today=new Date();const weeks=[];const d=new Date(today);d.setDate(d.getDate()-364);const startDate=new Date(d);
+// Adjust to Sunday
+while(d.getDay()!==0){d.setDate(d.getDate()-1)}
+let currentWeek=[];
+while(d<=today){
+currentWeek.push(new Date(d));
+if(d.getDay()===6){weeks.push(currentWeek);currentWeek=[]}
+d.setDate(d.getDate()+1)}
+if(currentWeek.length)weeks.push(currentWeek);
+const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+let html='<div style="display:flex;gap:4px"><div class="week-labels">';
+['','Mon','','Wed','','Fri',''].forEach(l=>html+=`<div class="week-label">${l}</div>`);
+html+='</div><div class="heatmap">';
+weeks.forEach(week=>{
+html+='<div class="week-col">';
+for(let dayOfWeek=0;dayOfWeek<7;dayOfWeek++){
+const day=week.find(d=>d.getDay()===dayOfWeek);
+if(day){
+const key=day.toISOString().split('T')[0];const level=getLevel(key);
+const future=day>today?'style="opacity:0.2"':'';
+html+=`<div class="day-cell" data-level="${level}" data-date="${key}" data-value="${level}" ${future} onclick="toggleDay('${key}')" onmouseenter="showTip(event,'${key}: ${level}/4')" onmouseleave="hideTip()"></div>`}
+else html+='<div class="day-cell" data-level="0" style="visibility:hidden"></div>'}
+html+='</div>'});
+html+='</div></div>';
+document.getElementById('heatmapWrap').innerHTML=html;
+// stats
+const total=Object.values(data).length;const activeDays=Object.keys(data).filter(k=>data[k]>0).length;
+let streak=0,maxStreak=0;const d2=new Date(today);
+while(true){const key=d2.toISOString().split('T')[0];if(data[key]&&data[key]>0){streak++;maxStreak=Math.max(maxStreak,streak);d2.setDate(d2.getDate()-1)}else break}
+document.getElementById('statTotal').textContent=Object.values(data).reduce((a,b)=>a+b,0);
+document.getElementById('statStreak').textContent=streak;
+document.getElementById('statMaxStreak').textContent=maxStreak;
+document.getElementById('statActive').textContent=activeDays}
+function showTip(e,text){const tip=document.getElementById('tooltip');tip.textContent=text;tip.style.display='block';tip.style.left=e.clientX+10+'px';tip.style.top=e.clientY-30+'px'}
+function hideTip(){document.getElementById('tooltip').style.display='none'}
+document.getElementById('dataDate').value=new Date().toISOString().split('T')[0];
+render();
+</script>
+</body>
+</html>

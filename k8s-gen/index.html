@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kubernetes YAML Generator - ZCUs Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
+.header{background:#1a1d27;border-bottom:1px solid #2a2d3a;padding:16px 24px;display:flex;align-items:center;gap:16px}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header h1{font-size:20px;font-weight:700;color:#fff}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#1a1d27;border:1px solid #2a2d3a;border-radius:12px;padding:24px;margin-bottom:20px}
+.card h2{font-size:18px;font-weight:600;color:#fff;margin-bottom:16px}
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:14px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:12px;font-weight:500;color:#aaa;text-transform:uppercase;letter-spacing:.5px}
+select,input,textarea{background:#0f1117;border:1px solid #3a3d4a;border-radius:8px;padding:10px 12px;color:#e0e0e0;font-family:'Inter',sans-serif;font-size:14px;width:100%}
+select:focus,input:focus,textarea:focus{outline:none;border-color:#FF6B00}
+textarea{min-height:80px;resize:vertical;font-family:monospace;font-size:13px}
+.output-box{background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;padding:16px;font-family:monospace;font-size:13px;color:#8ae6a0;white-space:pre-wrap;max-height:600px;overflow-y:auto}
+button{background:#FF6B00;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+button:hover{opacity:.85}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.type-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.type-tab{background:#2a2d3a;color:#e0e0e0;border:1px solid #3a3d4a;border-radius:6px;padding:8px 16px;cursor:pointer;font-size:13px}
+.type-tab.active{background:#FF6B00;color:#fff;border-color:#FF6B00}
+.checkbox-row{display:flex;align-items:center;gap:8px;margin:8px 0}
+.checkbox-row input[type=checkbox]{width:auto;accent-color:#FF6B00}
+.checkbox-row label{font-size:14px;color:#ccc;text-transform:none;letter-spacing:0}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">☸️</span><h1>Kubernetes YAML Generator</h1></div>
+<div class="container">
+<div class="card">
+<h2>Resource Type</h2>
+<div class="type-tabs">
+<button class="type-tab active" onclick="setType('deployment')">Deployment</button>
+<button class="type-tab" onclick="setType('service')">Service</button>
+<button class="type-tab" onclick="setType('configmap')">ConfigMap</button>
+<button class="type-tab" onclick="setType('ingress')">Ingress</button>
+</div>
+</div>
+<div class="card">
+<h2>Configuration</h2>
+<div class="form-row">
+<div class="form-group"><label>Name</label><input id="name" value="my-app" oninput="update()"></div>
+<div class="form-group"><label>Namespace</label><input id="namespace" value="default" oninput="update()"></div>
+</div>
+<div id="deployFields">
+<div class="form-row">
+<div class="form-group"><label>Replicas</label><input id="replicas" type="number" value="3" oninput="update()"></div>
+<div class="form-group"><label>Image</label><input id="image" value="nginx:latest" oninput="update()"></div>
+<div class="form-group"><label>Container Port</label><input id="containerPort" type="number" value="80" oninput="update()"></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Environment Variables (KEY=VAL, one per line)</label><textarea id="envVars" oninput="update()">NODE_ENV=production
+PORT=8080</textarea></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>CPU Request</label><input id="cpuReq" value="100m" oninput="update()"></div>
+<div class="form-group"><label>CPU Limit</label><input id="cpuLimit" value="500m" oninput="update()"></div>
+<div class="form-group"><label>Memory Request</label><input id="memReq" value="128Mi" oninput="update()"></div>
+<div class="form-group"><label>Memory Limit</label><input id="memLimit" value="512Mi" oninput="update()"></div>
+</div>
+<div class="checkbox-row"><input type="checkbox" id="createService" checked onchange="update()"><label>Also create Service</label></div>
+</div>
+<div id="svcFields" style="display:none">
+<div class="form-row">
+<div class="form-group"><label>Service Type</label>
+<select id="svcType" onchange="update()">
+<option value="ClusterIP">ClusterIP</option>
+<option value="NodePort">NodePort</option>
+<option value="LoadBalancer">LoadBalancer</option>
+</select>
+</div>
+<div class="form-group"><label>Service Port</label><input id="svcPort" type="number" value="80" oninput="update()"></div>
+<div class="form-group"><label>Target Port</label><input id="targetPort" type="number" value="80" oninput="update()"></div>
+<div class="form-group"><label>Node Port</label><input id="nodePort" type="number" value="30080" oninput="update()"></div>
+</div>
+</div>
+<div id="cmFields" style="display:none">
+<div class="form-group"><label>Data (KEY=VALUE, one per line)</label><textarea id="cmData" oninput="update()">config.yaml=|
+  key: value
+.env=VAR1=foo
+VAR2=bar</textarea></div>
+</div>
+<div id="ingFields" style="display:none">
+<div class="form-row">
+<div class="form-group"><label>Ingress Class</label><input id="ingClass" value="nginx" oninput="update()"></div>
+<div class="form-group"><label>Host</label><input id="ingHost" value="example.com" oninput="update()"></div>
+<div class="form-group"><label>Path</label><input id="ingPath" value="/" oninput="update()"></div>
+<div class="form-group"><label>Backend Service</label><input id="ingBackend" value="my-app" oninput="update()"></div>
+<div class="form-group"><label>Backend Port</label><input id="ingBackendPort" type="number" value="80" oninput="update()"></div>
+</div>
+<div class="checkbox-row"><input type="checkbox" id="ingTLS" onchange="update()"><label>Enable TLS</label></div>
+<div class="form-group"><label>TLS Secret</label><input id="ingTLSSecret" value="my-tls-secret" oninput="update()"></div>
+</div>
+</div>
+<div class="card">
+<h2>Generated YAML</h2>
+<div class="output-box" id="output"></div>
+<div class="btn-row">
+<button onclick="copyOutput()">📋 Copy</button>
+<button onclick="downloadOutput()">⬇️ Download</button>
+</div>
+</div>
+</div>
+<script>
+function toast(msg){const t=document.createElement('div');t.textContent=msg;Object.assign(t.style,{position:'fixed',bottom:'20px',right:'20px',background:'#FF6B00',color:'#fff',padding:'12px 20px',borderRadius:'8px',fontFamily:'Inter',sans-serif',fontSize:'14px',zIndex:'9999',transition:'opacity .3s'});document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},2500)}
+
+let currentType='deployment';
+function setType(t){
+currentType=t;
+document.querySelectorAll('.type-tab').forEach(b=>b.classList.remove('active'));
+event.target.classList.add('active');
+document.getElementById('deployFields').style.display=t==='deployment'?'':'none';
+document.getElementById('svcFields').style.display=t==='service'?'':'none';
+document.getElementById('cmFields').style.display=t==='configmap'?'':'none';
+document.getElementById('ingFields').style.display=t==='ingress'?'':'none';
+update();
+}
+
+function yamlEscape(s){return s.includes(':')||s.includes('#')||s.includes('"')?`"${s.replace(/"/g,'\\"')}"`:s}
+
+function update(){
+const name=document.getElementById('name').value||'my-app';
+const ns=document.getElementById('namespace').value||'default';
+let yml=`apiVersion: `;
+let parts=[];
+if(currentType==='deployment'){
+const replicas=document.getElementById('replicas').value||3;
+const image=document.getElementById('image').value||'nginx:latest';
+const cport=document.getElementById('containerPort').value||80;
+const envs=(document.getElementById('envVars').value||'').split('\n').filter(l=>l.trim());
+const cpuR=document.getElementById('cpuReq').value;
+const cpuL=document.getElementById('cpuLimit').value;
+const memR=document.getElementById('memReq').value;
+const memL=document.getElementById('memLimit').value;
+let d=`apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: ${name}\n  namespace: ${ns}\nspec:\n  replicas: ${replicas}\n  selector:\n    matchLabels:\n      app: ${name}\n  template:\n    metadata:\n      labels:\n        app: ${name}\n    spec:\n      containers:\n      - name: ${name}\n        image: ${image}\n        ports:\n        - containerPort: ${cport}`;
+if(envs.length){d+=`\n        env:\n`;envs.forEach(e=>{const[k,...v]=e.split('=');d+=`        - name: ${k.trim()}\n          value: ${v.join('=').trim()}\n`})}
+if(cpuR||cpuL||memR||memL){d+=`\n        resources:\n          requests:\n            cpu: ${cpuR}\n            memory: ${memR}\n          limits:\n            cpu: ${cpuL}\n            memory: ${memL}`}
+yml=d;
+if(document.getElementById('createService').checked){
+yml+=`\n---\napiVersion: v1\nkind: Service\nmetadata:\n  name: ${name}\n  namespace: ${ns}\nspec:\n  selector:\n    app: ${name}\n  ports:\n  - port: ${document.getElementById('svcPort').value||80}\n    targetPort: ${document.getElementById('targetPort').value||80}\n  type: ClusterIP`;
+}
+}else if(currentType==='service'){
+const stype=document.getElementById('svcType').value;
+const sp=document.getElementById('svcPort').value||80;
+const tp=document.getElementById('targetPort').value||80;
+const np=document.getElementById('nodePort').value;
+yml=`apiVersion: v1\nkind: Service\nmetadata:\n  name: ${name}\n  namespace: ${ns}\nspec:\n  type: ${stype}\n  selector:\n    app: ${name}\n  ports:\n  - port: ${sp}\n    targetPort: ${tp}${stype==='NodePort'?`\n    nodePort: ${np}`:''}`;
+}else if(currentType==='configmap'){
+const data=document.getElementById('cmData').value||'';
+yml=`apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: ${name}\n  namespace: ${ns}\ndata:\n`;
+data.split('\n').filter(l=>l.trim()).forEach(l=>{const k=l.split('=')[0].trim();const v=l.substring(l.indexOf('=')+1).trim();yml+=`  ${yamlEscape(k)}: ${yamlEscape(v)}\n`});
+}else if(currentType==='ingress'){
+const cls=document.getElementById('ingClass').value||'nginx';
+const host=document.getElementById('ingHost').value||'example.com';
+const path=document.getElementById('ingPath').value||'/';
+const backend=document.getElementById('ingBackend').value||name;
+const bp=document.getElementById('ingBackendPort').value||80;
+const tls=document.getElementById('ingTLS').checked;
+const tlsSec=document.getElementById('ingTLSSecret').value;
+yml=`apiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: ${name}\n  namespace: ${ns}\nspec:\n  ingressClassName: ${cls}\n  rules:\n  - host: ${host}\n    http:\n      paths:\n      - path: ${path}\n        pathType: Prefix\n        backend:\n          service:\n            name: ${backend}\n            port:\n              number: ${bp}`;
+if(tls)yml+=`\n  tls:\n  - hosts:\n    - ${host}\n    secretName: ${tlsSec}`;
+}
+document.getElementById('output').textContent=yml;
+}
+
+function copyOutput(){navigator.clipboard.writeText(document.getElementById('output').textContent);toast('Copied!')}
+function downloadOutput(){const b=new Blob([document.getElementById('output').textContent],{type:'text/yaml'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='k8s-resource.yaml';a.click();toast('Downloaded!')}
+update();
+</script>
+</body>
+</html>

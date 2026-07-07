@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UFW Firewall Rule Builder - ZCUs Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
+.header{background:#1a1d27;border-bottom:1px solid #2a2d3a;padding:16px 24px;display:flex;align-items:center;gap:16px}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header h1{font-size:20px;font-weight:700;color:#fff}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#1a1d27;border:1px solid #2a2d3a;border-radius:12px;padding:24px;margin-bottom:20px}
+.card h2{font-size:18px;font-weight:600;color:#fff;margin-bottom:16px}
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:14px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:12px;font-weight:500;color:#aaa;text-transform:uppercase;letter-spacing:.5px}
+select,input{background:#0f1117;border:1px solid #3a3d4a;border-radius:8px;padding:10px 12px;color:#e0e0e0;font-family:'Inter',sans-serif;font-size:14px}
+select:focus,input:focus{outline:none;border-color:#FF6B00}
+.output-box{background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;padding:16px;font-family:monospace;font-size:14px;color:#8ae6a0;white-space:pre-wrap;max-height:500px;overflow-y:auto}
+button{background:#FF6B00;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+button:hover{opacity:.85}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.preset-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.preset-btn{background:#2a2d3a;color:#e0e0e0;border:1px solid #3a3d4a;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif}
+.preset-btn:hover{border-color:#FF6B00;color:#FF6B00}
+.cmd-list{margin-top:12px}
+.cmd-item{background:#0f1117;border:1px solid #3a3d4a;border-radius:6px;padding:10px 14px;font-family:monospace;font-size:13px;color:#8ae6a0;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.del-btn{background:#e53e3e;color:#fff;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">🛡️</span><h1>UFW Firewall Rule Builder</h1></div>
+<div class="container">
+<div class="card">
+<h2>Quick Templates</h2>
+<div class="preset-row">
+<button class="preset-btn" onclick="addPreset('ufw default deny incoming')">Default Deny Incoming</button>
+<button class="preset-btn" onclick="addPreset('ufw default allow outgoing')">Default Allow Outgoing</button>
+<button class="preset-btn" onclick="addPreset('ufw allow 22/tcp')">Allow SSH (22)</button>
+<button class="preset-btn" onclick="addPreset('ufw allow 80/tcp')">Allow HTTP (80)</button>
+<button class="preset-btn" onclick="addPreset('ufw allow 443/tcp')">Allow HTTPS (443)</button>
+<button class="preset-btn" onclick="addPreset('ufw allow 3306/tcp')">Allow MySQL (3306)</button>
+<button class="preset-btn" onclick="addPreset('ufw allow 5432/tcp')">Allow PostgreSQL (5432)</button>
+<button class="preset-btn" onclick="addPreset('ufw allow 6379/tcp')">Allow Redis (6379)</button>
+<button class="preset-btn" onclick="addPreset('ufw allow 27017/tcp')">Allow MongoDB (27017)</button>
+</div>
+</div>
+<div class="card">
+<h2>Custom Rule</h2>
+<div class="form-row">
+<div class="form-group"><label>Action</label>
+<select id="action"><option value="allow">allow</option><option value="deny">deny</option><option value="reject">reject</option><option value="limit">limit</option></select>
+</div>
+<div class="form-group"><label>Direction</label>
+<select id="direction"><option value="">in</option><option value="out">out</option></select>
+</div>
+<div class="form-group"><label>Port/Service</label><input id="port" placeholder="22, 80, http, etc"></div>
+<div class="form-group"><label>Protocol</label>
+<select id="protocol"><option value="">any</option><option value="/tcp">tcp</option><option value="/udp">udp</option></select>
+</div>
+<div class="form-group"><label>From IP</label><input id="fromIP" placeholder="any"></div>
+<div class="form-group"><label>From Port</label><input id="fromPort" placeholder="any"></div>
+<div class="form-group"><label>To IP</label><input id="toIP" placeholder="any"></div>
+<div class="form-group"><label>To Port</label><input id="toPort" placeholder="any"></div>
+</div>
+<button onclick="buildRule()">+ Add Rule</button>
+</div>
+<div class="card">
+<h2>Generated UFW Commands</h2>
+<div class="cmd-list" id="cmdList"></div>
+</div>
+<div class="card">
+<h2>Full Script</h2>
+<div class="output-box" id="output"></div>
+<div class="btn-row">
+<button onclick="copyOutput()">📋 Copy</button>
+<button onclick="downloadOutput()">⬇️ Download Script</button>
+<button onclick="clearAll()" style="background:#e53e3e">🗑️ Clear All</button>
+</div>
+</div>
+</div>
+<script>
+function toast(msg){const t=document.createElement('div');t.textContent=msg;Object.assign(t.style,{position:'fixed',bottom:'20px',right:'20px',background:'#FF6B00',color:'#fff',padding:'12px 20px',borderRadius:'8px',fontFamily:'Inter',sans-serif',fontSize:'14px',zIndex:'9999',transition:'opacity .3s'});document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},2500)}
+
+let cmds=[];
+function buildRule(){
+const action=document.getElementById('action').value;
+const dir=document.getElementById('direction').value;
+const port=document.getElementById('port').value;
+const proto=document.getElementById('protocol').value;
+const fromIP=document.getElementById('fromIP').value;
+const fromPort=document.getElementById('fromPort').value;
+const toIP=document.getElementById('toIP').value;
+const toPort=document.getElementById('toPort').value;
+let cmd=`ufw ${action} `;
+if(dir==='out')cmd+='out ';
+if(port)cmd+=port+proto+' ';
+if(fromIP||fromPort||toIP||toPort){
+cmd+='from ';
+cmd+=fromIP||'any';
+if(fromPort)cmd+=` port ${fromPort}`;
+cmd+=' to ';
+cmd+=toIP||'any';
+if(toPort)cmd+=` port ${toPort}`;
+}
+cmds.push(cmd.trim());
+render();
+}
+function addPreset(c){cmds.push(c);render()}
+function removeCmd(i){cmds.splice(i,1);render()}
+function render(){
+const list=document.getElementById('cmdList');list.innerHTML='';
+cmds.forEach((c,i)=>{
+const el=document.createElement('div');el.className='cmd-item';
+el.innerHTML=`<span>sudo ${c}</span><button class="del-btn" onclick="removeCmd(${i})">✕</button>`;
+list.appendChild(el);
+});
+updateOutput();
+}
+function updateOutput(){
+let s=`#!/bin/bash\n# UFW rules - Generated by ZCUs Tools\n\n# Reset UFW\nsudo ufw --force reset\n\n`;
+cmds.forEach(c=>{s+=`sudo ${c}\n`});
+s+=`\nsudo ufw --force enable\nsudo ufw status verbose\n`;
+document.getElementById('output').textContent=s;
+}
+function clearAll(){cmds=[];render()}
+function copyOutput(){navigator.clipboard.writeText(document.getElementById('output').textContent);toast('Copied!')}
+function downloadOutput(){const b=new Blob([document.getElementById('output').textContent],{type:'text/x-shellscript'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='ufw-rules.sh';a.click();toast('Downloaded!')}
+render();
+</script>
+</body>
+</html>

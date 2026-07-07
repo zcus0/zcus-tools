@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text Shadow Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #e0e0e0;padding:16px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header .icon{font-size:24px}
+.header h1{font-size:18px;font-weight:600;flex:1}
+.container{max-width:900px;margin:0 auto;padding:24px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:24px;margin-bottom:20px}
+.card h2{font-size:16px;font-weight:600;margin-bottom:16px}
+.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;transition:all .2s}
+.btn-primary{background:#FF6B00;color:#fff}.btn-primary:hover{background:#e55a00}
+.btn-outline{background:transparent;border:1px solid #ddd;color:#555}.btn-outline:hover{border-color:#FF6B00;color:#FF6B00}
+.btn-sm{padding:5px 10px;font-size:12px}
+input[type=text],input[type=number],input[type=color],select{font-family:'Inter',sans-serif;font-size:13px;padding:8px 12px;border:1px solid #ddd;border-radius:6px;outline:none}
+input:focus,select:focus{border-color:#FF6B00}
+input[type=color]{width:40px;height:36px;padding:2px;cursor:pointer}
+label{display:block;font-size:12px;font-weight:500;margin-bottom:4px;color:#555}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+.preview{padding:40px;border-radius:12px;text-align:center;margin-bottom:16px;border:1px solid #eee;min-height:120px}
+.preview .text{transition:text-shadow .3s}
+.shadow-item{padding:12px;border:1px solid #eee;border-radius:8px;margin-bottom:8px}
+.shadow-item .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.shadow-item .ctrl{flex:1;min-width:80px;text-align:center}
+.shadow-item .ctrl input[type=range]{width:100%}
+.shadow-item .ctrl .val{font-size:10px;color:#999}
+.code-block{background:#1e1e1e;color:#d4d4d4;padding:16px;border-radius:8px;font-family:'Fira Code',monospace;font-size:13px;overflow-x:auto;white-space:pre;cursor:pointer;position:relative}
+.code-block:hover{background:#2a2a2a}
+.copy-hint{position:absolute;top:8px;right:12px;font-size:11px;color:#888;font-family:'Inter',sans-serif}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/">← Home</a>
+  <span class="icon">📝</span>
+  <h1>Text Shadow Generator</h1>
+</div>
+<div class="container">
+  <div class="card">
+    <h2>Preview</h2>
+    <div class="preview" id="preview" style="background:#f0f0f0">
+      <div class="text" id="preview-text" style="font-size:48px;font-weight:700">Hello World</div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Text Settings</h2>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div style="min-width:100px"><label>Font Size</label><input type="number" id="fontSize" value="48" min="12" max="200" oninput="update()"></div>
+      <div style="min-width:100px"><label>Font Weight</label>
+        <select id="fontWeight" onchange="update()"><option value="400">Regular</option><option value="500">Medium</option><option value="600">Semibold</option><option value="700" selected>Bold</option><option value="800">Extra Bold</option></select>
+      </div>
+      <div style="min-width:100px"><label>Text Color</label><input type="color" id="textColor" value="#333333" oninput="update()"></div>
+      <div style="flex:1;min-width:150px"><label>Preview Text</label><input type="text" id="previewInput" value="Hello World" oninput="document.getElementById('preview-text').textContent=this.value;update()"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Shadows</h2>
+    <div id="shadows"></div>
+    <button class="btn btn-primary btn-sm" onclick="addShadow()" style="margin-top:12px">+ Add Shadow</button>
+  </div>
+  <div class="card">
+    <h2>CSS Code</h2>
+    <div class="code-block" onclick="copyCSS()"><span class="copy-hint">Click to copy</span><code id="css-code"></code></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let shadows=[{x:2,y:2,blur:4,color:'rgba(0,0,0,0.3)'}];
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function renderShadows(){
+  const el=document.getElementById('shadows');
+  el.innerHTML=shadows.map((s,i)=>`
+    <div class="shadow-item">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <label style="margin:0;font-size:12px;font-weight:600;color:#FF6B00">Shadow ${i+1}</label>
+        <button class="btn btn-sm" style="background:#ff4444;color:#fff;padding:2px 6px;font-size:10px" onclick="shadows.splice(${i},1);update()">✕</button>
+      </div>
+      <div class="row">
+        <div class="ctrl"><label>X</label><input type="range" min="-20" max="20" value="${s.x}" oninput="shadows[${i}].x=+this.value;this.nextElementSibling.textContent=this.value+'px';update()"><span class="val">${s.x}px</span></div>
+        <div class="ctrl"><label>Y</label><input type="range" min="-20" max="20" value="${s.y}" oninput="shadows[${i}].y=+this.value;this.nextElementSibling.textContent=this.value+'px';update()"><span class="val">${s.y}px</span></div>
+        <div class="ctrl"><label>Blur</label><input type="range" min="0" max="50" value="${s.blur}" oninput="shadows[${i}].blur=+this.value;this.nextElementSibling.textContent=this.value+'px';update()"><span class="val">${s.blur}px</span></div>
+        <div class="ctrl"><label>Color</label><input type="color" value="${s.color.startsWith('rgba')?'#000000':s.color}" onchange="shadows[${i}].color=this.value;update()"></div>
+      </div>
+    </div>
+  `).join('');
+}
+function addShadow(){shadows.push({x:0,y:4,blur:8,color:'rgba(0,0,0,0.2)'});update()}
+function buildCSS(){return shadows.map(s=>`${s.x}px ${s.y}px ${s.blur}px ${s.color}`).join(',\n  ')}
+function update(){
+  renderShadows();
+  const css=`text-shadow: ${buildCSS()};`;
+  document.getElementById('css-code').textContent=css;
+  document.getElementById('preview-text').style.fontSize=document.getElementById('fontSize').value+'px';
+  document.getElementById('preview-text').style.fontWeight=document.getElementById('fontWeight').value;
+  document.getElementById('preview-text').style.color=document.getElementById('textColor').value;
+  document.getElementById('preview-text').style.textShadow=buildCSS();
+}
+function copyCSS(){navigator.clipboard.writeText(document.getElementById('css-code').textContent);toast('Copied!')}
+addShadow();update();
+</script>
+</body>
+</html>

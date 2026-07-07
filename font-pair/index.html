@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Font Pair Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #e0e0e0;padding:16px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header .icon{font-size:24px}
+.header h1{font-size:18px;font-weight:600;flex:1}
+.container{max-width:900px;margin:0 auto;padding:24px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:24px;margin-bottom:20px}
+.card h2{font-size:16px;font-weight:600;margin-bottom:16px}
+.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;transition:all .2s}
+.btn-primary{background:#FF6B00;color:#fff}.btn-primary:hover{background:#e55a00}
+.btn-outline{background:transparent;border:1px solid #ddd;color:#555}.btn-outline:hover{border-color:#FF6B00;color:#FF6B00}
+.btn-sm{padding:5px 10px;font-size:12px}
+input[type=text],textarea,select{font-family:'Inter',sans-serif;font-size:14px;padding:10px 12px;border:1px solid #ddd;border-radius:8px;width:100%;outline:none;transition:border .2s}
+textarea:focus,input:focus{border-color:#FF6B00}
+label{display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#555}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+.preview-card{border:1px solid #eee;border-radius:12px;padding:32px;margin-bottom:16px;background:#fafafa}
+.preview-card h2{font-size:16px;margin-bottom:8px}
+.font-label{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#999;margin-bottom:4px}
+.editable{outline:none;border:1px dashed transparent;border-radius:4px;padding:4px 8px;transition:border .2s}
+.editable:focus{border-color:#FF6B00}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+.controls select{width:auto;min-width:180px}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/">← Home</a>
+  <span class="icon">🔤</span>
+  <h1>Font Pair Generator</h1>
+</div>
+<div class="container">
+  <div class="card">
+    <div class="controls">
+      <select id="heading" onchange="updatePair()"></select>
+      <select id="body" onchange="updatePair()"></select>
+      <button class="btn btn-primary" onclick="randomPair()">🎲 Random Pair</button>
+      <button class="btn btn-outline" onclick="copyCSS()">📋 Copy CSS</button>
+    </div>
+  </div>
+  <div class="preview-card">
+    <div class="font-label" id="heading-label">HEADING FONT</div>
+    <h2 class="editable" contenteditable="true" id="heading-text" style="font-size:48px;font-weight:700;line-height:1.2;margin-bottom:24px">The quick brown fox jumps over the lazy dog</h2>
+    <div class="font-label" id="body-label">BODY FONT</div>
+    <p class="editable" contenteditable="true" id="body-text" style="font-size:18px;line-height:1.7;color:#555">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+  </div>
+  <div class="preview-card">
+    <div class="font-label">ARTICLE PREVIEW</div>
+    <h2 class="editable" contenteditable="true" id="article-title" style="font-size:32px;font-weight:600;line-height:1.3;margin-bottom:16px">Design Principles for Modern Web Applications</h2>
+    <p class="editable" contenteditable="true" id="article-body" style="font-size:16px;line-height:1.8;color:#444;margin-bottom:12px">Typography is one of the most important aspects of web design. The fonts you choose can dramatically affect how your content is perceived by users. A well-chosen font pairing creates visual hierarchy and improves readability.</p>
+    <p class="editable" contenteditable="true" id="article-body2" style="font-size:16px;line-height:1.8;color:#444">When selecting font combinations, consider the contrast between headings and body text. Serif fonts often work well for headings, while sans-serif fonts provide clean readability for body content. The key is finding balance between visual interest and legibility.</p>
+  </div>
+  <div class="card">
+    <h2>Font Info</h2>
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px;padding:12px;background:#f9f9f9;border-radius:8px">
+        <div style="font-size:12px;color:#999;margin-bottom:4px">Heading</div>
+        <div id="heading-info" style="font-weight:600"></div>
+      </div>
+      <div style="flex:1;min-width:200px;padding:12px;background:#f9f9f9;border-radius:8px">
+        <div style="font-size:12px;color:#999;margin-bottom:4px">Body</div>
+        <div id="body-info" style="font-weight:600"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const fonts=[
+  {name:'Inter',category:'sans-serif',import:'Inter:wght@300;400;500;600;700'},
+  {name:'Roboto',category:'sans-serif',import:'Roboto:wght@300;400;500;700'},
+  {name:'Open Sans',category:'sans-serif',import:'Open+Sans:wght@300;400;600;700'},
+  {name:'Lato',category:'sans-serif',import:'Lato:wght@300;400;700'},
+  {name:'Montserrat',category:'sans-serif',import:'Montserrat:wght@300;400;600;700'},
+  {name:'Poppins',category:'sans-serif',import:'Poppins:wght@300;400;600;700'},
+  {name:'Raleway',category:'sans-serif',import:'Raleway:wght@300;400;600;700'},
+  {name:'Nunito',category:'sans-serif',import:'Nunito:wght@300;400;600;700'},
+  {name:'Ubuntu',category:'sans-serif',import:'Ubuntu:wght@300;400;500;700'},
+  {name:'Work Sans',category:'sans-serif',import:'Work+Sans:wght@300;400;500;600'},
+  {name:'Source Sans Pro',category:'sans-serif',import:'Source+Sans+3:wght@300;400;600;700'},
+  {name:'Merriweather',category:'serif',import:'Merriweather:wght@300;400;700'},
+  {name:'Playfair Display',category:'serif',import:'Playfair+Display:wght@400;600;700'},
+  {name:'Lora',category:'serif',import:'Lora:wght@400;500;600;700'},
+  {name:'PT Serif',category:'serif',import:'PT+Serif:wght@400;700'},
+  {name:'Crimson Text',category:'serif',import:'Crimson+Text:wght@400;600;700'},
+  {name:'Libre Baskerville',category:'serif',import:'Libre+Baskerville:wght@400;700'},
+  {name:'EB Garamond',category:'serif',import:'EB+Garamond:wght@400;500;600;700'},
+  {name:'Bitter',category:'serif',import:'Bitter:wght@400;500;700'},
+  {name:'Cormorant Garamond',category:'serif',import:'Cormorant+Garamond:wght@400;600;700'},
+  {name:'Space Mono',category:'monospace',import:'Space+Mono:wght@400;700'},
+  {name:'Fira Code',category:'monospace',import:'Fira+Code:wght@400;500;700'},
+  {name:'JetBrains Mono',category:'monospace',import:'JetBrains+Mono:wght@400;500;700'},
+  {name:'Pacifico',category:'handwriting',import:'Pacifico'},
+  {name:'Dancing Script',category:'handwriting',import:'Dancing+Script:wght@400;700'},
+];
+const loadedFonts=new Set();
+const selects=[document.getElementById('heading'),document.getElementById('body')];
+const goodPairs=[
+  [0,12],[0,11],[1,12],[1,11],[2,12],[2,14],[3,12],[3,11],
+  [4,12],[4,14],[5,11],[5,14],[6,12],[6,15],[7,11],[7,14],
+  [8,12],[8,15],[9,11],[9,14],[10,12],[10,13],
+  [12,0],[12,2],[12,3],[13,0],[13,5],[14,2],[14,6],
+  [11,0],[11,3],[11,5],[15,0],[15,2],[16,0],[16,3],
+  [17,0],[17,5],[18,0],[18,3],[19,0],[19,5],
+];
+fonts.forEach(f=>{selects.forEach(s=>{const o=document.createElement('option');o.value=f.name;o.textContent=`${f.name} (${f.category})`;s.appendChild(o)})});
+function loadFont(name){
+  if(loadedFonts.has(name))return;
+  loadedFonts.add(name);
+  const f=fonts.find(x=>x.name===name);if(!f)return;
+  const link=document.createElement('link');link.rel='stylesheet';link.href=`https://fonts.googleapis.com/css2?family=${f.import}&display=swap`;document.head.appendChild(link);
+}
+function updatePair(){
+  const h=selects[0].value,b=selects[1].value;
+  loadFont(h);loadFont(b);
+  setTimeout(()=>{
+    document.getElementById('heading-text').style.fontFamily=`'${h}', sans-serif`;
+    document.getElementById('body-text').style.fontFamily=`'${b}', sans-serif`;
+    document.getElementById('article-title').style.fontFamily=`'${h}', sans-serif`;
+    document.getElementById('article-body').style.fontFamily=`'${b}', sans-serif`;
+    document.getElementById('article-body2').style.fontFamily=`'${b}', sans-serif`;
+    document.getElementById('heading-label').textContent=h.toUpperCase();
+    document.getElementById('body-label').textContent=b.toUpperCase();
+    const hf=fonts.find(f=>f.name===h);const bf=fonts.find(f=>f.name===b);
+    document.getElementById('heading-info').textContent=`${h} (${hf.category})`;
+    document.getElementById('body-info').textContent=`${b} (${bf.category})`;
+  },300);
+}
+function randomPair(){
+  const p=goodPairs[Math.floor(Math.random()*goodPairs.length)];
+  selects[0].value=fonts[p[0]].name;selects[1].value=fonts[p[1]].name;
+  updatePair();
+}
+function copyCSS(){
+  const h=selects[0].value,b=selects[1].value;
+  const css=`/* Heading: ${h} */\nh1, h2, h3, h4, h5, h6 {\n  font-family: '${h}', sans-serif;\n}\n\n/* Body: ${b} */\nbody, p, span, a, li {\n  font-family: '${b}', sans-serif;\n}`;
+  navigator.clipboard.writeText(css);toast('CSS copied!');
+}
+loadFont(fonts[0].name);loadFont(fonts[12].name);updatePair();
+</script>
+</body>
+</html>

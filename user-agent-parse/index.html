@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Agent Parser - ZCUs Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
+.header{background:#1a1d27;border-bottom:1px solid #2a2d3a;padding:16px 24px;display:flex;align-items:center;gap:16px}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header h1{font-size:20px;font-weight:700;color:#fff}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#1a1d27;border:1px solid #2a2d3a;border-radius:12px;padding:24px;margin-bottom:20px}
+.card h2{font-size:18px;font-weight:600;color:#fff;margin-bottom:16px}
+.form-group{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.form-group label{font-size:12px;font-weight:500;color:#aaa;text-transform:uppercase;letter-spacing:.5px}
+textarea,input{background:#0f1117;border:1px solid #3a3d4a;border-radius:8px;padding:10px 12px;color:#e0e0e0;font-family:'Inter',sans-serif;font-size:14px;width:100%}
+textarea:focus,input:focus{outline:none;border-color:#FF6B00}
+textarea{min-height:60px;resize:vertical;font-family:monospace;font-size:13px}
+button{background:#FF6B00;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+button:hover{opacity:.85}
+.result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.result-item{background:#0f1117;border-radius:8px;padding:14px}
+.result-label{font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.result-value{font-size:14px;font-weight:600;color:#FF6B00}
+.result-value.sm{font-size:12px;color:#e0e0e0}
+.preset-list{display:flex;flex-direction:column;gap:6px}
+.preset-item{background:#0f1117;border:1px solid #2a2d3a;border-radius:6px;padding:8px 12px;font-size:12px;font-family:monospace;color:#aaa;cursor:pointer;transition:border-color .2s}
+.preset-item:hover{border-color:#FF6B00}
+.preset-name{color:#FF6B00;font-family:'Inter',sans-serif;font-weight:600;margin-bottom:2px}
+.preset-ua{color:#8ae6a0;word-break:break-all}
+.gen-output{background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;padding:12px;font-family:monospace;font-size:13px;color:#8ae6a0;margin-top:12px}
+.gen-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-top:12px}
+.gen-options select{background:#0f1117;border:1px solid #3a3d4a;border-radius:8px;padding:8px;color:#e0e0e0;font-family:'Inter',sans-serif;font-size:13px}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">🧭</span><h1>User Agent String Parser</h1></div>
+<div class="container">
+<div class="card">
+<h2>Parse User Agent</h2>
+<div class="form-group">
+<label>User Agent String</label>
+<textarea id="ua" oninput="parseUA()">Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36</textarea>
+</div>
+<button onclick="parseUA()">🔍 Parse</button>
+</div>
+<div class="card">
+<h2>Parsed Result</h2>
+<div class="result-grid" id="parsed"></div>
+</div>
+<div class="card">
+<h2>Common User Agents</h2>
+<div class="preset-list" id="presets"></div>
+</div>
+<div class="card">
+<h2>Generate User Agent</h2>
+<div class="gen-options">
+<div class="form-group">
+<label>Browser</label>
+<select id="genBrowser" onchange="genUA()">
+<option value="chrome">Chrome</option><option value="firefox">Firefox</option><option value="safari">Safari</option><option value="edge">Edge</option><option value="opera">Opera</option>
+</select>
+</div>
+<div class="form-group">
+<label>OS</label>
+<select id="genOS" onchange="genUA()">
+<option value="win11">Windows 11</option><option value="win10">Windows 10</option><option value="macos">macOS</option><option value="linux">Linux</option><option value="android">Android</option><option value="ios">iOS</option>
+</select>
+</div>
+<div class="form-group">
+<label>Device</label>
+<select id="genDevice" onchange="genUA()">
+<option value="desktop">Desktop</option><option value="mobile">Mobile</option><option value="tablet">Tablet</option>
+</select>
+</div>
+</div>
+<div class="gen-output" id="genOutput"></div>
+<button onclick="copyGen()" style="margin-top:8px">📋 Copy</button>
+</div>
+</div>
+<script>
+function toast(msg){const t=document.createElement('div');t.textContent=msg;Object.assign(t.style,{position:'fixed',bottom:'20px',right:'20px',background:'#FF6B00',color:'#fff',padding:'12px 20px',borderRadius:'8px',fontFamily:'Inter',sans-serif',fontSize:'14px',zIndex:'9999',transition:'opacity .3s'});document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},2500)}
+
+function parseUA(){
+const ua=document.getElementById('ua').value.trim();
+if(!ua){document.getElementById('parsed').innerHTML='';return}
+let browser='Unknown',browserVer='',os='Unknown',osVer='',device='Desktop',engine='';
+// Browser
+if(ua.includes('Firefox/')){browser='Firefox';browserVer=ua.match(/Firefox\/([\d.]+)/)?.[1]||''}
+else if(ua.includes('Edg/')){browser='Edge';browserVer=ua.match(/Edg\/([\d.]+)/)?.[1]||''}
+else if(ua.includes('OPR/')){browser='Opera';browserVer=ua.match(/OPR\/([\d.]+)/)?.[1]||''}
+else if(ua.includes('Chrome/')&&ua.includes('Safari/')){browser='Chrome';browserVer=ua.match(/Chrome\/([\d.]+)/)?.[1]||''}
+else if(ua.includes('Safari/')&&!ua.includes('Chrome')){browser='Safari';browserVer=ua.match(/Version\/([\d.]+)/)?.[1]||''}
+else if(ua.includes('MSIE')){browser='IE';browserVer=ua.match(/MSIE ([\d.]+)/)?.[1]||''}
+else if(ua.includes('Trident/')){browser='IE 11';browserVer='11'}
+// Engine
+if(ua.includes('AppleWebKit/'))engine='WebKit '+ua.match(/AppleWebKit\/([\d.]+)/)?.[1]||'';
+else if(ua.includes('Gecko/'))engine='Gecko';
+else if(ua.includes('Blink/'))engine='Blink';
+// OS
+if(ua.includes('Windows NT 10.0')){os='Windows';osVer='10/11'}
+else if(ua.includes('Windows NT 6.3')){os='Windows';osVer='8.1'}
+else if(ua.includes('Windows NT 6.1')){os='Windows';osVer='7'}
+else if(ua.includes('Mac OS X')){os='macOS';osVer=ua.match(/Mac OS X ([\d_]+)/)?.[1].replace(/_/g,'.')||''}
+else if(ua.includes('Linux')&&!ua.includes('Android')){os='Linux';osVer=''}
+else if(ua.includes('Android')){os='Android';osVer=ua.match(/Android ([\d.]+)/)?.[1]||''}
+else if(ua.includes('iPhone')||ua.includes('iPad')){os=ua.includes('iPad')?'iPadOS':'iOS';osVer=ua.match(/OS ([\d_]+)/)?.[1].replace(/_/g,'.')||''}
+else if(ua.includes('CrOS')){os='ChromeOS';osVer=''}
+// Device
+if(ua.includes('Mobile')||ua.includes('Android'))device='Mobile';
+else if(ua.includes('iPad')||ua.includes('Tablet'))device='Tablet';
+
+const items=[
+['🌐 Browser',`${browser} ${browserVer}`],
+['💻 Operating System',`${os} ${osVer}`],
+['📱 Device Type',device],
+['⚡ Engine',engine||'Unknown'],
+['🔒 Bot',ua.toLowerCase().includes('bot')?'Yes':'No'],
+];
+document.getElementById('parsed').innerHTML=items.map(([k,v])=>`<div class="result-item"><div class="result-label">${k}</div><div class="result-value">${v}</div></div>`).join('');
+}
+
+const commonUAs=[
+{name:'Chrome 120 (Windows 11)',ua:'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'},
+{name:'Firefox 121 (macOS)',ua:'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:121.0) Gecko/20100101 Firefox/121.0'},
+{name:'Safari 17 (macOS)',ua:'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15'},
+{name:'Edge 120 (Windows 11)',ua:'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0'},
+{name:'Chrome 120 (Android)',ua:'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'},
+{name:'Safari (iPhone iOS 17)',ua:'Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1'},
+{name:'Chrome 120 (Linux)',ua:'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'},
+{name:'Googlebot',ua:'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'},
+{name:'Bingbot',ua:'Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)'},
+{name:'curl',ua:'curl/8.4.0'},
+{name:'Python Requests',ua:'python-requests/2.31.0'},
+{name:'Opera 105 (Windows)',ua:'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 OPR/105.0.0.0'},
+{name:'iPad Safari',ua:'Mozilla/5.0 (iPad; CPU OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1'},
+];
+const pList=document.getElementById('presets');
+commonUAs.forEach(ua=>{
+const d=document.createElement('div');d.className='preset-item';
+d.innerHTML=`<div class="preset-name">${ua.name}</div><div class="preset-ua">${ua.ua}</div>`;
+d.onclick=()=>{document.getElementById('ua').value=ua.ua;parseUA()};
+pList.appendChild(d);
+});
+
+function genUA(){
+const browser=document.getElementById('genBrowser').value;
+const os=document.getElementById('genOS').value;
+const device=document.getElementById('genDevice').value;
+const versions={chrome:'120.0.0.0',firefox:'121.0',safari:'17.1',edge:'120.0.0.0',opera:'105.0.0.0'};
+const ver=versions[browser]||'1.0';
+const uaMap={
+'chrome-win11':`Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${ver} Safari/537.36`,
+'chrome-win10':`Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${ver} Safari/537.36`,
+'chrome-macos':`Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${ver} Safari/537.36`,
+'chrome-linux':`Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${ver} Safari/537.36`,
+'chrome-android':`Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${ver} Mobile Safari/537.36`,
+'chrome-ios':`Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/${ver} Mobile/15E148 Safari/604.1`,
+'firefox-win11':`Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:${ver}) Gecko/20100101 Firefox/${ver}`,
+'firefox-macos':`Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:${ver}) Gecko/20100101 Firefox/${ver}`,
+'firefox-linux':`Mozilla/5.0 (X11; Linux x86_64; rv:${ver}) Gecko/20100101 Firefox/${ver}`,
+'safari-macos':`Mozilla/5.0 (Macintosh; Intel Mac OS X 14_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/${ver} Safari/605.1.15`,
+'safari-ios':`Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/${ver} Mobile/15E148 Safari/604.1`,
+'edge-win11':`Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/${ver}`,
+'edge-macos':`Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/${ver}`,
+'opera-win11':`Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 OPR/${ver}`,
+};
+const key=`${browser}-${os}`;
+document.getElementById('genOutput').textContent=uaMap[key]||`Mozilla/5.0 (${os}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${ver} Safari/537.36`;
+}
+
+function copyGen(){navigator.clipboard.writeText(document.getElementById('genOutput').textContent);toast('Copied!')}
+parseUA();
+genUA();
+</script>
+</body>
+</html>

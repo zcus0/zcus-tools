@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Box Shadow Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #e0e0e0;padding:16px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header .icon{font-size:24px}
+.header h1{font-size:18px;font-weight:600;flex:1}
+.container{max-width:1000px;margin:0 auto;padding:24px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:24px;margin-bottom:20px}
+.card h2{font-size:16px;font-weight:600;margin-bottom:16px}
+.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;transition:all .2s}
+.btn-primary{background:#FF6B00;color:#fff}.btn-primary:hover{background:#e55a00}
+.btn-outline{background:transparent;border:1px solid #ddd;color:#555}.btn-outline:hover{border-color:#FF6B00;color:#FF6B00}
+.btn-sm{padding:5px 10px;font-size:12px}
+input[type=text],input[type=number],input[type=color]{font-family:'Inter',sans-serif;font-size:14px;padding:8px 12px;border:1px solid #ddd;border-radius:8px;outline:none;width:100%}
+input:focus{border-color:#FF6B00}
+input[type=color]{width:50px;height:36px;padding:2px;cursor:pointer}
+label{display:block;font-size:13px;font-weight:500;margin-bottom:4px;color:#555}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+.preview-area{display:flex;justify-content:center;align-items:center;min-height:300px;background:repeating-conic-gradient(#e0e0e0 0% 25%, #fff 0% 50%) 50%/20px 20px;border-radius:12px;padding:40px}
+.preview-box{width:200px;height:200px;background:#fff;border-radius:12px;transition:box-shadow .3s}
+.ctrl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-bottom:16px}
+.ctrl{text-align:center}
+.ctrl input[type=range]{width:100%}
+.ctrl .val{font-size:11px;color:#999}
+.code-block{background:#1e1e1e;color:#d4d4d4;padding:16px;border-radius:8px;font-family:'Fira Code',monospace;font-size:13px;overflow-x:auto;white-space:pre;cursor:pointer;position:relative}
+.code-block:hover{background:#2a2a2a}
+.copy-hint{position:absolute;top:8px;right:12px;font-size:11px;color:#888;font-family:'Inter',sans-serif}
+.shadow-item{padding:12px;border:1px solid #eee;border-radius:8px;margin-bottom:8px}
+.shadow-item .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.preset-btn{padding:8px 12px;border:1px solid #eee;border-radius:8px;background:#f9f9f9;cursor:pointer;font-size:12px;font-weight:500;transition:all .2s}
+.preset-btn:hover{border-color:#FF6B00;background:#fff5f0}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/">← Home</a>
+  <span class="icon">📦</span>
+  <h1>Box Shadow Generator</h1>
+</div>
+<div class="container">
+  <div class="card">
+    <h2>Preview</h2>
+    <div class="preview-area"><div class="preview-box" id="preview"></div></div>
+  </div>
+  <div class="card">
+    <h2>Presets</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="preset-btn" onclick="applyPreset('soft')">Soft</button>
+      <button class="preset-btn" onclick="applyPreset('hard')">Hard</button>
+      <button class="preset-btn" onclick="applyPreset('neumorph')">Neumorphism</button>
+      <button class="preset-btn" onclick="applyPreset('neumorph-in')">Neumorphism Inset</button>
+      <button class="preset-btn" onclick="applyPreset('glow')">Glow</button>
+      <button class="preset-btn" onclick="applyPreset('long')">Long Shadow</button>
+      <button class="preset-btn" onclick="applyPreset('float')">Float</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Shadows</h2>
+    <div id="shadows"></div>
+    <button class="btn btn-primary btn-sm" onclick="addShadow()" style="margin-top:12px">+ Add Shadow</button>
+  </div>
+  <div class="card">
+    <h2>CSS Code</h2>
+    <div class="code-block" onclick="copyCSS()"><span class="copy-hint">Click to copy</span><code id="css-code"></code></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let shadows=[{x:0,y:4,blur:12,spread:0,color:'rgba(0,0,0,0.15)',inset:false}];
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function renderShadows(){
+  const el=document.getElementById('shadows');
+  el.innerHTML=shadows.map((s,i)=>`
+    <div class="shadow-item">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <label style="margin:0">Shadow ${i+1}</label>
+        <div style="display:flex;gap:8px">
+          <label style="display:flex;align-items:center;gap:4px;font-size:12px;margin:0">
+            <input type="checkbox" ${s.inset?'checked':''} onchange="shadows[${i}].inset=this.checked;update()"> Inset
+          </label>
+          <button class="btn btn-sm" style="background:#ff4444;color:#fff" onclick="shadows.splice(${i},1);update()">✕</button>
+        </div>
+      </div>
+      <div class="row">
+        <div style="flex:1"><label>X</label><input type="range" min="-50" max="50" value="${s.x}" oninput="shadows[${i}].x=+this.value;this.nextElementSibling.textContent=this.value+'px';update()"><span style="font-size:11px;color:#999">${s.x}px</span></div>
+        <div style="flex:1"><label>Y</label><input type="range" min="-50" max="50" value="${s.y}" oninput="shadows[${i}].y=+this.value;this.nextElementSibling.textContent=this.value+'px';update()"><span style="font-size:11px;color:#999">${s.y}px</span></div>
+        <div style="flex:1"><label>Blur</label><input type="range" min="0" max="100" value="${s.blur}" oninput="shadows[${i}].blur=+this.value;this.nextElementSibling.textContent=this.value+'px';update()"><span style="font-size:11px;color:#999">${s.blur}px</span></div>
+        <div style="flex:1"><label>Spread</label><input type="range" min="-50" max="50" value="${s.spread}" oninput="shadows[${i}].spread=+this.value;this.nextElementSibling.textContent=this.value+'px';update()"><span style="font-size:11px;color:#999">${s.spread}px</span></div>
+        <div style="min-width:50px"><label>Color</label><input type="color" value="${s.color.startsWith('rgba')?'#000000':s.color}" onchange="shadows[${i}].color=this.value;update()"></div>
+      </div>
+    </div>
+  `).join('');
+}
+function addShadow(){shadows.push({x:0,y:8,blur:16,spread:0,color:'rgba(0,0,0,0.1)',inset:false});update()}
+function buildCSS(){
+  return shadows.map(s=>`${s.inset?'inset ':''}${s.x}px ${s.y}px ${s.blur}px ${s.spread}px ${s.color}`).join(',\n  ');
+}
+function update(){
+  renderShadows();
+  const css=`box-shadow: ${buildCSS()};`;
+  document.getElementById('css-code').textContent=css;
+  document.getElementById('preview').style.boxShadow=buildCSS();
+}
+function copyCSS(){navigator.clipboard.writeText(document.getElementById('css-code').textContent);toast('Copied!')}
+const presets={
+  soft:[{x:0,y:4,blur:12,spread:0,color:'rgba(0,0,0,0.1)',inset:false}],
+  hard:[{x:4,y:4,blur:0,spread:0,color:'#000',inset:false}],
+  'neumorph':[{x:-6,y:-6,blur:12,spread:0,color:'#fff',inset:false},{x:6,y:6,blur:12,spread:0,color:'#bebebe',inset:false}],
+  'neumorph-in':[{x:-4,y:-4,blur:8,spread:0,color:'rgba(255,255,255,0.7)',inset:true},{x:4,y:4,blur:8,spread:0,color:'rgba(0,0,0,0.15)',inset:true}],
+  glow:[{x:0,y:0,blur:20,spread:5,color:'#FF6B00',inset:false}],
+  long:[{x:4,y:4,blur:0,spread:0,color:'#ddd',inset:false},{x:8,y:8,blur:0,spread:0,color:'#eee',inset:false},{x:12,y:12,blur:0,spread:0,color:'#f5f5f5',inset:false}],
+  float:[{x:0,y:10,blur:30,spread:-5,color:'rgba(0,0,0,0.1)',inset:false}]
+};
+function applyPreset(name){shadows=JSON.parse(JSON.stringify(presets[name]));update();toast('Preset applied')}
+addShadow();
+update();
+</script>
+</body>
+</html>

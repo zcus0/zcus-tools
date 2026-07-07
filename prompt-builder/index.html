@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #e0e0e0;padding:16px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header .icon{font-size:24px}
+.header h1{font-size:18px;font-weight:600;flex:1}
+.container{max-width:1200px;margin:0 auto;padding:24px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:24px;margin-bottom:20px}
+.card h2{font-size:16px;font-weight:600;margin-bottom:16px;color:#333}
+.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;transition:all .2s}
+.btn-primary{background:#FF6B00;color:#fff}.btn-primary:hover{background:#e55a00}
+.btn-outline{background:transparent;border:1px solid #ddd;color:#555}.btn-outline:hover{border-color:#FF6B00;color:#FF6B00}
+.btn-danger{background:#ff4444;color:#fff}.btn-danger:hover{background:#cc0000}
+.btn-sm{padding:5px 10px;font-size:12px}
+textarea,input[type=text],select{font-family:'Inter',sans-serif;font-size:14px;padding:10px 12px;border:1px solid #ddd;border-radius:8px;width:100%;resize:vertical;outline:none;transition:border .2s}
+textarea:focus,input:focus,select:focus{border-color:#FF6B00}
+.row{display:flex;gap:16px;flex-wrap:wrap}
+.row>*{flex:1;min-width:250px}
+label{display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#555}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:768px){.grid-2{grid-template-columns:1fr}}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+.template-btn{display:block;width:100%;text-align:left;padding:12px;margin-bottom:8px;background:#f9f9f9;border:1px solid #eee;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;transition:all .2s}
+.template-btn:hover{border-color:#FF6B00;background:#fff5f0}
+.template-btn small{display:block;font-weight:400;color:#888;margin-top:4px}
+.block{background:#f9f9f9;border:1px solid #eee;border-radius:8px;padding:16px;margin-bottom:12px;cursor:move;position:relative;transition:all .2s}
+.block:hover{border-color:#FF6B00}
+.block.dragging{opacity:.5;border-color:#FF6B00}
+.block-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.block-header span{font-size:12px;font-weight:600;color:#FF6B00;text-transform:uppercase}
+.block textarea{min-height:60px;font-size:13px}
+.token-count{font-size:12px;color:#888;margin-top:8px;text-align:right}
+.token-bar{height:4px;background:#eee;border-radius:2px;margin-top:8px;overflow:hidden}
+.token-bar-fill{height:100%;background:#FF6B00;border-radius:2px;transition:width .3s}
+.empty-state{text-align:center;padding:40px;color:#999;font-size:14px}
+.flex-between{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/">← Home</a>
+  <span class="icon">🧠</span>
+  <h1>Prompt Builder</h1>
+</div>
+<div class="container">
+  <div class="card">
+    <h2>Templates</h2>
+    <div class="row" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr));display:grid">
+      <button class="template-btn" onclick="addTemplate('system','You are a helpful AI assistant. You provide clear, concise, and accurate responses.')">📋 System Prompt<small>Set the AI's behavior and persona</small></button>
+      <button class="template-btn" onclick="addTemplate('few-shot','Example 1:\nInput: Hello\nOutput: Hi there!\n\nExample 2:\nInput: How are you?\nOutput: I\\'m doing great, thanks for asking!')">🎯 Few-Shot Learning<small>Provide input/output examples</small></button>
+      <button class="template-btn" onclick="addTemplate('chain-of-thought','Let me think through this step by step.\n\n1. First, I need to...\n2. Then, considering...\n3. Therefore, the answer is...')">🔗 Chain of Thought<small>Step-by-step reasoning</small></button>
+      <button class="template-btn" onclick="addTemplate('role-play','You are an expert [role] with 20 years of experience. Respond in character, drawing on your extensive knowledge and practical wisdom.')">🎭 Role Play<small>Assign a specific persona</small></button>
+      <button class="template-btn" onclick="addTemplate('output-format','Please respond in the following format:\n\n**Summary:** [brief summary]\n**Details:** [detailed explanation]\n**Key Points:** [bullet list]')">📐 Output Format<small>Define response structure</small></button>
+      <button class="template-btn" onclick="addTemplate('critic','Analyze the following and provide:\n1. Strengths\n2. Weaknesses\n3. Suggestions for improvement\n4. Overall assessment')">🔍 Critic Mode<small>Critical analysis prompt</small></button>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div>
+      <div class="card">
+        <div class="flex-between" style="margin-bottom:16px">
+          <h2 style="margin:0">Prompt Blocks</h2>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="addBlock()">+ Add Block</button>
+            <select style="width:auto;padding:5px 10px;font-size:12px;border-radius:8px;border:1px solid #ddd" onchange="addFromPreset(this.value);this.value=''">
+              <option value="">Quick Add...</option>
+              <option value="instruction">Instruction</option>
+              <option value="context">Context</option>
+              <option value="constraint">Constraint</option>
+              <option value="example">Example</option>
+            </select>
+          </div>
+        </div>
+        <div id="blocks"></div>
+        <div id="empty-state" class="empty-state">Click a template above or "+ Add Block" to start building your prompt</div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="position:sticky;top:80px">
+        <div class="flex-between" style="margin-bottom:12px">
+          <h2 style="margin:0">Preview</h2>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline btn-sm" onclick="exportText()">📋 Copy</button>
+            <button class="btn btn-outline btn-sm" onclick="exportJSON()">💾 JSON</button>
+          </div>
+        </div>
+        <pre id="preview" style="background:#f9f9f9;padding:16px;border-radius:8px;font-size:13px;white-space:pre-wrap;max-height:400px;overflow-y:auto;font-family:'Inter',sans-serif;border:1px solid #eee;min-height:100px"></pre>
+        <div class="token-count">Estimated tokens: <strong id="token-count">0</strong></div>
+        <div class="token-bar"><div class="token-bar-fill" id="token-bar" style="width:0%"></div></div>
+        <div style="font-size:11px;color:#aaa;margin-top:4px;text-align:right">~4 chars ≈ 1 token</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let blocks=[];
+let dragIdx=null;
+const presets={instruction:'Instruction:\nPlease follow these guidelines carefully.',context:'Context:\nHere is the relevant background information:',constraint:'Constraint:\nDo not exceed 200 words. Be factual and cite sources.',example:'Example:\nInput: sample input\nOutput: expected output'};
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function addBlock(type='',content=''){blocks.push({id:Date.now(),type: type||'custom',content});render();updatePreview()}
+function addTemplate(type,content){blocks.push({id:Date.now(),type,content});render();updatePreview();toast('Template added')}
+function addFromPreset(v){if(presets[v])addBlock(v,presets[v])}
+function removeBlock(id){blocks=blocks.filter(b=>b.id!==id);render();updatePreview()}
+function updateContent(id,content){const b=blocks.find(x=>x.id===id);if(b)b.content=content;updatePreview()}
+function updateType(id,type){const b=blocks.find(x=>x.id===id);if(b)b.type=type;updatePreview()}
+function render(){
+  const el=document.getElementById('blocks');
+  const empty=document.getElementById('empty-state');
+  empty.style.display=blocks.length?'none':'block';
+  el.innerHTML=blocks.map((b,i)=>`
+    <div class="block" draggable="true" data-idx="${i}" ondragstart="dragStart(event,${i})" ondragover="event.preventDefault()" ondrop="event.preventDefault();dropBlock(${i})">
+      <div class="block-header">
+        <span>${b.type}</span>
+        <div>
+          <select style="padding:3px 6px;font-size:11px;border-radius:6px;border:1px solid #ddd;margin-right:4px" onchange="updateType(${b.id},this.value)">
+            <option value="custom" ${b.type==='custom'?'selected':''}>Custom</option>
+            <option value="system" ${b.type==='system'?'selected':''}>System</option>
+            <option value="user" ${b.type==='user'?'selected':''}>User</option>
+            <option value="assistant" ${b.type==='assistant'?'selected':''}>Assistant</option>
+            <option value="instruction" ${b.type==='instruction'?'selected':''}>Instruction</option>
+            <option value="context" ${b.type==='context'?'selected':''}>Context</option>
+            <option value="constraint" ${b.type==='constraint'?'selected':''}>Constraint</option>
+            <option value="example" ${b.type==='example'?'selected':''}>Example</option>
+          </select>
+          <button class="btn btn-danger btn-sm" onclick="removeBlock(${b.id})" style="padding:3px 8px;font-size:11px">✕</button>
+        </div>
+      </div>
+      <textarea oninput="updateContent(${b.id},this.value)" placeholder="Enter content...">${b.content}</textarea>
+      <div class="token-count">~${Math.ceil(b.content.length/4)} tokens</div>
+    </div>
+  `).join('');
+}
+function dragStart(e,i){dragIdx=i;e.target.classList.add('dragging')}
+function dropTarget(i){}
+function dropBlock(to){if(dragIdx===null||dragIdx===to)return;const item=blocks.splice(dragIdx,1)[0];blocks.splice(to,0,item);dragIdx=null;render();updatePreview()}
+function updatePreview(){
+  const el=document.getElementById('preview');
+  const total=blocks.map(b=>`[${b.type.toUpperCase()}]\n${b.content}`).join('\n\n');
+  el.textContent=total||'(No blocks added yet)';
+  const tokens=Math.ceil(total.length/4);
+  document.getElementById('token-count').textContent=tokens;
+  document.getElementById('token-bar').style.width=Math.min(tokens/4000*100,100)+'%';
+  document.getElementById('token-bar').style.background=tokens>3000?'#ff4444':tokens>1500?'#ffaa00':'#FF6B00';
+}
+function exportText(){const t=blocks.map(b=>`[${b.type}]\n${b.content}`).join('\n\n');navigator.clipboard.writeText(t);toast('Copied to clipboard!')}
+function exportJSON(){const t=JSON.stringify(blocks.map(b=>({type:b.type,content:b.content})),null,2);navigator.clipboard.writeText(t);toast('JSON copied!')}
+render();updatePreview();
+</script>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JS Minifier</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333;min-height:100vh}
+.header{background:#fff;padding:16px 24px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+.header a{color:#FF6B00;text-decoration:none;font-weight:600;font-size:14px}
+.header h1{font-size:20px;font-weight:700}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card h2{font-size:16px;font-weight:600;margin-bottom:12px;color:#333}
+textarea{width:100%;height:200px;border:1px solid #e0e0e0;border-radius:8px;padding:12px;font-family:'Fira Code',monospace;font-size:13px;resize:vertical}
+textarea:focus{outline:2px solid #FF6B00;border-color:#FF6B00}
+.btn{background:#FF6B00;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-family:'Inter';font-weight:600;font-size:14px;cursor:pointer}
+.btn:hover{opacity:.9}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.btn-secondary{background:#eee;color:#333}
+label{font-size:13px;display:flex;align-items:center;gap:6px;margin:4px 0;cursor:pointer}
+.stats{display:flex;gap:16px;font-size:13px;color:#666;margin-top:12px}
+.stats span{background:#f0f0f0;padding:4px 10px;border-radius:6px}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:1000;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header">
+<a href="/">← Home</a>
+<span class="icon">🗜️</span>
+<h1>JS Minifier</h1>
+</div>
+<div class="container">
+<div class="card">
+<h2>JavaScript Input</h2>
+<textarea id="input" placeholder="Paste your JavaScript code here..."></textarea>
+<div class="btn-row">
+<button class="btn" onclick="minify()">Minify</button>
+<button class="btn btn-secondary" onclick="beautify()">Beautify</button>
+<label><input type="checkbox" id="shortenVars"> Shorten variable names</label>
+</div>
+</div>
+<div class="card">
+<h2>Result</h2>
+<textarea id="output" readonly placeholder="Result will appear here..."></textarea>
+<div class="stats">
+<span id="statBefore">Before: 0 chars</span>
+<span id="statAfter">After: 0 chars</span>
+<span id="statSaved">Saved: 0%</span>
+</div>
+<div class="btn-row">
+<button class="btn btn-secondary" onclick="copyResult()">📋 Copy</button>
+<button class="btn btn-secondary" onclick="swapInOut()">🔄 Swap</button>
+</div>
+</div>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function minify(){
+const input=document.getElementById('input').value;
+if(!input.trim())return toast('Enter some JS first');
+let code=input;
+// Remove single-line comments
+code=code.replace(/\/\/.*$/gm,'');
+// Remove multi-line comments
+code=code.replace(/\/\*[\s\S]*?\*\//g,'');
+// Remove strings to protect them
+const strings=[];code=code.replace(/(['"`])(?:(?!\1|\\).|\\.)*\1/g,m=>{strings.push(m);return'__STR'+(strings.length-1)+'__'});
+// Remove extra whitespace
+code=code.replace(/\s+/g,' ');
+code=code.replace(/\s*([{};,=+\-*/<>!&|?:])\s*/g,'$1');
+code=code.replace(/;}/g,'}');
+// Restore strings
+strings.forEach((s,i)=>{code=code.replace('__STR'+i+'__',s)});
+// Shorten variables
+if(document.getElementById('shortenVars').checked){
+const vars=[];code.replace(/\b(?:var|let|const)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\b/g,(_,v)=>{if(v.length>2)vars.push(v);return _});
+let idx=0;const genShort=()=>{let n='',i=idx++;const chars='abcdefghijklmnopqrstuvwxyz';do{n=chars[i%26]+n;i=Math.floor(i/26)}while(i>0);return'n'+n};
+const map={};vars.forEach(v=>{if(!map[v])map[v]=genShort()});
+Object.keys(map).forEach(v=>{code=code.replace(new RegExp('\\b'+v.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','g'),map[v])});
+}
+document.getElementById('output').value=code;
+updateStats(input,code);
+toast('Minified!');
+}
+function beautify(){
+const input=document.getElementById('input').value;
+if(!input.trim())return toast('Enter some JS first');
+let code=input;let indent=0;let out='';
+for(let i=0;i<code.length;i++){
+const ch=code[i];
+if(ch==='{'||ch==='['){out+=ch;indent++;out+='\n'+'  '.repeat(indent)}
+else if(ch==='}'||ch===']'){indent=Math.max(0,indent-1);out+='\n'+'  '.repeat(indent)+ch;out+='\n'+'  '.repeat(indent)}
+else if(ch===';'){out+=ch;out+='\n'+'  '.repeat(indent)}
+else if(ch===','&&code[i+1]!==' '){out+=',\n'+'  '.repeat(indent)}
+else{out+=ch}
+}
+out=out.replace(/\n\s*\n/g,'\n').trim();
+document.getElementById('output').value=out;
+updateStats(input,out);
+toast('Beautified!');
+}
+function updateStats(a,b){
+document.getElementById('statBefore').textContent='Before: '+a.length+' chars';
+document.getElementById('statAfter').textContent='After: '+b.length+' chars';
+const pct=a.length?Math.round((1-b.length/a.length)*100):0;
+document.getElementById('statSaved').textContent='Saved: '+pct+'%';
+}
+function copyResult(){navigator.clipboard.writeText(document.getElementById('output').value).then(()=>toast('Copied!'))}
+function swapInOut(){const a=document.getElementById('input'),b=document.getElementById('output');const t=a.value;a.value=b.value;b.value=t}
+</script>
+</body>
+</html>

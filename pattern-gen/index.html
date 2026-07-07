@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pattern Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #e0e0e0;padding:16px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header .icon{font-size:24px}
+.header h1{font-size:18px;font-weight:600;flex:1}
+.container{max-width:1000px;margin:0 auto;padding:24px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:24px;margin-bottom:20px}
+.card h2{font-size:16px;font-weight:600;margin-bottom:16px}
+.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;transition:all .2s}
+.btn-primary{background:#FF6B00;color:#fff}.btn-primary:hover{background:#e55a00}
+.btn-outline{background:transparent;border:1px solid #ddd;color:#555}.btn-outline:hover{border-color:#FF6B00;color:#FF6B00}
+.btn-sm{padding:5px 10px;font-size:12px}
+input[type=text],input[type=number],input[type=color],select{font-family:'Inter',sans-serif;font-size:14px;padding:8px 12px;border:1px solid #ddd;border-radius:8px;outline:none;width:100%}
+input:focus,select:focus{border-color:#FF6B00}
+label{display:block;font-size:13px;font-weight:500;margin-bottom:4px;color:#555}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+.row{display:flex;gap:16px;flex-wrap:wrap}
+.row>*{flex:1;min-width:150px}
+.preview{width:100%;height:300px;border-radius:12px;border:1px solid #eee}
+.code-block{background:#1e1e1e;color:#d4d4d4;padding:16px;border-radius:8px;font-family:'Fira Code',monospace;font-size:12px;overflow-x:auto;white-space:pre-wrap;cursor:pointer;position:relative;max-height:200px;overflow-y:auto}
+.code-block:hover{background:#2a2a2a}
+.copy-hint{position:absolute;top:8px;right:12px;font-size:11px;color:#888;font-family:'Inter',sans-serif}
+.type-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
+.type-btn{padding:12px 8px;border:2px solid #eee;border-radius:8px;background:#fff;cursor:pointer;text-align:center;font-size:12px;font-weight:500;transition:all .2s}
+.type-btn.active{border-color:#FF6B00;background:#fff5f0;color:#FF6B00}
+.type-btn:hover{border-color:#FF6B00}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/">← Home</a>
+  <span class="icon">🔲</span>
+  <h1>Pattern Generator</h1>
+</div>
+<div class="container">
+  <div class="card">
+    <h2>Preview</h2>
+    <div class="preview" id="preview"></div>
+  </div>
+  <div class="card">
+    <h2>Pattern Type</h2>
+    <div class="type-grid">
+      <button class="type-btn active" onclick="setType('dots',this)">Dot</button>
+      <button class="type-btn" onclick="setType('lines-h',this)">H Lines</button>
+      <button class="type-btn" onclick="setType('lines-v',this)">V Lines</button>
+      <button class="type-btn" onclick="setType('lines-d',this)">Diag Lines</button>
+      <button class="type-btn" onclick="setType('grid',this)">Grid</button>
+      <button class="type-btn" onclick="setType('checker',this)">Checker</button>
+      <button class="type-btn" onclick="setType('zigzag',this)">Zigzag</button>
+      <button class="type-btn" onclick="setType('waves',this)">Waves</button>
+      <button class="type-btn" onclick="setType('crosses',this)">Crosses</button>
+      <button class="type-btn" onclick="setType('diamonds',this)">Diamonds</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Customize</h2>
+    <div class="row">
+      <div><label>Foreground Color</label><input type="color" id="fg" value="#FF6B00" oninput="update()"></div>
+      <div><label>Background Color</label><input type="color" id="bg" value="#ffffff" oninput="update()"></div>
+      <div><label>Size (px)</label><input type="number" id="size" value="20" min="4" max="100" oninput="update()"></div>
+      <div><label>Opacity</label><input type="number" id="opacity" value="1" min="0.1" max="1" step="0.1" oninput="update()"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>CSS Code</h2>
+    <div class="code-block" onclick="copyCode()"><span class="copy-hint">Click to copy</span><code id="css-code"></code></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let patternType='dots';
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function setType(type,btn){
+  patternType=type;
+  document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  update();
+}
+function genSVG(){
+  const fg=document.getElementById('fg').value;
+  const bg=document.getElementById('bg').value;
+  const size=+document.getElementById('size').value;
+  const op=+document.getElementById('opacity').value;
+  const fga=fg+Math.round(op*255).toString(16).padStart(2,'0');
+  let svg='';
+  switch(patternType){
+    case'svg:dots':
+    case'dots':svg=`<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'><circle cx='${size/2}' cy='${size/2}' r='${size/6}' fill='${fga}'/></svg>`;break;
+    case'lines-h':svg=`<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'><line x1='0' y1='${size/2}' x2='${size}' y2='${size/2}' stroke='${fga}' stroke-width='${Math.max(1,size/10)}'/></svg>`;break;
+    case'lines-v':svg=`<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'><line x1='${size/2}' y1='0' x2='${size/2}' y2='${size}' stroke='${fga}' stroke-width='${Math.max(1,size/10)}'/></svg>`;break;
+    case'lines-d':svg=`<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'><line x1='0' y1='${size}' x2='${size}' y2='0' stroke='${fga}' stroke-width='${Math.max(1,size/10)}'/></svg>`;break;
+    case'grid':svg=`<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'><rect width='${size}' height='${size}' fill='none' stroke='${fga}' stroke-width='${Math.max(1,size/15)}'/></svg>`;break;
+    case'checker':svg=`<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'><rect width='${size/2}' height='${size/2}' fill='${fga}'/><rect x='${size/2}' y='${size/2}' width='${size/2}' height='${size/2}' fill='${fga}'/></svg>`;break;
+    case'zigzag':svg=`<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'><polyline points='0,${size} ${size/2},0 ${size},${size}' fill='none' stroke='${fga}' stroke-width='${Math.max(1,size/10)}'/></svg>`;break;
+    case'waves':svg=`<svg xmlns='http://www.w3.org/2000/svg' width='${size*2}' height='${size}'><path d='M0,${size/2} Q${size/2},0 ${size},${size/2} T${size*2},${size/2}' fill='none' stroke='${fga}' stroke-width='${Math.max(1,size/10)}'/></svg>`;break;
+    case'crosses':svg=`<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'><line x1='${size/2}' y1='${size*0.25}' x2='${size/2}' y2='${size*0.75}' stroke='${fga}' stroke-width='${Math.max(1,size/10)}'/><line x1='${size*0.25}' y1='${size/2}' x2='${size*0.75}' y2='${size/2}' stroke='${fga}' stroke-width='${Math.max(1,size/10)}'/></svg>`;break;
+    case'diamonds':svg=`<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'><polygon points='${size/2},0 ${size},${size/2} ${size/2},${size} 0,${size/2}' fill='none' stroke='${fga}' stroke-width='${Math.max(1,size/10)}'/></svg>`;break;
+  }
+  return`data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+function update(){
+  const url=genSVG();
+  const bg=document.getElementById('bg').value;
+  document.getElementById('preview').style.background=`${bg} url('${url}') repeat`;
+  document.getElementById('css-code').textContent=`background-color: ${bg};\nbackground-image: url("${decodeURIComponent(url.replace('data:image/svg+xml,',''))}");\nbackground-repeat: repeat;`;
+}
+function copyCode(){navigator.clipboard.writeText(document.getElementById('css-code').textContent);toast('Copied!')}
+update();
+</script>
+</body>
+</html>

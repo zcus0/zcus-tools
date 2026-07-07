@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SVG Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #e0e0e0;padding:16px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header .icon{font-size:24px}
+.header h1{font-size:18px;font-weight:600;flex:1}
+.container{max-width:1200px;margin:0 auto;padding:24px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:24px;margin-bottom:20px}
+.card h2{font-size:16px;font-weight:600;margin-bottom:16px}
+.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;transition:all .2s}
+.btn-primary{background:#FF6B00;color:#fff}.btn-primary:hover{background:#e55a00}
+.btn-outline{background:transparent;border:1px solid #ddd;color:#555}.btn-outline:hover{border-color:#FF6B00;color:#FF6B00}
+.btn-sm{padding:5px 10px;font-size:12px}
+input[type=text],input[type=number],input[type=color],select{font-family:'Inter',sans-serif;font-size:13px;padding:6px 10px;border:1px solid #ddd;border-radius:6px;outline:none}
+input:focus,select:focus{border-color:#FF6B00}
+label{display:block;font-size:12px;font-weight:500;margin-bottom:4px;color:#555}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+.toolbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tool-btn{padding:8px 12px;border:2px solid #eee;border-radius:8px;background:#fff;cursor:pointer;font-size:12px;font-weight:500;transition:all .2s}
+.tool-btn.active{border-color:#FF6B00;color:#FF6B00;background:#fff5f0}
+.tool-btn:hover{border-color:#FF6B00}
+.canvas-area{border:2px dashed #ddd;border-radius:12px;overflow:hidden;background:#fff;cursor:crosshair}
+.canvas-area svg{display:block;width:100%;height:100%}
+.code-block{background:#1e1e1e;color:#d4d4d4;padding:16px;border-radius:8px;font-family:'Fira Code',monospace;font-size:11px;overflow:auto;white-space:pre-wrap;max-height:300px;cursor:pointer;position:relative}
+.code-block:hover{background:#2a2a2a}
+.copy-hint{position:absolute;top:8px;right:12px;font-size:11px;color:#888;font-family:'Inter',sans-serif}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:768px){.grid-2{grid-template-columns:1fr}}
+.props{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+.prop{min-width:80px}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/">← Home</a>
+  <span class="icon">✏️</span>
+  <h1>SVG Editor</h1>
+</div>
+<div class="container">
+  <div class="card">
+    <div class="toolbar">
+      <button class="tool-btn active" data-tool="rect" onclick="setTool('rect',this)">▭ Rect</button>
+      <button class="tool-btn" data-tool="circle" onclick="setTool('circle',this)">○ Circle</button>
+      <button class="tool-btn" data-tool="ellipse" onclick="setTool('ellipse',this)">⬭ Ellipse</button>
+      <button class="tool-btn" data-tool="line" onclick="setTool('line',this)">╱ Line</button>
+      <button class="tool-btn" data-tool="text" onclick="setTool('text',this)">T Text</button>
+    </div>
+    <div class="props" style="margin-bottom:12px">
+      <div class="prop"><label>Fill</label><input type="color" id="fill" value="#FF6B00"></div>
+      <div class="prop"><label>Stroke</label><input type="color" id="stroke" value="#333333"></div>
+      <div class="prop"><label>Stroke W</label><input type="number" id="strokeW" value="2" min="0" max="20" style="width:60px"></div>
+      <div class="prop"><label>Opacity</label><input type="number" id="opacity" value="1" min="0" max="1" step="0.1" style="width:60px"></div>
+      <div style="flex:1"></div>
+      <button class="btn btn-outline btn-sm" onclick="undo()">↩ Undo</button>
+      <button class="btn btn-outline btn-sm" onclick="clearCanvas()">🗑 Clear</button>
+      <button class="btn btn-primary btn-sm" onclick="exportSVG()">📋 Copy SVG</button>
+      <button class="btn btn-outline btn-sm" onclick="downloadSVG()">💾 Download</button>
+    </div>
+    <div class="canvas-area" id="canvas-wrap">
+      <svg id="svg-canvas" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h2>Elements</h2>
+      <div id="elements-list" style="max-height:200px;overflow-y:auto;font-size:13px">
+        <div style="color:#999;text-align:center;padding:20px">No elements yet</div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>SVG Code</h2>
+      <div class="code-block" onclick="exportSVG()"><span class="copy-hint">Click to copy</span><code id="svg-code"></code></div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let tool='rect';let elements=[];let drawing=false;let startX,startY,tempEl;
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+const svg=document.getElementById('svg-canvas');
+const ns='http://www.w3.org/2000/svg';
+function setTool(t,btn){tool=t;document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active')}
+function getCoords(e){const r=svg.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*800,y:(e.clientY-r.top)/r.height*500}}
+function getAttrs(){return{fill:document.getElementById('fill').value,stroke:document.getElementById('stroke').value,'stroke-width':document.getElementById('strokeW').value,opacity:document.getElementById('opacity').value}}
+svg.addEventListener('mousedown',e=>{
+  const p=getCoords(e);drawing=true;startX=p.x;startY=p.y;
+  const a=getAttrs();
+  if(tool==='rect'){tempEl=document.createElementNS(ns,'rect');tempEl.setAttribute('x',p.x);tempEl.setAttribute('y',p.y);tempEl.setAttribute('width',0);tempEl.setAttribute('height',0)}
+  else if(tool==='circle'){tempEl=document.createElementNS(ns,'circle');tempEl.setAttribute('cx',p.x);tempEl.setAttribute('cy',p.y);tempEl.setAttribute('r',0)}
+  else if(tool==='ellipse'){tempEl=document.createElementNS(ns,'ellipse');tempEl.setAttribute('cx',p.x);tempEl.setAttribute('cy',p.y);tempEl.setAttribute('rx',0);tempEl.setAttribute('ry',0)}
+  else if(tool==='line'){tempEl=document.createElementNS(ns,'line');tempEl.setAttribute('x1',p.x);tempEl.setAttribute('y1',p.y);tempEl.setAttribute('x2',p.x);tempEl.setAttribute('y2',p.y);tempEl.setAttribute('fill','none')}
+  else if(tool==='text'){tempEl=document.createElementNS(ns,'text');tempEl.setAttribute('x',p.x);tempEl.setAttribute('y',p.y);tempEl.textContent='Text';tempEl.setAttribute('font-size','24');tempEl.setAttribute('font-family','Inter,sans-serif');drawing=false;elements.push(tempEl);svg.appendChild(tempEl);updateCode();return}
+  Object.keys(a).forEach(k=>tempEl.setAttribute(k,a[k]));
+  tempEl.style.cursor='pointer';
+  svg.appendChild(tempEl);
+});
+svg.addEventListener('mousemove',e=>{
+  if(!drawing||!tempEl)return;const p=getCoords(e);
+  if(tool==='rect'){const x=Math.min(startX,p.x),y=Math.min(startY,p.y);tempEl.setAttribute('x',x);tempEl.setAttribute('y',y);tempEl.setAttribute('width',Math.abs(p.x-startX));tempEl.setAttribute('height',Math.abs(p.y-startY))}
+  else if(tool==='circle'){tempEl.setAttribute('r',Math.sqrt((p.x-startX)**2+(p.y-startY)**2))}
+  else if(tool==='ellipse'){tempEl.setAttribute('rx',Math.abs(p.x-startX));tempEl.setAttribute('ry',Math.abs(p.y-startY))}
+  else if(tool==='line'){tempEl.setAttribute('x2',p.x);tempEl.setAttribute('y2',p.y)}
+});
+svg.addEventListener('mouseup',()=>{if(drawing&&tempEl){elements.push(tempEl);tempEl=null;drawing=false;updateCode();updateList()}});
+function undo(){if(!elements.length)return;svg.removeChild(elements.pop());updateCode();updateList()}
+function clearCanvas(){elements.forEach(el=>svg.removeChild(el));elements=[];updateCode();updateList()}
+function updateCode(){const code=svg.outerHTML;document.getElementById('svg-code').textContent=code}
+function updateList(){
+  const el=document.getElementById('elements-list');
+  if(!elements.length){el.innerHTML='<div style="color:#999;text-align:center;padding:20px">No elements yet</div>';return}
+  el.innerHTML=elements.map((e,i)=>`<div style="padding:6px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center"><span>${e.tagName} #${i+1}</span><button class="btn btn-sm" style="background:#ff4444;color:#fff;padding:2px 6px;font-size:10px" onclick="svg.removeChild(elements[${i}]);elements.splice(${i},1);updateCode();updateList()">✕</button></div>`).join('');
+}
+function exportSVG(){navigator.clipboard.writeText(svg.outerHTML);toast('SVG copied!')}
+function downloadSVG(){const b=new Blob([svg.outerHTML],{type:'image/svg+xml'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='drawing.svg';a.click();URL.revokeObjectURL(u);toast('Downloaded!')}
+updateCode();
+</script>
+</body>
+</html>

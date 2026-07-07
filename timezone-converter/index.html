@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Timezone Converter</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#fff;min-height:100vh;padding:16px}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.header a{color:#FF6B00;text-decoration:none;font-size:14px}
+.header h1{font-size:20px;font-weight:700}
+.header span{font-size:24px}
+.container{max-width:700px;margin:0 auto}
+.card{background:#16213e;border-radius:12px;padding:24px;border:1px solid #233554;margin-bottom:16px}
+label{display:block;color:#888;font-size:13px;margin-bottom:6px}
+input,select{width:100%;padding:12px;background:#0f0f23;border:1px solid #233554;border-radius:8px;color:#fff;font-size:14px;font-family:'Inter',sans-serif;margin-bottom:12px}
+input:focus,select:focus{outline:none;border-color:#FF6B00}
+.search-wrap{position:relative}
+.search-wrap input{padding-left:32px}
+.search-wrap::before{content:'🔍';position:absolute;left:10px;top:10px;font-size:14px}
+.results{max-height:400px;overflow-y:auto}
+.tz-row{display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #233554;font-size:13px}
+.tz-row:hover{background:#0f0f23;border-radius:6px}
+.tz-row .name{color:#888;flex:1}
+.tz-row .time{font-weight:600;color:#FF6B00;font-variant-numeric:tabular-nums}
+.tz-row .date-sub{color:#555;font-size:11px}
+.toast{position:fixed;bottom:20px;right:20px;background:#FF6B00;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span>🌐</span><h1>Timezone Converter</h1></div>
+<div class="container">
+<div class="card">
+<label>Date & Time</label>
+<input type="datetime-local" id="inputDT">
+<label>Source Timezone</label>
+<div class="search-wrap"><input type="text" id="tzSearch" placeholder="Search timezone..." oninput="filterTz()"></div>
+<select id="srcTz" size="8" onchange="convert()" style="height:auto"></select>
+</div>
+<div class="card">
+<h3 style="margin-bottom:12px;font-size:14px;color:#888">Converted Times</h3>
+<div class="results" id="results"></div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const allTz=['Pacific/Honolulu','America/Anchorage','America/Los_Angeles','America/Denver','America/Chicago','America/New_York','America/Toronto','America/Sao_Paulo','America/Argentina/Buenos_Aires','Atlantic/Reykjavik','Europe/London','Europe/Paris','Europe/Berlin','Europe/Moscow','Africa/Cairo','Africa/Lagos','Asia/Dubai','Asia/Karachi','Asia/Kolkata','Asia/Kathmandu','Asia/Dhaka','Asia/Bangkok','Asia/Hong_Kong','Asia/Shanghai','Asia/Singapore','Asia/Taipei','Asia/Seoul','Asia/Tokyo','Australia/Perth','Australia/Sydney','Pacific/Auckland','Pacific/Fiji'];
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function initTz(){const sel=document.getElementById('srcTz');sel.innerHTML=allTz.map(tz=>`<option value="${tz}">${tz.replace(/_/g,' ')}</option>`).join('');sel.value='America/New_York'}
+function filterTz(){const q=document.getElementById('tzSearch').value.toLowerCase();const sel=document.getElementById('srcTz');[...sel.options].forEach(o=>{o.style.display=o.value.toLowerCase().includes(q)?'':'none'})}
+function convert(){
+const dt=document.getElementById('inputDT').value;if(!dt)return;
+const tz=document.getElementById('srcTz').value;const srcDate=new Date(dt);
+const srcStr=srcDate.toLocaleString('en-US',{timeZone:tz});
+const results=[];
+allTz.forEach(t=>{
+if(t===tz)return;
+try{const tgtDate=new Date(srcStr);const parts=new Intl.DateTimeFormat('en-US',{timeZone:t,hour:'2-digit',minute:'2-digit',hour12:true}).formatToParts(tgtDate);
+const timeStr=parts.filter(p=>p.type!=='literal').map(p=>p.value).join(':');
+const dateStr=new Intl.DateTimeFormat('en-US',{timeZone:t,weekday:'short',month:'short',day:'numeric'}).format(tgtDate);
+const srcOffset=new Date(srcStr).getTimezoneOffset?0:0;
+results.push({tz:t,time:timeStr,date:dateStr})}
+catch(e){}});
+results.sort((a,b)=>a.tz.localeCompare(b.tz));
+document.getElementById('results').innerHTML=results.map(r=>`<div class="tz-row"><span class="name">${r.tz.replace(/_/g,' ')}</span><div style="text-align:right"><div class="time">${r.time}</div><div class="date-sub">${r.date}</div></div></div>`).join('')}
+initTz();
+document.getElementById('inputDT').value=new Date().toISOString().slice(0,16);
+convert();
+</script>
+</body>
+</html>

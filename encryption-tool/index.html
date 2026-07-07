@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AES Encryption Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333}
+.header{background:#fff;padding:16px 24px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+.header a{color:#FF6B00;text-decoration:none;font-weight:600}
+.header h1{font-size:20px;font-weight:700}
+.header .icon{font-size:24px}
+.container{max-width:800px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card h2{font-size:16px;font-weight:600;margin-bottom:12px}
+textarea{width:100%;height:120px;border:1px solid #e0e0e0;border-radius:8px;padding:12px;font-family:monospace;font-size:13px;resize:vertical}
+textarea:focus{outline:2px solid #FF6B00;border-color:#FF6B00}
+input[type=text]{width:100%;padding:10px 14px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px}
+input[type=text]:focus{outline:2px solid #FF6B00}
+.btn{background:#FF6B00;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-family:'Inter';font-weight:600;font-size:14px;cursor:pointer}
+.btn:hover{opacity:.9}
+.btn-secondary{background:#eee;color:#333}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.alert{background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px;font-size:13px;margin-bottom:12px}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:1000;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">🔐</span><h1>AES Encryption Tool</h1></div>
+<div class="container">
+<div class="alert">🔒 Uses AES-GCM via Web Crypto API. Encryption happens entirely in your browser — nothing is sent to any server.</div>
+<div class="card">
+<h2>Encrypt</h2>
+<textarea id="plainText" placeholder="Enter text to encrypt..."></textarea>
+<label style="font-size:13px;font-weight:600;margin:8px 0;display:block">Password</label>
+<input type="text" id="encPassword" placeholder="Enter encryption password" style="margin-bottom:8px">
+<div class="btn-row">
+<button class="btn" onclick="encryptText()">🔒 Encrypt</button>
+</div>
+<label style="font-size:13px;font-weight:600;margin:8px 0;display:block">Encrypted Output</label>
+<textarea id="cipherText" readonly placeholder="Encrypted text will appear here..."></textarea>
+<div class="btn-row">
+<button class="btn btn-secondary" onclick="copy(document.getElementById('cipherText').value)">📋 Copy Encrypted</button>
+</div>
+</div>
+<div class="card">
+<h2>Decrypt</h2>
+<textarea id="decryptInput" placeholder="Paste encrypted text here..."></textarea>
+<label style="font-size:13px;font-weight:600;margin:8px 0;display:block">Password</label>
+<input type="text" id="decPassword" placeholder="Enter decryption password" style="margin-bottom:8px">
+<div class="btn-row">
+<button class="btn" onclick="decryptText()">🔓 Decrypt</button>
+</div>
+<label style="font-size:13px;font-weight:600;margin:8px 0;display:block">Decrypted Output</label>
+<textarea id="decryptedOutput" readonly placeholder="Decrypted text will appear here..."></textarea>
+<div class="btn-row">
+<button class="btn btn-secondary" onclick="copy(document.getElementById('decryptedOutput').value)">📋 Copy Decrypted</button>
+</div>
+</div>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function copy(v){navigator.clipboard.writeText(v).then(()=>toast('Copied!'))}
+async function getKey(password,salt){
+const enc=new TextEncoder();
+const keyMaterial=await crypto.subtle.importKey('raw',enc.encode(password),'PBKDF2',false,['deriveKey']);
+return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:100000,hash:'SHA-256'},keyMaterial,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function encryptText(){
+const text=document.getElementById('plainText').value;
+const password=document.getElementById('encPassword').value;
+if(!text)return toast('Enter text to encrypt');
+if(!password)return toast('Enter a password');
+try{
+const enc=new TextEncoder();
+const salt=crypto.getRandomValues(new Uint8Array(16));
+const iv=crypto.getRandomValues(new Uint8Array(12));
+const key=await getKey(password,salt);
+const encrypted=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,enc.encode(text));
+const combined=new Uint8Array(salt.length+iv.length+encrypted.byteLength);
+combined.set(salt,0);combined.set(iv,salt.length);combined.set(new Uint8Array(encrypted),salt.length+iv.length);
+const b64=btoa(String.fromCharCode(...combined));
+document.getElementById('cipherText').value=b64;
+toast('Encrypted!');
+}catch(e){toast('Encryption failed: '+e.message)}
+}
+async function decryptText(){
+const cipherText=document.getElementById('decryptInput').value;
+const password=document.getElementById('decPassword').value;
+if(!cipherText)return toast('Enter encrypted text');
+if(!password)return toast('Enter the password');
+try{
+const combined=Uint8Array.from(atob(cipherText),c=>c.charCodeAt(0));
+const salt=combined.slice(0,16);
+const iv=combined.slice(16,28);
+const data=combined.slice(28);
+const key=await getKey(password,salt);
+const decrypted=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,data);
+document.getElementById('decryptedOutput').value=new TextDecoder().decode(decrypted);
+toast('Decrypted!');
+}catch(e){toast('Decryption failed — wrong password or corrupted data')}
+}
+</script>
+</body>
+</html>

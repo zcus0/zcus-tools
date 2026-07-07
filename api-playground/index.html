@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>API Playground</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333}
+.header{background:#fff;padding:16px 24px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+.header a{color:#FF6B00;text-decoration:none;font-weight:600}
+.header h1{font-size:20px;font-weight:700}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card h2{font-size:16px;font-weight:600;margin-bottom:12px}
+.url-row{display:flex;gap:8px}
+select{padding:10px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;font-weight:600;background:#fff}
+select:focus{outline:2px solid #FF6B00}
+input[type=text],textarea{width:100%;padding:10px 14px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;font-family:monospace}
+input[type=text]:focus,textarea:focus{outline:2px solid #FF6B00;border-color:#FF6B00}
+textarea{height:120px;resize:vertical}
+.btn{background:#FF6B00;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-family:'Inter';font-weight:600;font-size:14px;cursor:pointer}
+.btn:hover{opacity:.9}
+.btn-secondary{background:#eee;color:#333}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.kv-row{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+.kv-row input{flex:1}
+.remove-btn{background:none;border:none;color:#e74c3c;cursor:pointer;font-size:18px}
+.response-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.status-badge{padding:4px 12px;border-radius:20px;font-size:13px;font-weight:700;color:#fff}
+.status-2xx{background:#27ae60}.status-3xx{background:#3498db}.status-4xx{background:#f39c12}.status-5xx{background:#e74c3c}
+.response-body{background:#1e1e1e;color:#d4d4d4;padding:16px;border-radius:8px;font-family:monospace;font-size:13px;max-height:400px;overflow:auto;white-space:pre-wrap;word-break:break-all}
+.timing{font-size:12px;color:#666;display:flex;gap:16px}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:1000;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+.tab-bar{display:flex;gap:0;border-bottom:2px solid #e0e0e0;margin-bottom:12px}
+.tab{padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid transparent;margin-bottom:-2px}
+.tab.active{color:#FF6B00;border-bottom-color:#FF6B00}
+.body-type{display:flex;gap:8px;margin-bottom:8px}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">🌐</span><h1>API Playground</h1></div>
+<div class="container">
+<div class="card">
+<h2>Request</h2>
+<div class="url-row" style="margin-bottom:12px">
+<select id="method">
+<option value="GET">GET</option><option value="POST">POST</option><option value="PUT">PUT</option>
+<option value="PATCH">PATCH</option><option value="DELETE">DELETE</option>
+</select>
+<input type="text" id="url" placeholder="https://api.example.com/endpoint" value="https://jsonplaceholder.typicode.com/posts/1">
+<button class="btn" onclick="sendRequest()">Send</button>
+</div>
+<div class="tab-bar">
+<div class="tab active" onclick="showTab('headers')" data-tab="headers">Headers</div>
+<div class="tab" onclick="showTab('body')" data-tab="body">Body</div>
+</div>
+<div id="headersTab">
+<div id="headerPairs"></div>
+<button class="btn btn-sm btn-secondary" onclick="addHeader()">+ Add Header</button>
+</div>
+<div id="bodyTab" style="display:none">
+<div class="body-type">
+<label><input type="radio" name="bodyType" value="json" checked onchange="updateBodyType()"> JSON</label>
+<label><input type="radio" name="bodyType" value="form" onchange="updateBodyType()"> Form</label>
+<label><input type="radio" name="bodyType" value="text" onchange="updateBodyType()"> Text</label>
+</div>
+<textarea id="bodyContent" placeholder='{"key": "value"}'></textarea>
+</div>
+</div>
+<div class="card" id="responseCard" style="display:none">
+<h2>Response</h2>
+<div class="response-header">
+<span><span class="status-badge" id="statusBadge"></span> <span id="statusText" style="font-size:14px;font-weight:600"></span></span>
+<div class="timing" id="timing"></div>
+</div>
+<div class="tab-bar" style="margin-top:12px">
+<div class="tab active" onclick="showRespTab('respBody')" data-rt="respBody">Body</div>
+<div class="tab" onclick="showRespTab('respHeaders')" data-rt="respHeaders">Headers</div>
+</div>
+<div class="response-body" id="responseBody"></div>
+<div id="responseHeaders" style="display:none;font-family:monospace;font-size:12px;max-height:200px;overflow:auto"></div>
+<button class="btn btn-secondary" style="margin-top:8px" onclick="copy(document.getElementById('responseBody').textContent)">📋 Copy Response</button>
+</div>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function copy(v){navigator.clipboard.writeText(v).then(()=>toast('Copied!'))}
+let headerCount=0;
+function addHeader(id=''){
+const row=document.createElement('div');row.className='kv-row';
+row.innerHTML=`<input type="text" placeholder="Key" data-role="key" value="${id?'Authorization':''}">
+<input type="text" placeholder="Value" data-role="value" value="${id?'Bearer token':''}">
+<button class="remove-btn" onclick="this.parentElement.remove()">✕</button>`;
+document.getElementById('headerPairs').appendChild(row);
+}
+function showTab(name){
+document.querySelectorAll('.tab-bar .tab[data-tab]').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
+document.getElementById('headersTab').style.display=name==='headers'?'block':'none';
+document.getElementById('bodyTab').style.display=name==='body'?'block':'none';
+}
+function showRespTab(name){
+document.querySelectorAll('.tab-bar .tab[data-rt]').forEach(t=>t.classList.toggle('active',t.dataset.rt===name));
+document.getElementById('responseBody').style.display=name==='respBody'?'block':'none';
+document.getElementById('responseHeaders').style.display=name==='respHeaders'?'block':'none';
+}
+async function sendRequest(){
+const method=document.getElementById('method').value;
+const url=document.getElementById('url').value.trim();
+if(!url)return toast('Enter a URL');
+const headers={};
+document.querySelectorAll('#headerPairs .kv-row').forEach(row=>{
+const k=row.querySelector('[data-role=key]').value.trim();
+const v=row.querySelector('[data-role=value]').value.trim();
+if(k)headers[k]=v;
+});
+const bodyType=document.querySelector('input[name=bodyType]:checked').value;
+const opts={method,headers};
+if(method!=='GET'&&method!=='DELETE'){
+if(bodyType==='json'){opts.body=document.getElementById('bodyContent').value;headers['Content-Type']=headers['Content-Type']||'application/json'}
+else if(bodyType==='form'){const fd=new URLSearchParams(document.getElementById('bodyContent').value);opts.body=fd;headers['Content-Type']='application/x-www-form-urlencoded'}
+else{opts.body=document.getElementById('bodyContent').value}
+}
+const start=performance.now();
+try{
+const resp=await fetch(url,opts);
+const elapsed=Math.round(performance.now()-start);
+const text=await resp.text();
+let formatted=text;
+try{formatted=JSON.stringify(JSON.parse(text),null,2)}catch(e){}
+document.getElementById('responseCard').style.display='block';
+const cls=resp.status<300?'status-2xx':resp.status<400?'status-3xx':resp.status<500?'status-4xx':'status-5xx';
+document.getElementById('statusBadge').className='status-badge '+cls;
+document.getElementById('statusBadge').textContent=resp.status;
+document.getElementById('statusText').textContent=resp.statusText;
+document.getElementById('timing').innerHTML=`<span>⏱️ ${elapsed}ms</span><span>📦 ${text.length} chars</span>`;
+document.getElementById('responseBody').textContent=formatted;
+let hdrHtml='';resp.headers.forEach((v,k)=>{hdrHtml+=`<div style="padding:4px 0;border-bottom:1px solid #eee"><strong>${k}:</strong> ${v}</div>`});
+document.getElementById('responseHeaders').innerHTML=hdrHtml;
+toast('Request sent!');
+}catch(e){toast('Request failed: '+e.message)}
+}
+addHeader();
+addHeader();
+</script>
+</body>
+</html>

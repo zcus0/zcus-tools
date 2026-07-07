@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Query Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#fff;min-height:100vh;padding:16px}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.header a{color:#FF6B00;text-decoration:none;font-size:14px}
+.header h1{font-size:20px;font-weight:700}
+.header span{font-size:24px}
+.container{max-width:800px;margin:0 auto}
+.card{background:#16213e;border-radius:12px;padding:24px;border:1px solid #233554;margin-bottom:16px}
+label{display:block;color:#888;font-size:12px;margin-bottom:4px}
+select,input[type=text]{width:100%;padding:10px;background:#0f0f23;border:1px solid #233554;border-radius:8px;color:#fff;font-family:'Inter',sans-serif;font-size:14px;margin-bottom:10px}
+select:focus,input:focus{outline:none;border-color:#FF6B00}
+select[multiple]{height:auto;min-height:80px}
+.btn{padding:10px 20px;background:#FF6B00;border:none;color:#fff;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.btn:hover{background:#e65c00}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-secondary{background:#233554}
+.section{margin-bottom:16px;padding:12px;background:#0f0f23;border-radius:8px;border:1px solid #233554}
+.section-title{font-size:12px;color:#FF6B00;font-weight:600;margin-bottom:8px;text-transform:uppercase}
+.condition-row{display:flex;gap:8px;align-items:end;margin-bottom:8px}
+.condition-row select,.condition-row input{margin:0;flex:1}
+.condition-row .logic{flex:0.5}
+.output{background:#0f0f23;border-radius:8px;padding:16px;font-family:'Courier New',monospace;font-size:14px;color:#FF6B00;line-height:1.6;white-space:pre-wrap;border:1px solid #233554}
+.output-actions{display:flex;gap:8px;margin-top:8px}
+.toast{position:fixed;bottom:20px;right:20px;background:#FF6B00;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span>🔧</span><h1>SQL Query Builder</h1></div>
+<div class="container">
+<div class="card">
+<h3 style="font-size:14px;color:#888;margin-bottom:12px">Schema Setup</h3>
+<label>Table Definitions (name:col1:type,col2:type,...)</label>
+<textarea id="schemaInput" style="width:100%;min-height:80px;padding:12px;background:#0f0f23;border:1px solid #233554;border-radius:8px;color:#fff;font-family:'Courier New',monospace;font-size:12px;resize:vertical" placeholder="users: id:INTEGER, name:VARCHAR, email:VARCHAR, age:INTEGER
+posts: id:INTEGER, user_id:INTEGER, title:VARCHAR, body:TEXT
+comments: id:INTEGER, post_id:INTEGER, user_id:INTEGER, body:TEXT">users: id:INTEGER, name:VARCHAR, email:VARCHAR, age:INTEGER, city:VARCHAR
+posts: id:INTEGER, user_id:INTEGER, title:VARCHAR, body:TEXT, created_at:TIMESTAMP</textarea>
+<button class="btn btn-sm btn-secondary" onclick="parseSchema()" style="margin-top:8px">Parse Schema</button>
+</div>
+<div class="card">
+<div class="section">
+<div class="section-title">SELECT</div>
+<label>Table</label>
+<select id="selTable" onchange="onTableChange()"><option value="">-- Select Table --</option></select>
+<label>Columns</label>
+<select id="selCols" multiple></select>
+<label>Where Conditions</label>
+<div id="conditions"></div>
+<button class="btn btn-sm btn-secondary" onclick="addCondition()" style="margin-top:4px">+ Add Condition</button>
+</div>
+<div class="section">
+<div class="section-title">ORDER BY</div>
+<div style="display:flex;gap:8px">
+<select id="orderBy" style="flex:2"><option value="">None</option></select>
+<select id="orderDir" style="flex:0.5"><option value="ASC">ASC</option><option value="DESC">DESC</option></select>
+</div>
+</div>
+<div class="section">
+<div class="section-title">LIMIT</div>
+<input type="text" id="limitVal" placeholder="e.g. 10" style="width:100px">
+</div>
+<div class="section">
+<div class="section-title">JOIN</div>
+<label>Join Table</label>
+<select id="joinTable" onchange="onJoinTableChange()"><option value="">None</option></select>
+<label>On (foreign key)</label>
+<div style="display:flex;gap:8px">
+<select id="joinOn" style="flex:1"><option value="">--</option></select>
+<span style="padding:10px;color:#888">=</span>
+<select id="joinTarget" style="flex:1"><option value="">--</option></select>
+</div>
+</div>
+<button class="btn" onclick="buildQuery()" style="width:100%">Build Query</button>
+</div>
+<div class="card">
+<h3 style="font-size:14px;color:#888;margin-bottom:8px">Generated SQL</h3>
+<div class="output" id="output">-- Configure and click "Build Query"</div>
+<div class="output-actions">
+<button class="btn btn-sm" onclick="copySQL()">📋 Copy SQL</button>
+</div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let schema={},conds=[];
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function parseSchema(){
+const input=document.getElementById('schemaInput').value;schema={};
+input.split('\n').forEach(line=>{
+const m=line.trim().match(/^(\w+):\s*(.+)/);if(!m)return;
+const tname=m[1];schema[tname]=m[2].split(',').map(s=>{const[p,type]=s.trim().split(':');return{name:p,type:type||'TEXT'}});
+});populateTables();toast('Schema parsed')}
+function populateTables(){
+const sel=document.getElementById('selTable');sel.innerHTML='<option value="">-- Select Table --</option>'+Object.keys(schema).map(t=>`<option value="${t}">${t}</option>`).join('');
+document.getElementById('joinTable').innerHTML='<option value="">None</option>'+Object.keys(schema).map(t=>`<option value="${t}">${t}</option>`).join('')}
+function onTableChange(){
+const t=document.getElementById('selTable').value;
+const colSel=document.getElementById('selCols');
+if(t&&schema[t]){colSel.innerHTML=schema[t].map(c=>`<option value="${c.name}" selected>${c.name} (${c.type})</option>`).join('')}
+else colSel.innerHTML='';
+updateOrderBy()}
+function onJoinTableChange(){
+const t=document.getElementById('joinTable').value;const src=document.getElementById('selTable').value;
+if(!t||!src){document.getElementById('joinOn').innerHTML='<option value="">--</option>';document.getElementById('joinTarget').innerHTML='<option value="">--</option>';return}
+document.getElementById('joinOn').innerHTML='<option value="">--</option>'+(schema[src]||[]).map(c=>`<option value="${c.name}">${src}.${c.name}</option>`).join('');
+document.getElementById('joinTarget').innerHTML='<option value="">--</option>'+(schema[t]||[]).map(c=>`<option value="${c.name}">${t}.${c.name}</option>`).join('')}
+function updateOrderBy(){
+const t=document.getElementById('selTable').value;const sel=document.getElementById('orderBy');
+if(t&&schema[t]){sel.innerHTML='<option value="">None</option>'+schema[t].map(c=>`<option value="${c.name}">${c.name}</option>`).join('')}
+else sel.innerHTML='<option value="">None</option>'}
+function addCondition(){conds.push({col:'',op:'=',val:''});renderConds()}
+function renderConds(){
+document.getElementById('conditions').innerHTML=conds.map((c,i)=>`<div class="condition-row">
+${i>0?'<select class="logic" onchange="conds['+i+'].logic=this.value"><option value="AND">AND</option><option value="OR">OR</option></select>':'<span class="logic"></span>'}
+<input placeholder="column" value="${c.col}" onchange="conds[${i}].col=this.value" style="flex:1.5">
+<select onchange="conds[${i}].op=this.value" style="flex:0.7"><option ${c.op==='='?'selected':''}>=</option><option ${c.op==='!='?'selected':''}>!=</option><option ${c.op==='>'?'selected':''}>&gt;</option><option ${c.op==='<'?'selected':''}>&lt;</option><option ${c.op==='>='?'selected':''}>&gt;=</option><option ${c.op==='<='?'selected':''}>&lt;=</option><option ${c.op==='LIKE'?'selected':''}>LIKE</option><option ${c.op==='IN'?'selected':''}>IN</option><option ${c.op==='IS NULL'?'selected':''}>IS NULL</option><option ${c.op==='IS NOT NULL'?'selected':''}>IS NOT NULL</option></select>
+<input placeholder="value" value="${c.val}" onchange="conds[${i}].val=this.value" style="flex:1">
+<button class="btn btn-sm" style="padding:4px 8px" onclick="conds.splice(${i},1);renderConds()">✕</button>
+</div>`).join('')}
+function buildQuery(){
+const table=document.getElementById('selTable').value;if(!table){toast('Select a table');return}
+const cols=[...document.getElementById('selCols').selectedOptions].map(o=>o.value);
+let sql=`SELECT ${cols.length?cols.join(', '):'*'}\nFROM ${table}`;
+const joinT=document.getElementById('joinTable').value;
+if(joinT){const onCol=document.getElementById('joinOn').value;const tgtCol=document.getElementById('joinTarget').value;
+if(onCol&&tgtCol)sql+=`\nJOIN ${joinT} ON ${table}.${onCol} = ${joinT}.${tgtCol}`}
+const validConds=conds.filter(c=>c.col);
+if(validConds.length){sql+='\nWHERE '+validConds.map((c,i)=>{const prefix=i>0?(c.logic||'AND')+' ':'';
+if(c.op==='IS NULL')return prefix+c.col+' IS NULL';if(c.op==='IS NOT NULL')return prefix+c.col+' IS NOT NULL';
+if(c.op==='IN')return prefix+c.col+' IN ('+c.val+')';
+return prefix+c.col+' '+c.op+" '"+c.val()+"'"}).join('\n  ')}
+const orderBy=document.getElementById('orderBy').value;
+if(orderBy)sql+=`\nORDER BY ${orderBy} ${document.getElementById('orderDir').value}`;
+const limit=document.getElementById('limitVal').value;
+if(limit)sql+=`\nLIMIT ${parseInt(limit)}`;
+document.getElementById('output').textContent=sql}
+function copySQL(){navigator.clipboard.writeText(document.getElementById('output').textContent);toast('Copied!')}
+parseSchema();
+</script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HTML Escape/Unescape</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333}
+.header{background:#fff;padding:16px 24px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+.header a{color:#FF6B00;text-decoration:none;font-weight:600}
+.header h1{font-size:20px;font-weight:700}
+.header .icon{font-size:24px}
+.container{max-width:800px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card h2{font-size:16px;font-weight:600;margin-bottom:12px}
+textarea{width:100%;height:100px;border:1px solid #e0e0e0;border-radius:8px;padding:12px;font-family:monospace;font-size:14px;resize:vertical}
+textarea:focus{outline:2px solid #FF6B00;border-color:#FF6B00}
+.btn{background:#FF6B00;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-family:'Inter';font-weight:600;font-size:14px;cursor:pointer}
+.btn:hover{opacity:.9}
+.btn-secondary{background:#eee;color:#333}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#FF6B00;color:#fff;padding:8px;text-align:left}
+td{padding:6px 8px;border-bottom:1px solid #eee;font-family:monospace}
+tr:hover{background:#fff3ee}
+.table-wrap{max-height:300px;overflow-y:auto;border-radius:8px;border:1px solid #e0e0e0}
+.entity-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px;margin-top:8px}
+.entity-item{background:#f8f8f8;border-radius:6px;padding:6px 8px;font-size:11px;cursor:pointer;font-family:monospace}
+.entity-item:hover{background:#FF6B00;color:#fff}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:1000;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">🏷️</span><h1>HTML Escape / Unescape</h1></div>
+<div class="container">
+<div class="card">
+<h2>Escape / Unescape</h2>
+<textarea id="input" placeholder="Enter HTML to escape or unescape..."></textarea>
+<div class="btn-row">
+<button class="btn" onclick="escapeHtml()">Escape →</button>
+<button class="btn btn-secondary" onclick="unescapeHtml()">← Unescape</button>
+<button class="btn btn-secondary" onclick="copy(document.getElementById('output').value)">📋 Copy</button>
+</div>
+<textarea id="output" readonly placeholder="Result..."></textarea>
+</div>
+<div class="card">
+<h2>Common HTML Entities Reference</h2>
+<div class="entity-grid" id="entityGrid"></div>
+</div>
+<div class="card">
+<h2>Full Entity Table</h2>
+<div class="table-wrap">
+<table><thead><tr><th>Character</th><th>Named</th><th>Decimal</th><th>Hex</th></tr></thead>
+<tbody id="entityTable"></tbody></table>
+</div>
+</div>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function escapeHtml(){const v=document.getElementById('input').value;document.getElementById('output').value=v.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');toast('Escaped!')}
+function unescapeHtml(){const v=document.getElementById('input').value;const el=document.createElement('textarea');el.innerHTML=v;document.getElementById('output').value=el.value;toast('Unescaped!')}
+function copy(v){navigator.clipboard.writeText(v).then(()=>toast('Copied!'))}
+const entities=[
+{char:'&',name:'&amp;',dec:'&#38;',hex:'&#x26;'},
+{char:'<',name:'&lt;',dec:'&#60;',hex:'&#x3C;'},
+{char:'>',name:'&gt;',dec:'&#62;',hex:'&#x3E;'},
+{char:'"',name:'&quot;',dec:'&#34;',hex:'&#x22;'},
+{char:"'",name:'&apos;',dec:'&#39;',hex:'&#x27;'},
+{char:' ',name:'&nbsp;',dec:'&#160;',hex:'&#xA0;'},
+{char:'©',name:'&copy;',dec:'&#169;',hex:'&#xA9;'},
+{char:'®',name:'&reg;',dec:'&#174;',hex:'&#xAE;'},
+{char:'™',name:'&trade;',dec:'&#8482;',hex:'&#x2122;'},
+{char:'€',name:'&euro;',dec:'&#8364;',hex:'&#x20AC;'},
+{char:'£',name:'&pound;',dec:'&#163;',hex:'&#xA3;'},
+{char:'¥',name:'&yen;',dec:'&#165;',hex:'&#xA5;'},
+{char:'°',name:'&deg;',dec:'&#176;',hex:'&#xB0;'},
+{char:'±',name:'&plusmn;',dec:'&#177;',hex:'&#xB1;'},
+{char:'×',name:'&times;',dec:'&#215;',hex:'&#xD7;'},
+{char:'÷',name:'&divide;',dec:'&#247;',hex:'&#xF7;'},
+{char:'²',name:'&sup2;',dec:'&#178;',hex:'&#xB2;'},
+{char:'³',name:'&sup3;',dec:'&#179;',hex:'&#xB3;'},
+{char:'¼',name:'&frac14;',dec:'&#188;',hex:'&#xBC;'},
+{char:'½',name:'&frac12;',dec:'&#189;',hex:'&#xBD;'},
+{char:'¾',name:'&frac34;',dec:'&#190;',hex:'&#xBE;'},
+{char:'α',name:'&alpha;',dec:'&#945;',hex:'&#x3B1;'},
+{char:'β',name:'&beta;',dec:'&#946;',hex:'&#x3B2;'},
+{char:'γ',name:'&gamma;',dec:'&#947;',hex:'&#x3B3;'},
+{char:'δ',name:'&delta;',dec:'&#948;',hex:'&#x3B4;'},
+{char:'π',name:'&pi;',dec:'&#960;',hex:'&#x3C0;'},
+{char:'Σ',name:'&Sigma;',dec:'&#931;',hex:'&#x3A3;'},
+{char:'Ω',name:'&Omega;',dec:'&#937;',hex:'&#x3A9;'},
+{char:'←',name:'&larr;',dec:'&#8592;',hex:'&#x2190;'},
+{char:'→',name:'&rarr;',dec:'&#8594;',hex:'&#x2192;'},
+{char:'↑',name:'&uarr;',dec:'&#8593;',hex:'&#x2191;'},
+{char:'↓',name:'&darr;',dec:'&#8595;',hex:'&#x2193;'},
+{char:'★',name:'&#9733;',dec:'&#9733;',hex:'&#x2605;'},
+{char:'♥',name:'&#9829;',dec:'&#9829;',hex:'&#x2665;'},
+{char:'✓',name:'&#10003;',dec:'&#10003;',hex:'&#x2713;'},
+{char:'✗',name:'&#10007;',dec:'&#10007;',hex:'&#x2717;'},
+];
+document.getElementById('entityGrid').innerHTML=entities.map(e=>`<div class="entity-item" onclick="copy('${e.name}')" title="${e.char}">${e.name}</div>`).join('');
+document.getElementById('entityTable').innerHTML=entities.map(e=>`<tr onclick="copy('${e.name}')"><td style="font-size:18px">${e.char}</td><td>${e.name}</td><td>${e.dec}</td><td>${e.hex}</td></tr>`).join('');
+</script>
+</body>
+</html>

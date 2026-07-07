@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Text Case Converter</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333}
+.header{background:#fff;padding:16px 24px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+.header a{color:#FF6B00;text-decoration:none;font-weight:600}
+.header h1{font-size:20px;font-weight:700}
+.header .icon{font-size:24px}
+.container{max-width:800px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card h2{font-size:16px;font-weight:600;margin-bottom:12px}
+textarea{width:100%;height:120px;border:1px solid #e0e0e0;border-radius:8px;padding:12px;font-size:14px;resize:vertical}
+textarea:focus{outline:2px solid #FF6B00;border-color:#FF6B00}
+.btn{background:#FF6B00;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-family:'Inter';font-weight:600;font-size:14px;cursor:pointer}
+.btn:hover{opacity:.9}
+.btn-secondary{background:#eee;color:#333}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.results{display:grid;gap:10px}
+.result-item{background:#f8f8f8;border-radius:8px;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.result-label{font-weight:600;font-size:12px;color:#FF6B00;min-width:120px}
+.result-value{flex:1;font-size:14px;word-break:break-word}
+.result-value:empty::before{content:'Type something above...';color:#999}
+.copy-btn{background:none;border:none;cursor:pointer;font-size:16px;flex-shrink:0}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:1000;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">🔡</span><h1>Text Case Converter</h1></div>
+<div class="container">
+<div class="card">
+<h2>Input Text</h2>
+<textarea id="input" placeholder="Type or paste your text here..." oninput="convertAll()"></textarea>
+</div>
+<div class="card">
+<h2>Converted Results</h2>
+<div class="results" id="results"></div>
+</div>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function titleCase(s){return s.replace(/\w\S*/g,w=>w.charAt(0).toUpperCase()+w.substr(1).toLowerCase())}
+function sentenceCase(s){return s.replace(/(^\s*|[.!?]\s+)(\w)/g,(m,p1,p2)=>p1+p2.toUpperCase())}
+function alternatingCase(s){return[...s].map((c,i)=>i%2?c.toLowerCase():c.toUpperCase()).join('')}
+function inverseCase(s){return[...s].map(c=>c===c.toUpperCase()?c.toLowerCase():c.toUpperCase()).join('')}
+function invertWords(s){return s.split(/\s+/).reverse().join(' ')}
+const conversions=[
+{id:'upper',label:'UPPERCASE',fn:s=>s.toUpperCase()},
+{id:'lower',label:'lowercase',fn:s=>s.toLowerCase()},
+{id:'sentence',label:'Sentence case',fn:sentenceCase},
+{id:'title',label:'Title Case',fn:titleCase},
+{id:'caps',label:'cApItAlIzE',fn:alternatingCase},
+{id:'inverse',label:'iNvErSe CaSe',fn:inverseCase},
+{id:'reverse',label:'Reverse Words',fn:invertWords},
+];
+function convertAll(){
+const text=document.getElementById('input').value;
+document.getElementById('results').innerHTML=conversions.map(c=>{
+const result=text?c.fn(text):'';
+return`<div class="result-item"><span class="result-label">${c.label}</span><span class="result-value">${result.replace(/</g,'&lt;')}</span><button class="copy-btn" onclick="copy('${c.id}')">📋</button></div>`;
+}).join('');
+}
+function copy(id){
+const idx=conversions.findIndex(c=>c.id===id);
+const text=document.getElementById('input').value;
+if(text&&idx>=0){navigator.clipboard.writeText(conversions[idx].fn(text)).then(()=>toast('Copied!'))}
+}
+convertAll();
+</script>
+</body>
+</html>

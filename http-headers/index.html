@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HTTP Headers Analyzer - ZCUs Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
+.header{background:#1a1d27;border-bottom:1px solid #2a2d3a;padding:16px 24px;display:flex;align-items:center;gap:16px}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header h1{font-size:20px;font-weight:700;color:#fff}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#1a1d27;border:1px solid #2a2d3a;border-radius:12px;padding:24px;margin-bottom:20px}
+.card h2{font-size:18px;font-weight:600;color:#fff;margin-bottom:16px}
+.form-row{display:flex;gap:12px;margin-bottom:16px}
+.form-group{display:flex;flex-direction:column;gap:4px;flex:1}
+.form-group label{font-size:12px;font-weight:500;color:#aaa;text-transform:uppercase;letter-spacing:.5px}
+select,input{background:#0f1117;border:1px solid #3a3d4a;border-radius:8px;padding:10px 12px;color:#e0e0e0;font-family:'Inter',sans-serif;font-size:14px;width:100%}
+select:focus,input:focus{outline:none;border-color:#FF6B00}
+button{background:#FF6B00;color:#fff;border:none;border-radius:8px;padding:12px 24px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+button:hover{opacity:.85}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.ref-table{width:100%;border-collapse:collapse;font-size:13px}
+.ref-table th{text-align:left;padding:8px 12px;background:#0f1117;color:#FF6B00;border-bottom:1px solid #3a3d4a;font-size:11px;text-transform:uppercase}
+.ref-table td{padding:8px 12px;border-bottom:1px solid #1a1d27;color:#ccc}
+.ref-table tr:hover{background:#1a1d27}
+.header-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1d27}
+.header-name{color:#FF6B00;font-family:monospace;font-weight:600}
+.header-val{color:#e0e0e0;font-family:monospace;font-size:12px;max-width:60%;word-break:break-all}
+.check-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #1a1d27;font-size:13px}
+.check-icon{font-size:16px}
+.check-name{color:#e0e0e0}
+.check-status{margin-left:auto;font-size:12px}
+.loading{text-align:center;padding:40px;color:#aaa}
+.error-msg{color:#ff9999;padding:20px;text-align:center}
+.tab-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.tab-btn{background:#2a2d3a;color:#e0e0e0;border:1px solid #3a3d4a;border-radius:6px;padding:6px 14px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif}
+.tab-btn.active{background:#FF6B00;color:#fff;border-color:#FF6B00}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">📡</span><h1>HTTP Headers Analyzer</h1></div>
+<div class="container">
+<div class="card">
+<h2>Analyze Response Headers</h2>
+<div class="form-row">
+<div class="form-group">
+<label>URL</label>
+<input id="url" placeholder="https://example.com" value="https://github.com">
+</div>
+<div class="form-group" style="flex:0">
+<label>&nbsp;</label>
+<button onclick="analyze()">🔍 Analyze</button>
+</div>
+</div>
+</div>
+<div class="card">
+<h2>Security Headers Checklist</h2>
+<div id="securityChecklist">
+<div style="font-size:13px;color:#aaa;padding:12px 0">Click Analyze to check security headers...</div>
+</div>
+</div>
+<div class="card">
+<h2>Common Headers Reference</h2>
+<div class="tab-bar">
+<button class="tab-btn active" onclick="showRef('general')">General</button>
+<button class="tab-btn" onclick="showRef('req')">Request</button>
+<button class="tab-btn" onclick="showRef('res')">Response</button>
+<button class="tab-btn" onclick="showRef('sec')">Security</button>
+</div>
+<div id="refTable"></div>
+</div>
+<div id="headersResult" class="card" style="display:none">
+<h2>Response Headers</h2>
+<div id="headersList"></div>
+</div>
+</div>
+<script>
+function toast(msg){const t=document.createElement('div');t.textContent=msg;Object.assign(t.style,{position:'fixed',bottom:'20px',right:'20px',background:'#FF6B00',color:'#fff',padding:'12px 20px',borderRadius:'8px',fontFamily:'Inter',sans-serif',fontSize:'14px',zIndex:'9999',transition:'opacity .3s'});document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},2500)}
+
+const refs={
+general:[
+['Host','The target host and port number for the request'],['User-Agent','Identifies the client software'],['Accept','Content types the client can handle'],['Accept-Encoding','Accepted encoding methods (gzip, br, etc.)'],['Accept-Language','Accepted languages'],['Connection','Connection type (keep-alive, close)'],['Cache-Control','Directives for caching mechanisms'],['Cookie','Cookies sent to the server']
+],
+req:[
+['Authorization','Credentials for HTTP authentication'],['Content-Type','Media type of the body'],['Content-Length','Size of the body in bytes'],['Referer','URL of the referring page'],['X-Requested-With','AJAX request indicator'],['If-None-Match','ETag conditional request'],['Origin','Origin of the request'],['X-Forwarded-For','Client IP behind proxy']
+],
+res:[
+['Content-Type','Media type of the response body'],['Content-Length','Size of response body'],['Content-Encoding','Compression used (gzip, br, etc.)'],['Location','Redirect URL'],['Set-Cookie','Cookies to set on client'],['ETag','Resource version identifier'],['Last-Modified','When the resource last changed'],['X-Powered-By','Technology behind the server']
+],
+sec:[
+['Strict-Transport-Security','Enforce HTTPS (HSTS)'],['Content-Security-Policy','Controls allowed resources'],['X-Content-Type-Options','Prevents MIME sniffing'],['X-Frame-Options','Controls framing (clickjacking)'],['X-XSS-Protection','XSS filter control'],['Referrer-Policy','Controls referrer information'],['Permissions-Policy','Feature policy'],['Cross-Origin-Embedder-Policy','Controls cross-origin resources']
+]
+};
+
+function showRef(type){
+document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+event.target.classList.add('active');
+const data=refs[type];
+let html=`<table class="ref-table"><thead><tr><th>Header</th><th>Description</th></tr></thead><tbody>`;
+data.forEach(([h,d])=>{html+=`<tr><td style="color:#FF6B00;font-family:monospace;font-weight:600">${h}</td><td>${d}</td></tr>`});
+html+=`</tbody></table>`;
+document.getElementById('refTable').innerHTML=html;
+}
+showRef('general');
+
+const securityHeaders=[
+{name:'Strict-Transport-Security',desc:'HSTS - enforces HTTPS connections',recommendation:'max-age=31536000; includeSubDomains; preload'},
+{name:'Content-Security-Policy',desc:'Controls which resources can be loaded',recommendation:"default-src 'self'; script-src 'self'"},
+{name:'X-Content-Type-Options',desc:'Prevents MIME-type sniffing',recommendation:'nosniff'},
+{name:'X-Frame-Options',desc:'Prevents clickjacking attacks',recommendation:'DENY or SAMEORIGIN'},
+{name:'X-XSS-Protection',desc:'Enables browser XSS filter',recommendation:'1; mode=block'},
+{name:'Referrer-Policy',desc:'Controls referrer information sent',recommendation:'strict-origin-when-cross-origin'},
+{name:'Permissions-Policy',desc:'Controls browser features',recommend:'camera=(), microphone=(), geolocation=()'},
+{name:'Cross-Origin-Opener-Policy',desc:'Isolates browsing context',recommendation:'same-origin'},
+{name:'Cross-Origin-Resource-Policy',desc:'Controls cross-origin resource loading',recommendation:'same-origin'}
+];
+
+async function analyze(){
+const url=document.getElementById('url').value.trim();
+if(!url){toast('Enter a URL');return}
+const checklist=document.getElementById('securityChecklist');
+const hdrResult=document.getElementById('headersResult');
+const hdrList=document.getElementById('headersList');
+checklist.innerHTML='<div class="loading">🔍 Fetching headers...</div>';
+hdrResult.style.display='none';
+
+try{
+// Use CORS proxy or direct fetch
+const targetUrl=url.startsWith('http')?url:'https://'+url;
+const res=await fetch(targetUrl,{method:'HEAD',mode:'no-cors'});
+const headers={};
+// In no-cors mode we can't read headers, so show known security headers
+let html='';
+securityHeaders.forEach(h=>{
+const present=res.headers.get(h.name);
+if(present){
+html+=`<div class="check-item"><span class="check-icon">✅</span><span class="check-name">${h.name}</span><span class="check-status"><span class="badge badge-green">Present</span></span></div>`;
+}else{
+html+=`<div class="check-item"><span class="check-icon">⚠️</span><span class="check-name">${h.name}</span><span class="check-status" style="font-size:11px;color:#aaa">Missing — ${h.recommendation}</span></div>`;
+}
+});
+checklist.innerHTML=html;
+
+// Show available response headers
+hdrResult.style.display='';
+let hdrHtml='<div style="font-size:13px;color:#aaa;padding:8px 0">Due to CORS restrictions, only limited headers are accessible from the browser.</div>';
+try{
+res.headers.forEach((val,key)=>{
+hdrHtml+=`<div class="header-row"><span class="header-name">${key}</span><span class="header-val">${val}</span></div>`;
+});
+}catch(e){}
+hdrList.innerHTML=hdrHtml;
+
+toast('Analysis complete');
+}catch(e){
+checklist.innerHTML=`<div class="error-msg">⚠️ Could not fetch headers: ${e.message}<br><br>Due to CORS restrictions, browser-based header fetching is limited.<br>Try using curl: <code style="color:#FF6B00">curl -I ${url}</code></div>`;
+}
+}
+document.getElementById('url').addEventListener('keypress',e=>{if(e.key==='Enter')analyze()});
+</script>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Systemd Unit Generator - ZCUs Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
+.header{background:#1a1d27;border-bottom:1px solid #2a2d3a;padding:16px 24px;display:flex;align-items:center;gap:16px}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header h1{font-size:20px;font-weight:700;color:#fff}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#1a1d27;border:1px solid #2a2d3a;border-radius:12px;padding:24px;margin-bottom:20px}
+.card h2{font-size:18px;font-weight:600;color:#fff;margin-bottom:16px}
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:14px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:12px;font-weight:500;color:#aaa;text-transform:uppercase;letter-spacing:.5px}
+select,input,textarea{background:#0f1117;border:1px solid #3a3d4a;border-radius:8px;padding:10px 12px;color:#e0e0e0;font-family:'Inter',sans-serif;font-size:14px;width:100%}
+select:focus,input:focus,textarea:focus{outline:none;border-color:#FF6B00}
+textarea{min-height:120px;resize:vertical}
+.output-box{background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;padding:16px;font-family:monospace;font-size:13px;color:#8ae6a0;white-space:pre-wrap;max-height:500px;overflow-y:auto}
+button{background:#FF6B00;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+button:hover{opacity:.85}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.tag{display:inline-block;background:#2a2d3a;border-radius:12px;padding:4px 10px;font-size:11px;color:#aaa;margin:2px}
+</style>
+</head>
+<body>
+<div class="header">
+<a href="/">← Home</a>
+<span class="icon">⚙️</span>
+<h1>Systemd Unit File Generator</h1>
+</div>
+<div class="container">
+<div class="card">
+<h2>Configuration</h2>
+<div class="form-row">
+<div class="form-group">
+<label>Unit Type</label>
+<select id="unitType" onchange="update()">
+<option value="service">Service</option>
+<option value="timer">Timer</option>
+<option value="socket">Socket</option>
+<option value="path">Path</option>
+</select>
+</div>
+<div class="form-group">
+<label>Description</label>
+<input id="description" value="My Application" oninput="update()">
+</div>
+<div class="form-group">
+<label>After (dependency)</label>
+<input id="after" value="network.target" oninput="update()">
+</div>
+</div>
+<div id="serviceFields">
+<div class="form-row">
+<div class="form-group">
+<label>ExecStart</label>
+<input id="execStart" value="/usr/bin/myapp" oninput="update()">
+</div>
+<div class="form-group">
+<label>ExecStartPre (optional)</label>
+<input id="execStartPre" placeholder="/usr/bin/pre-task" oninput="update()">
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>ExecStop (optional)</label>
+<input id="execStop" placeholder="/usr/bin/myapp --stop" oninput="update()">
+</div>
+<div class="form-group">
+<label>Restart Policy</label>
+<select id="restart" onchange="update()">
+<option value="on-failure">on-failure</option>
+<option value="always">always</option>
+<option value="on-abnormal">on-abnormal</option>
+<option value="on-abort">on-abort</option>
+<option value="no" selected>no</option>
+</select>
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>RestartSec</label>
+<input id="restartSec" type="number" value="5" oninput="update()">
+</div>
+<div class="form-group">
+<label>User</label>
+<input id="user" value="root" oninput="update()">
+</div>
+<div class="form-group">
+<label>WorkingDirectory</label>
+<input id="workDir" placeholder="/opt/myapp" oninput="update()">
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>Environment Variables (KEY=VAL, one per line)</label>
+<textarea id="envVars" placeholder="NODE_ENV=production&#10;PORT=3000" oninput="update()"></textarea>
+</div>
+<div class="form-group">
+<label>WantedBy (multi-user.target)</label>
+<input id="wantedBy" value="multi-user.target" oninput="update()">
+</div>
+</div>
+</div>
+<div id="timerFields" style="display:none">
+<div class="form-row">
+<div class="form-group">
+<label>OnCalendar</label>
+<input id="onCalendar" value="*-*-* 00:00:00" oninput="update()">
+</div>
+<div class="form-group">
+<label>OnBootSec</label>
+<input id="onBootSec" placeholder="5min" oninput="update()">
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>Persistent</label>
+<select id="persistent" onchange="update()"><option value="true">true</option><option value="false">false</option></select>
+</div>
+</div>
+</div>
+<div id="socketFields" style="display:none">
+<div class="form-row">
+<div class="form-group">
+<label>ListenStream</label>
+<input id="listenStream" value="8080" oninput="update()">
+</div>
+<div class="form-group">
+<label>SocketUser</label>
+<input id="socketUser" value="www-data" oninput="update()">
+</div>
+</div>
+</div>
+</div>
+<div class="card">
+<h2>Generated Unit File</h2>
+<div class="output-box" id="output"></div>
+<div class="btn-row">
+<button onclick="copyOutput()">📋 Copy</button>
+<button onclick="downloadOutput()">⬇️ Download</button>
+</div>
+</div>
+</div>
+<script>
+function toast(msg){const t=document.createElement('div');t.textContent=msg;Object.assign(t.style,{position:'fixed',bottom:'20px',right:'20px',background:'#FF6B00',color:'#fff',padding:'12px 20px',borderRadius:'8px',fontFamily:'Inter',sans-serif',fontSize:'14px',zIndex:'9999',transition:'opacity .3s'});document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},2500)}
+
+function update(){
+const type=document.getElementById('unitType').value;
+document.getElementById('serviceFields').style.display=(type==='service'||type==='path')?'':'none';
+document.getElementById('timerFields').style.display=type==='timer'?'':'none';
+document.getElementById('socketFields').style.display=type==='socket'?'':'none';
+const desc=document.getElementById('description').value||'My Application';
+const after=document.getElementById('after').value||'network.target';
+let sections=[];
+let unitSec=`[Unit]\nDescription=${desc}\nAfter=${after}`;
+sections.push(unitSec);
+if(type==='service'||type==='path'){
+const svc=`[Service]\nType=${type==='path'?'oneshot':'simple'}\nExecStart=${document.getElementById('execStart').value||'/usr/bin/myapp'}`;
+let svcLines=svc;
+const pre=document.getElementById('execStartPre').value;if(pre)svcLines+=`\nExecStartPre=${pre}`;
+const stop=document.getElementById('execStop').value;if(stop)svcLines+=`\nExecStop=${stop}`;
+svcLines+=`\nRestart=${document.getElementById('restart').value}`;
+svcLines+=`\nRestartSec=${document.getElementById('restartSec').value||5}`;
+svcLines+=`\nUser=${document.getElementById('user').value||'root'}`;
+const wd=document.getElementById('workDir').value;if(wd)svcLines+=`\nWorkingDirectory=${wd}`;
+const env=document.getElementById('envVars').value.split('\n').filter(l=>l.trim());
+env.forEach(e=>{svcLines+=`\nEnvironment="${e.trim()}"`});
+sections.push(svcLines);
+sections.push(`[Install]\nWantedBy=${document.getElementById('wantedBy').value||'multi-user.target'}`);
+}
+if(type==='timer'){
+const tmr=`[Unit]\nDescription=${desc} Timer\n\n[Timer]\nOnCalendar=${document.getElementById('onCalendar').value||'*-*-* 00:00:00'}`;
+let tl=tmr;
+const ob=document.getElementById('onBootSec').value;if(ob)tl+=`\nOnBootSec=${ob}`;
+tl+=`\nPersistent=${document.getElementById('persistent').value}`;
+sections.push(tl);
+sections.push(`[Install]\nWantedBy=timers.target`);
+}
+if(type==='socket'){
+sections.push(`[Socket]\nListenStream=${document.getElementById('listenStream').value||8080}\nSocketUser=${document.getElementById('socketUser').value||'www-data'}`);
+sections.push(`[Install]\nWantedBy=sockets.target`);
+}
+document.getElementById('output').textContent=sections.join('\n\n')+'\n';
+}
+
+function copyOutput(){navigator.clipboard.writeText(document.getElementById('output').textContent);toast('Copied!')}
+function downloadOutput(){
+const blob=new Blob([document.getElementById('output').textContent],{type:'text/plain'});
+const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${document.getElementById('unitType').value}.service`;a.click();toast('Downloaded!');
+}
+update();
+</script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mock Data Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333}
+.header{background:#fff;padding:16px 24px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+.header a{color:#FF6B00;text-decoration:none;font-weight:600}
+.header h1{font-size:20px;font-weight:700}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card h2{font-size:16px;font-weight:600;margin-bottom:12px}
+select,input[type=text],input[type=number]{padding:10px 14px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px}
+select:focus,input:focus{outline:2px solid #FF6B00}
+.btn{background:#FF6B00;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-family:'Inter';font-weight:600;font-size:14px;cursor:pointer}
+.btn:hover{opacity:.9}
+.btn-secondary{background:#eee;color:#333}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.type-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin:12px 0}
+.type-chip{padding:8px 12px;border:2px solid #e0e0e0;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;text-align:center}
+.type-chip.active{border-color:#FF6B00;background:#FF6B00;color:#fff}
+pre{background:#1e1e1e;color:#d4d4d4;padding:16px;border-radius:8px;font-size:12px;max-height:400px;overflow:auto;white-space:pre-wrap}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:1000;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">🎲</span><h1>Mock Data Generator</h1></div>
+<div class="container">
+<div class="card">
+<h2>Settings</h2>
+<label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px">Count</label>
+<input type="number" id="count" value="5" min="1" max="1000" style="width:100px;margin-bottom:8px">
+<label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px">Fields to generate</label>
+<div class="type-grid" id="types"></div>
+<div class="btn-row">
+<button class="btn" onclick="generate()">🎲 Generate</button>
+<button class="btn btn-secondary" onclick="copyJSON()">📋 Copy JSON</button>
+<button class="btn btn-secondary" onclick="copyCSV()">📋 Copy CSV</button>
+</div>
+</div>
+<div class="card">
+<h2>Generated Data</h2>
+<pre id="output">Click "Generate" to create mock data...</pre>
+</div>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+const types=[
+{id:'firstName',label:'👤 First Name'},{id:'lastName',label:'👤 Last Name'},
+{id:'fullName',label:'👤 Full Name'},{id:'email',label:'📧 Email'},
+{id:'phone',label:'📞 Phone'},{id:'address',label:'📍 Address'},
+{id:'city',label:'🏙️ City'},{id:'country',label:'🌍 Country'},
+{id:'company',label:'🏢 Company'},{id:'jobTitle',label:'💼 Job Title'},
+{id:'date',label:'📅 Date'},{id:'number',label:'🔢 Number'},
+{id:'uuid',label:'🆔 UUID'},{id:'paragraph',label:'📄 Paragraph'},
+{id:'word',label:'📝 Word'},{id:'bool',label:'✅ Boolean'},
+{id:'color',label:'🎨 Color'},{id:'price',label:'💰 Price'},
+];
+const activeTypes=new Set(['firstName','lastName','email','phone']);
+document.getElementById('types').innerHTML=types.map(t=>`<div class="type-chip${activeTypes.has(t.id)?' active':''}" data-t="${t.id}" onclick="toggleType('${t.id}',this)">${t.label}</div>`).join('');
+function toggleType(id,el){activeTypes.has(id)?activeTypes.delete(id):activeTypes.add(id);el.classList.toggle('active')}
+const firstNames=['James','Mary','John','Patricia','Robert','Jennifer','Michael','Linda','David','Elizabeth','William','Barbara','Richard','Susan','Joseph','Jessica','Thomas','Sarah','Emma','Liam','Olivia','Noah','Ava','Sophia','Mason','Isabella','Lucas','Mia','Oliver','Charlotte'];
+const lastNames=['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Rodriguez','Martinez','Hernandez','Lopez','Gonzalez','Wilson','Anderson','Thomas','Taylor','Moore','Jackson','Martin','Lee','Perez','Thompson','White','Harris','Clark','Lewis'];
+const cities=['New York','London','Tokyo','Paris','Berlin','Sydney','Toronto','Mumbai','Dubai','Singapore','Amsterdam','Seoul','Barcelona','Rome','Chicago'];
+const countries=['USA','UK','Japan','France','Germany','Australia','Canada','India','UAE','Singapore','Netherlands','South Korea','Spain','Italy','Brazil'];
+const companies=['Acme Corp','TechStart','GlobalTech','InnoLab','DataFlow','CloudNine','ByteForce','PixelCraft','CodeBase','WebWiz','NetLogic','SoftPrime','AppForge','CyberEdge','SmartSys'];
+const jobTitles=['Software Engineer','Product Manager','Data Scientist','UX Designer','DevOps Engineer','Marketing Manager','CTO','CEO','Frontend Developer','Backend Developer','Full Stack Developer','Security Analyst','Cloud Architect','AI Engineer','Technical Writer'];
+const words=['lorem','ipsum','dolor','sit','amet','consectetur','adipiscing','elit','sed','do','eiusmod','tempor','incididunt','ut','labore','et','dolore','magna','aliqua','enim','ad','minim','veniam','quis','nostrud','exercitation','ullamco','laboris','nisi','aliquip','ex','ea','commodo','consequat','duis','aute','irure','reprehenderit','voluptate','velit','esse','cillum','fugiat','nulla','pariatur','excepteur','sint','occaecat','cupidatat','non','proident','sunt','culpa','qui','officia','deserunt','mollit','anim','id','est','laborum'];
+const colors=['#FF6B00','#1DA1F2','#E4405F','#27AE60','#9B59B6','#F39C12','#1ABC9C','#3498DB','#E74C3C','#2C3E50'];
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)]}
+function randNum(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+function uuid(){return'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:r&0x3|0x8).toString(16)})}
+function genDate(){const d=new Date(Date.now()-Math.random()*365*24*60*60*1000);return d.toISOString().split('T')[0]}
+function genPhone(){return'+'+randNum(1,99)+'-'+randNum(100,999)+'-'+randNum(100,999)+'-'+randNum(1000,9999)}
+function genParagraph(){return Array.from({length:randNum(3,8)},()=>pick(words)+' '+pick(words)+' '+pick(words)+' '+pick(words)+' '+pick(words)+' '+pick(words)+' '+pick(words)+'.').join(' ')}
+function genEmail(){return pick(firstNames).toLowerCase()+'.'+pick(lastNames).toLowerCase()+randNum(1,99)+'@'+pick(['gmail.com','yahoo.com','outlook.com','company.com','test.org'])}
+function genAddress(){return randNum(1,9999)+' '+pick(['Main','Oak','Pine','Maple','Cedar','Elm','Walnut','Spring','Hill','Lake'])+' '+pick(['St','Ave','Blvd','Dr','Ln','Way'])}
+function generate(){
+const count=Math.min(1000,Math.max(1,parseInt(document.getElementById('count').value)||5));
+const fields=[...activeTypes];
+if(!fields.length)return toast('Select at least one field');
+const data=Array.from({length:count},()=>{
+const row={};
+fields.forEach(f=>{
+switch(f){
+case'firstName':row.firstName=pick(firstNames);break;
+case'lastName':row.lastName=pick(lastNames);break;
+case'fullName':row.fullName=pick(firstNames)+' '+pick(lastNames);break;
+case'email':row.email=genEmail();break;
+case'phone':row.phone=genPhone();break;
+case'address':row.address=genAddress();break;
+case'city':row.city=pick(cities);break;
+case'country':row.country=pick(countries);break;
+case'company':row.company=pick(companies);break;
+case'jobTitle':row.jobTitle=pick(jobTitles);break;
+case'date':row.date=genDate();break;
+case'number':row.number=randNum(1,10000);break;
+case'uuid':row.uuid=uuid();break;
+case'paragraph':row.paragraph=genParagraph();break;
+case'word':row.word=pick(words);break;
+case'bool':row.bool=Math.random()>0.5;break;
+case'color':row.color=pick(colors);break;
+case'price':row.price=parseFloat((Math.random()*1000).toFixed(2));break;
+}
+});
+return row;
+});
+window._generatedData=data;
+document.getElementById('output').textContent=JSON.stringify(data,null,2);
+toast(`Generated ${count} records!`);
+}
+function copyJSON(){navigator.clipboard.writeText(JSON.stringify(window._generatedData,null,2)).then(()=>toast('JSON copied!'))}
+function copyCSV(){
+const data=window._generatedData;
+if(!data||!data.length)return toast('Generate data first');
+const keys=Object.keys(data[0]);
+const csv=[keys.join(','),...data.map(r=>keys.map(k=>{const v=String(r[k]??'');return v.includes(',')||v.includes('"')||v.includes('\n')?'"'+v.replace(/"/g,'""')+'"':v}).join(','))].join('\n');
+navigator.clipboard.writeText(csv).then(()=>toast('CSV copied!'));
+}
+generate();
+</script>
+</body>
+</html>
