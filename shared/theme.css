@@ -1,0 +1,76 @@
+/* ═══════════════════════════════════════════════════════════
+   ZCUS Shared Theme — Light / Dark CSS Custom Properties
+   Usage: <link rel="stylesheet" href="shared/theme.css">
+   Toggle: document.documentElement.classList.toggle('dark')
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Palette: Light (default) ────────────────────────── */
+  --zcus-bg:            #ffffff;
+  --zcus-bg-alt:        #f5f7fa;
+  --zcus-bg-card:       #ffffff;
+  --zcus-surface:       #eef1f5;
+  --zcus-border:        #dde1e7;
+  --zcus-text:          #1a1a2e;
+  --zcus-text-secondary:#6b7280;
+  --zcus-text-muted:    #9ca3af;
+  --zcus-accent:        #6366f1;
+  --zcus-accent-hover:  #4f46e5;
+  --zcus-accent-light:  #e0e7ff;
+  --zcus-success:       #10b981;
+  --zcus-warning:       #f59e0b;
+  --zcus-danger:        #ef4444;
+  --zcus-shadow:        0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+  --zcus-shadow-lg:     0 4px 14px rgba(0,0,0,.1);
+  --zcus-radius:        8px;
+  --zcus-radius-lg:     12px;
+  --zcus-transition:    .2s ease;
+}
+
+/* ── Palette: Dark ─────────────────────────────────────── */
+:root.dark {
+  --zcus-bg:            #0f1117;
+  --zcus-bg-alt:        #161822;
+  --zcus-bg-card:       #1c1f2e;
+  --zcus-surface:       #232638;
+  --zcus-border:        #2e3348;
+  --zcus-text:          #e4e6f0;
+  --zcus-text-secondary:#9ca3c0;
+  --zcus-text-muted:    #6b7094;
+  --zcus-accent:        #818cf8;
+  --zcus-accent-hover:  #a5b4fc;
+  --zcus-accent-light:  #1e1b4b;
+  --zcus-success:       #34d399;
+  --zcus-warning:       #fbbf24;
+  --zcus-danger:        #f87171;
+  --zcus-shadow:        0 1px 3px rgba(0,0,0,.3), 0 1px 2px rgba(0,0,0,.25);
+  --zcus-shadow-lg:     0 4px 14px rgba(0,0,0,.4);
+}
+
+/* ── Base resets using tokens ──────────────────────────── */
+html { background: var(--zcus-bg); color: var(--zcus-text); transition: background var(--zcus-transition), color var(--zcus-transition); }
+body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; margin: 0; }
+*, *::before, *::after { box-sizing: border-box; }
+
+/* ── Toast container ───────────────────────────────────── */
+#zcus-toast-container {
+  position: fixed; top: 1rem; right: 1rem; z-index: 99999;
+  display: flex; flex-direction: column; gap: .5rem;
+  pointer-events: none;
+}
+.zcus-toast {
+  pointer-events: auto;
+  padding: .75rem 1.25rem; border-radius: var(--zcus-radius);
+  background: var(--zcus-bg-card); color: var(--zcus-text);
+  border: 1px solid var(--zcus-border); box-shadow: var(--zcus-shadow-lg);
+  font-size: .875rem; max-width: 360px;
+  animation: zcus-toast-in .25s ease;
+}
+.zcus-toast.zcus-success { border-left: 4px solid var(--zcus-success); }
+.zcus-toast.zcus-warning { border-left: 4px solid var(--zcus-warning); }
+.zcus-toast.zcus-danger  { border-left: 4px solid var(--zcus-danger); }
+.zcus-toast.zcus-info    { border-left: 4px solid var(--zcus-accent); }
+.zcus-toast.zcus-exit    { animation: zcus-toast-out .25s ease forwards; }
+
+@keyframes zcus-toast-in  { from { opacity:0; transform:translateX(1rem); } to { opacity:1; transform:translateX(0); } }
+@keyframes zcus-toast-out { from { opacity:1; transform:translateX(0); }    to { opacity:0; transform:translateX(1rem); } }

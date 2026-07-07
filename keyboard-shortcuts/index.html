@@ -1,0 +1,85 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Keyboard Shortcuts</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}:root{--accent:#FF6B00;--bg:#f8f9fc;--card:#fff;--text:#1a1a2e;--text2:#6b7280;--border:#e5e7eb;--radius:12px}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}.app{max-width:900px;margin:0 auto;padding:20px}
+.header{display:flex;align-items:center;gap:12px;padding:16px 0;border-bottom:2px solid var(--accent);margin-bottom:24px}
+.header h1{font-size:1.5rem;font-weight:700}.header a{color:var(--accent);text-decoration:none;font-size:0.85rem;margin-left:auto}
+.btn{background:var(--accent);color:#fff;border:none;padding:10px 20px;border-radius:var(--radius);font-weight:600;cursor:pointer;font-size:0.9rem}.btn:hover{opacity:.9}.btn-sm{padding:6px 14px;font-size:0.8rem}.btn-outline{background:transparent;color:var(--accent);border:2px solid var(--accent)}
+.card{background:var(--card);border-radius:var(--radius);padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid var(--border)}
+input,textarea,select{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.9rem;background:var(--card);color:var(--text);outline:none}
+input:focus,textarea:focus{border-color:var(--accent)}
+textarea{min-height:120px;font-family:'JetBrains Mono',monospace;font-size:0.85rem}
+pre{background:#1e1e2e;color:#a6e3a1;padding:16px;border-radius:8px;overflow-x:auto;font-size:0.82rem;font-family:'JetBrains Mono',monospace;max-height:400px;overflow-y:auto}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:12px 24px;border-radius:var(--radius);font-size:0.85rem;z-index:9999}
+.info{background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:12px;font-size:0.85rem;color:#9a3412;margin-bottom:16px}
+footer{text-align:center;padding:24px;color:var(--text2);font-size:0.75rem}
+</style>
+<style>table{width:100%;border-collapse:collapse;font-size:0.85rem}th,td{padding:8px 12px;border:1px solid var(--border);text-align:left}th{background:#f1f5f9;font-weight:600}kbd{background:#f1f5f9;border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-family:'JetBrains Mono',monospace;font-size:0.8rem;box-shadow:0 1px 0 var(--border)}</style>
+</head><body>
+<div class="app">
+  <div class="header"><span style="font-size:1.8rem">⌨️</span><h1>Keyboard Shortcuts</h1><a href="/">Home</a></div>
+  <div class="info">Searchable reference for keyboard shortcuts across popular apps.</div>
+  <div class="card">
+    <div style="display:flex;gap:8px;margin-bottom:12px"><input type="text" id="search" placeholder="Search shortcuts..." oninput="filter()"><select id="os" onchange="filter()" style="width:120px"><option value="all">All</option><option value="vscode">VS Code</option><option value="chrome">Chrome</option><option value="windows">Windows</option><option value="mac">Mac</option><option value="linux">Linux</option><option value="terminal">Terminal</option></select></div>
+    <div id="output"></div>
+  </div>
+</div><footer>ZCUS Tools - Keyboard Shortcuts</footer>
+<script>function toast(m){var t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(function(){t.remove()},2500)}function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+var S=[
+  {os:'vscode',app:'VS Code',keys:'Ctrl+Shift+P',desc:'Command Palette'},
+  {os:'vscode',app:'VS Code',keys:'Ctrl+P',desc:'Quick Open File'},
+  {os:'vscode',app:'VS Code',keys:'Ctrl+`',desc:'Toggle Terminal'},
+  {os:'vscode',app:'VS Code',keys:'Ctrl+Shift+F',desc:'Search in Files'},
+  {os:'vscode',app:'VS Code',keys:'Ctrl+D',desc:'Select Next Occurrence'},
+  {os:'vscode',app:'VS Code',keys:'Alt+Up/Down',desc:'Move Line Up/Down'},
+  {os:'vscode',app:'VS Code',keys:'Ctrl+/',desc:'Toggle Comment'},
+  {os:'vscode',app:'VS Code',keys:'Ctrl+Space',desc:'Trigger Suggestions'},
+  {os:'vscode',app:'VS Code',keys:'F12',desc:'Go to Definition'},
+  {os:'vscode',app:'VS Code',keys:'Ctrl+K Ctrl+C',desc:'Add Line Comment'},
+  {os:'chrome',app:'Chrome',keys:'Ctrl+T',desc:'New Tab'},
+  {os:'chrome',app:'Chrome',keys:'Ctrl+Shift+T',desc:'Reopen Closed Tab'},
+  {os:'chrome',app:'Chrome',keys:'Ctrl+L',desc:'Focus Address Bar'},
+  {os:'chrome',app:'Chrome',keys:'Ctrl+W',desc:'Close Tab'},
+  {os:'chrome',app:'Chrome',keys:'F12',desc:'DevTools'},
+  {os:'chrome',app:'Chrome',keys:'Ctrl+Shift+J',desc:'Console'},
+  {os:'chrome',app:'Chrome',keys:'Ctrl+R',desc:'Reload'},
+  {os:'chrome',app:'Chrome',keys:'Ctrl+Shift+Delete',desc:'Clear Browsing Data'},
+  {os:'chrome',app:'Chrome',keys:'Ctrl+D',desc:'Bookmark Page'},
+  {os:'windows',app:'Windows',keys:'Win+D',desc:'Show Desktop'},
+  {os:'windows',app:'Windows',keys:'Win+L',desc:'Lock Screen'},
+  {os:'windows',app:'Windows',keys:'Win+E',desc:'File Explorer'},
+  {os:'windows',app:'Windows',keys:'Win+R',desc:'Run Dialog'},
+  {os:'windows',app:'Windows',keys:'Win+I',desc:'Settings'},
+  {os:'windows',app:'Windows',keys:'Win+Tab',desc:'Task View'},
+  {os:'windows',app:'Windows',keys:'Alt+Tab',desc:'Switch Windows'},
+  {os:'windows',app:'Windows',keys:'Win+X',desc:'Quick Link Menu'},
+  {os:'mac',app:'Mac',keys:'Cmd+Space',desc:'Spotlight'},
+  {os:'mac',app:'Mac',keys:'Cmd+Q',desc:'Quit App'},
+  {os:'mac',app:'Mac',keys:'Cmd+Tab',desc:'Switch Apps'},
+  {os:'mac',app:'Mac',keys:'Cmd+`,desc:'Switch Window'},
+  {os:'mac',app:'Mac',keys:'Cmd+Shift+3',desc:'Screenshot'},
+  {os:'mac',app:'Mac',keys:'Cmd+Shift+4',desc:'Screenshot Area'},
+  {os:'mac',app:'Mac',keys:'Cmd+Ctrl+Q',desc:'Lock Screen'},
+  {os:'linux',app:'Linux',keys:'Ctrl+Alt+T',desc:'Open Terminal'},
+  {os:'linux',app:'Linux',keys:'Super',desc:'Activities'},
+  {os:'linux',app:'Linux',keys:'Ctrl+Alt+L',desc:'Lock Screen'},
+  {os:'linux',app:'Linux',keys:'Alt+F2',desc:'Run Command'},
+  {os:'linux',app:'Linux',keys:'Ctrl+Alt+Del',desc:'System Monitor'},
+  {os:'terminal',app:'Terminal',keys:'Ctrl+C',desc:'Kill Process'},
+  {os:'terminal',app:'Terminal',keys:'Ctrl+Z',desc:'Suspend Process'},
+  {os:'terminal',app:'Terminal',keys:'Ctrl+L',desc:'Clear Screen'},
+  {os:'terminal',app:'Terminal',keys:'Ctrl+A',desc:'Start of Line'},
+  {os:'terminal',app:'Terminal',keys:'Ctrl+E',desc:'End of Line'},
+  {os:'terminal',app:'Terminal',keys:'Ctrl+R',desc:'Reverse Search'},
+  {os:'terminal',app:'Terminal',keys:'Tab',desc:'Autocomplete'},
+  {os:'terminal',app:'Terminal',keys:'Ctrl+D',desc:'EOF / Exit'},
+];
+function filter(){
+  var q=document.getElementById('search').value.toLowerCase();var os=document.getElementById('os').value;
+  var f=S.filter(function(s){var mo=os==='all'||s.os===os;var mq=!q||s.desc.toLowerCase().indexOf(q)>=0||s.keys.toLowerCase().indexOf(q)>=0;return mo&&mq});
+  var groups={};f.forEach(function(s){if(!groups[s.app])groups[s.app]=[];groups[s.app].push(s)});
+  var html='';Object.keys(groups).forEach(function(app){html+='<h3 style="margin:16px 0 8px;font-size:0.95rem">'+app+'</h3><table><tr><th>Shortcut</th><th>Action</th></tr>';groups[app].forEach(function(s){html+='<tr><td><kbd>'+esc(s.keys)+'</kbd></td><td>'+esc(s.desc)+'</td></tr>'});html+='</table>'});
+  document.getElementById('output').innerHTML=html||'<p style="color:var(--text2)">No shortcuts found</p>';
+}
+filter();
+</script></body></html>

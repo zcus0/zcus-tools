@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Table Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #e0e0e0;padding:16px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header .icon{font-size:24px}
+.header h1{font-size:18px;font-weight:600;flex:1}
+.container{max-width:1200px;margin:0 auto;padding:24px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:24px;margin-bottom:20px}
+.card h2{font-size:16px;font-weight:600;margin-bottom:16px}
+.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;transition:all .2s}
+.btn-primary{background:#FF6B00;color:#fff}.btn-primary:hover{background:#e55a00}
+.btn-outline{background:transparent;border:1px solid #ddd;color:#555}.btn-outline:hover{border-color:#FF6B00;color:#FF6B00}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-danger{background:#ff4444;color:#fff}.btn-danger:hover{background:#cc0000}
+input[type=text],textarea{font-family:'Inter',sans-serif;font-size:13px;padding:8px 12px;border:1px solid #ddd;border-radius:8px;outline:none;width:100%}
+input:focus,textarea:focus{border-color:#FF6B00}
+label{display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#555}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+.table-wrap{overflow-x:auto;border:1px solid #eee;border-radius:8px;margin-top:12px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:8px 12px;border:1px solid #eee;text-align:left;min-width:100px}
+th{background:#f9f9f9;font-weight:600;font-size:12px;cursor:pointer;white-space:nowrap;user-select:none;position:relative}
+th:hover{background:#f0f0f0}
+th .sort-icon{margin-left:4px;color:#999;font-size:10px}
+th.sorted-asc .sort-icon::after{content:'▲';color:#FF6B00}
+th.sorted-desc .sort-icon::after{content:'▼';color:#FF6B00}
+td{position:relative}
+td input{border:none;background:transparent;padding:2px 4px;font-size:13px;font-family:'Inter',sans-serif;width:100%;outline:none}
+td input:focus{background:#fff5f0;border-radius:4px}
+tr:hover{background:#fafafa}
+.col-actions,.row-actions{text-align:center;min-width:40px}
+.del-btn{background:none;border:none;color:#ff4444;cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px}
+.del-btn:hover{background:#ffe6e6}
+.search-bar{margin-bottom:12px}
+.search-bar input{max-width:300px}
+.stats{font-size:12px;color:#888;margin-top:8px}
+.import-area{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+.import-area textarea{min-height:80px;max-width:500px}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/">← Home</a>
+  <span class="icon">📊</span>
+  <h1>Table Editor</h1>
+</div>
+<div class="container">
+  <div class="card">
+    <h2>Actions</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm" onclick="addRow()">+ Row</button>
+      <button class="btn btn-primary btn-sm" onclick="addColumn()">+ Column</button>
+      <button class="btn btn-outline btn-sm" onclick="exportCSV()">📋 CSV</button>
+      <button class="btn btn-outline btn-sm" onclick="exportJSON()">📋 JSON</button>
+      <button class="btn btn-outline btn-sm" onclick="downloadCSV()">💾 CSV</button>
+      <button class="btn btn-outline btn-sm" onclick="downloadJSON()">💾 JSON</button>
+      <button class="btn btn-danger btn-sm" onclick="clearTable()">🗑 Clear</button>
+    </div>
+    <div class="import-area" style="margin-top:12px">
+      <div style="flex:1;max-width:400px"><label>Import CSV</label><textarea id="import-csv" placeholder="Paste CSV data here..." rows="3"></textarea></div>
+      <button class="btn btn-primary btn-sm" onclick="importCSV()" style="align-self:flex-end">Import</button>
+      <button class="btn btn-outline btn-sm" onclick="loadSample()" style="align-self:flex-end">Load Sample</button>
+    </div>
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+      <h2 style="margin:0">Table Data</h2>
+      <div class="search-bar"><input type="text" id="search" placeholder="🔍 Search..." oninput="filterTable()"></div>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="table-wrap"><table id="table"></table></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let headers=['Name','Email','Role','Department'];
+let data=[
+  ['Alice Johnson','alice@example.com','Engineer','Engineering'],
+  ['Bob Smith','bob@example.com','Designer','Design'],
+  ['Charlie Brown','charlie@example.com','PM','Product'],
+  ['Diana Prince','diana@example.com','Engineer','Engineering'],
+  ['Eve Wilson','eve@example.com','Designer','Design'],
+];
+let sortCol=-1,sortDir='asc';
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function render(){
+  const search=document.getElementById('search').value.toLowerCase();
+  const filtered=data.filter(row=>search?row.some(c=>c.toLowerCase().includes(search)):true);
+  const sorted=sortCol>=0?[...filtered].sort((a,b)=>{
+    const va=a[sortCol]||'';const vb=b[sortCol]||'';
+    return sortDir==='asc'?va.localeCompare(vb):vb.localeCompare(va);
+  }):filtered;
+  const ths=headers.map((h,i)=>`<th onclick="sortCol===${i}?(sortDir=sortDir==='asc'?'desc':'asc'):(sortCol=${i};sortDir='asc');render()" class="${sortCol===i?(sortDir==='asc'?'sorted-asc':'sorted-desc'):''}">${h} <span class="sort-icon"></span></th>`).join('');
+  const trs=sorted.map((row,ri)=>{
+    const origIdx=data.indexOf(row);
+    return`<tr>${row.map((cell,ci)=>`<td><input value="${cell.replace(/"/g,'&quot;')}" onchange="data[${origIdx}][${ci}]=this.value"></td>`).join('')}<td class="col-actions"><button class="del-btn" onclick="data.splice(${origIdx},1);render()">✕</button></td></tr>`;
+  }).join('');
+  document.getElementById('table').innerHTML=`<tr>${ths}<th class="col-actions"></th></tr>${trs}`;
+  document.getElementById('stats').textContent=`${sorted.length} rows, ${headers.length} columns`;
+}
+function addRow(){data.push(headers.map(()=>''));render();toast('Row added')}
+function addColumn(){const name=prompt('Column name:');if(!name)return;headers.push(name);data.forEach(r=>r.push(''));render();toast('Column added')}
+function clearTable(){if(!confirm('Clear all data?'))return;headers=[];data=[];render()}
+function filterTable(){render()}
+function exportCSV(){const csv=headers.join(',')+'\n'+data.map(r=>r.map(c=>`"${c.replace(/"/g,'""')}"`).join(',')).join('\n');navigator.clipboard.writeText(csv);toast('CSV copied!')}
+function exportJSON(){const json=JSON.stringify(data.map(r=>{const obj={};headers.forEach((h,i)=>obj[h]=r[i]);return obj}),null,2);navigator.clipboard.writeText(json);toast('JSON copied!')}
+function downloadCSV(){const csv=headers.join(',')+'\n'+data.map(r=>r.map(c=>`"${c.replace(/"/g,'""')}"`).join(',')).join('\n');const b=new Blob([csv],{type:'text/csv'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='table.csv';a.click();toast('Downloaded!')}
+function downloadJSON(){const json=JSON.stringify(data.map(r=>{const obj={};headers.forEach((h,i)=>obj[h]=r[i]);return obj}),null,2);const b=new Blob([json],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='table.json';a.click();toast('Downloaded!')}
+function importCSV(){
+  const csv=document.getElementById('import-csv').value.trim();
+  if(!csv){toast('Paste CSV data first');return}
+  const lines=csv.split('\n').filter(l=>l.trim());
+  if(lines.length<2){toast('Need header + at least 1 row');return}
+  headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));
+  data=lines.slice(1).map(l=>{const cells=[];let cell='';let inQuotes=false;for(const c of l){if(c==='"'){inQuotes=!inQuotes;cell+=c}else if(c===','&&!inQuotes){cells.push(cell.trim().replace(/^"|"$/g,''));cell=''}else{cell+=c}}cells.push(cell.trim().replace(/^"|"$/g,''));return cells});
+  render();toast('CSV imported!');
+}
+function loadSample(){
+  document.getElementById('import-csv').value=`Name,Email,Role,Department
+Alice Johnson,alice@example.com,Engineer,Engineering
+Bob Smith,bob@example.com,Designer,Design
+Charlie Brown,charlie@example.com,PM,Product
+Diana Prince,diana@example.com,Engineer,Engineering
+Eve Wilson,eve@example.com,Designer,Design`;
+  importCSV();
+}
+render();
+</script>
+</body>
+</html>

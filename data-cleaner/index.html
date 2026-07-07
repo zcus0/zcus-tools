@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Cleaner</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #e0e0e0;padding:16px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header .icon{font-size:24px}
+.header h1{font-size:18px;font-weight:600;flex:1}
+.container{max-width:1100px;margin:0 auto;padding:24px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:24px;margin-bottom:20px}
+.card h2{font-size:16px;font-weight:600;margin-bottom:16px}
+.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;transition:all .2s}
+.btn-primary{background:#FF6B00;color:#fff}.btn-primary:hover{background:#e55a00}
+.btn-outline{background:transparent;border:1px solid #ddd;color:#555}.btn-outline:hover{border-color:#FF6B00;color:#FF6B00}
+.btn-sm{padding:5px 10px;font-size:12px}
+textarea{font-family:'Fira Code','Courier New',monospace;font-size:12px;padding:12px;border:1px solid #ddd;border-radius:8px;width:100%;resize:vertical;outline:none;transition:border .2s;min-height:200px;tab-size:2}
+textarea:focus{border-color:#FF6B00}
+label{display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#555}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:768px){.grid-2{grid-template-columns:1fr}}
+.clean-options{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin:12px 0}
+.clean-opt{display:flex;align-items:center;gap:8px;padding:10px;border:1px solid #eee;border-radius:8px;cursor:pointer;transition:all .2s;font-size:13px}
+.clean-opt:hover{border-color:#FF6B00}
+.clean-opt input{accent-color:#FF6B00}
+.clean-opt.checked{border-color:#FF6B00;background:#fff5f0}
+.stats{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0}
+.stat{padding:8px 14px;background:#f9f9f9;border-radius:8px;font-size:12px;border:1px solid #eee}
+.stat .val{font-weight:700;color:#FF6B00}
+.format-toggle{display:flex;gap:8px;margin-bottom:12px}
+.format-toggle .btn.active{background:#FF6B00;color:#fff}
+.log{padding:8px;background:#1e1e1e;color:#4ade80;border-radius:8px;font-family:'Fira Code',monospace;font-size:11px;max-height:150px;overflow-y:auto;margin-top:12px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/">← Home</a>
+  <span class="icon">🧹</span>
+  <h1>Data Cleaner</h1>
+</div>
+<div class="container">
+  <div class="card">
+    <h2>Input Data</h2>
+    <div class="format-toggle">
+      <button class="btn btn-sm active" onclick="setFormat('csv',this)">CSV</button>
+      <button class="btn btn-sm" onclick="setFormat('json',this)">JSON</button>
+      <button class="btn btn-sm" onclick="setFormat('tsv',this)">TSV</button>
+    </div>
+    <textarea id="input" placeholder="Paste your messy data here...&#10;&#10;CSV example:&#10;Name, Age, Email&#10;Alice, 25, alice@test.com &#10; , , &#10;Bob, 30, bob@test.com&#10;alice, , alice@test.com&#10;Charlie, , charlie@test.com"></textarea>
+    <div class="stats" id="stats"></div>
+  </div>
+  <div class="card">
+    <h2>Cleaning Options</h2>
+    <div class="clean-options">
+      <label class="clean-opt checked"><input type="checkbox" checked id="opt-trim"> Trim whitespace</label>
+      <label class="clean-opt checked"><input type="checkbox" checked id="opt-empty"> Remove empty rows</label>
+      <label class="clean-opt"><input type="checkbox" id="opt-dupes"> Remove duplicates</label>
+      <label class="clean-opt"><input type="checkbox" id="opt-lowercase"> Normalize to lowercase</label>
+      <label class="clean-opt"><input type="checkbox" id="opt-titlecase"> Title Case names</label>
+      <label class="clean-opt"><input type="checkbox" id="opt-fill"> Fill missing values</label>
+      <label class="clean-opt"><input type="checkbox" id="opt-remove-special"> Remove special chars</label>
+      <label class="clean-opt"><input type="checkbox" id="opt-consistent"> Consistent separators</label>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn btn-primary" onclick="cleanData()">🧹 Clean Data</button>
+      <button class="btn btn-outline" onclick="resetData()">↺ Reset</button>
+      <button class="btn btn-outline" onclick="copyOutput()">📋 Copy Output</button>
+      <button class="btn btn-outline" onclick="downloadOutput()">💾 Download</button>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h2>Output Data</h2>
+      <textarea id="output" readonly placeholder="Cleaned data will appear here..."></textarea>
+    </div>
+    <div class="card">
+      <h2>Changes Log</h2>
+      <div class="log" id="log">No changes yet...</div>
+      <div class="stats" id="output-stats"></div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let format='csv';let originalInput='';
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function setFormat(f,btn){format=f;document.querySelectorAll('.format-toggle .btn').forEach(b=>{b.classList.remove('active')});btn.classList.add('active');updateStats()}
+document.querySelectorAll('.clean-opt input').forEach(cb=>{cb.addEventListener('change',function(){this.closest('.clean-opt').classList.toggle('checked',this.checked)})});
+function parseData(input){
+  if(format==='json'){try{return JSON.parse(input)}catch(e){return null}}
+  const sep=format==='tsv'?'\t':',';
+  return input.split('\n').map(line=>line.split(sep).map(cell=>cell.trim()));
+}
+function parseCSV(input){return input.split('\n').filter(l=>l.trim()).map(l=>l.split(',').map(c=>c.trim()))}
+function toCSV(rows){return rows.map(r=>r.join(',')).join('\n')}
+function updateStats(){
+  const input=document.getElementById('input').value;
+  const rows=input?input.split('\n').filter(l=>l.trim()):[];
+  const cells=input?rows.reduce((sum,r)=>sum+r.split(/[,\t]/).length,0):0;
+  const emptyRows=rows.filter(r=>r.split(/[,\t]/).every(c=>!c.trim())).length;
+  document.getElementById('stats').innerHTML=`
+    <div class="stat">Rows: <span class="val">${rows.length}</span></div>
+    <div class="stat">Cells: <span class="val">${cells}</span></div>
+    <div class="stat">Empty: <span class="val">${emptyRows}</span></div>
+    <div class="stat">Chars: <span class="val">${input.length}</span></div>
+  `;
+}
+function cleanData(){
+  originalInput=document.getElementById('input').value;
+  const logs=[];let data=parseData(document.getElementById('input').value);
+  if(!data||!data.length){toast('Invalid data');return}
+  const sep=format==='tsv'?'\t':',';
+  let rows=format==='json'?data.map(r=>Object.values(r).map(String)):(typeof data[0]==='object'?data:data.map(l=>l.split(sep).map(c=>c.trim())));
+  const origRows=rows.length;
+  // Trim
+  if(document.getElementById('opt-trim').checked){
+    rows=rows.map(r=>r.map(c=>c.trim()));
+    logs.push('✓ Trimmed whitespace from all cells');
+  }
+  // Empty rows
+  if(document.getElementById('opt-empty').checked){
+    const before=rows.length;
+    rows=rows.filter(r=>r.some(c=>c!==''));
+    logs.push(`✓ Removed ${before-rows.length} empty rows`);
+  }
+  // Duplicates
+  if(document.getElementById('opt-dupes').checked){
+    const before=rows.length;
+    const seen=new Set();
+    rows=rows.filter(r=>{const key=r.join('|');if(seen.has(key))return false;seen.add(key);return true});
+    logs.push(`✓ Removed ${before-rows.length} duplicate rows`);
+  }
+  // Lowercase
+  if(document.getElementById('opt-lowercase').checked){
+    rows=rows.map(r=>r.map(c=>c.toLowerCase()));
+    logs.push('✓ Normalized to lowercase');
+  }
+  // Title Case
+  if(document.getElementById('opt-titlecase').checked){
+    rows=rows.map(r=>r.map(c=>c.replace(/\b\w/g,l=>l.toUpperCase())));
+    logs.push('✓ Applied Title Case');
+  }
+  // Fill missing
+  if(document.getElementById('opt-fill').checked){
+    rows=rows.map(r=>r.map(c=>c||'N/A'));
+    logs.push('✓ Filled missing values with "N/A"');
+  }
+  // Special chars
+  if(document.getElementById('opt-remove-special').checked){
+    rows=rows.map(r=>r.map(c=>c.replace(/[^a-zA-Z0-9\s.,@\-_]/g,'')));
+    logs.push('✓ Removed special characters');
+  }
+  // Consistent separators
+  if(document.getElementById('opt-consistent').checked){
+    rows=rows.map(r=>r.map(c=>c.replace(/\s+/g,' ')));
+    logs.push('✓ Normalized whitespace');
+  }
+  const output=toCSV(rows);
+  document.getElementById('output').value=output;
+  document.getElementById('log').innerHTML=logs.map(l=>`<div>${l}</div>`).join('');
+  document.getElementById('output-stats').innerHTML=`
+    <div class="stat">Rows: <span class="val">${origRows} → ${rows.length}</span></div>
+    <div class="stat">Changes: <span class="val">${logs.length}</span></div>
+  `;
+  updateStats();toast('Data cleaned!');
+}
+function resetData(){document.getElementById('output').value='';document.getElementById('log').innerHTML='No changes yet...';document.getElementById('output-stats').innerHTML=''}
+function copyOutput(){navigator.clipboard.writeText(document.getElementById('output').value);toast('Copied!')}
+function downloadOutput(){
+  const b=new Blob([document.getElementById('output').value],{type:'text/plain'});
+  const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='cleaned-data.csv';a.click();URL.revokeObjectURL(u);toast('Downloaded!');
+}
+updateStats();
+</script>
+</body>
+</html>

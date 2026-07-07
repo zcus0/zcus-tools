@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>QR Scanner</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;min-height:100vh}
+.header{background:#fff;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #FF6B00;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.header h1{font-size:1.3rem;color:#333;display:flex;align-items:center;gap:8px}
+.header a{color:#FF6B00;text-decoration:none;font-weight:600;font-size:.9rem}
+.container{max-width:800px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.08);padding:24px;margin-bottom:20px}
+.card h2{font-size:1.1rem;color:#333;margin-bottom:12px}
+.btn{background:#FF6B00;color:#fff;border:none;border-radius:8px;padding:12px 24px;cursor:pointer;font-family:inherit;font-weight:600;font-size:1rem;transition:.2s;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:#e55d00}
+.btn.danger{background:#e74c3c}.btn.danger:hover{background:#c0392b}
+.btn.secondary{background:#666}
+.btn-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:12px 0}
+.video-wrap{position:relative;display:none;margin:16px auto;border-radius:12px;overflow:hidden;max-width:100%;background:#000}
+.video-wrap video{width:100%;display:block;border-radius:12px}
+.video-wrap canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+.scan-line{position:absolute;top:0;left:0;right:0;height:3px;background:#FF6B00;box-shadow:0 0 10px #FF6B00;animation:scanMove 2s linear infinite;display:none}
+@keyframes scanMove{0%{top:0}100%{top:100%}}
+.result-card{display:none;border:2px solid #27ae60;border-radius:10px;padding:16px;background:#f0fff4;margin-top:16px}
+.result-card h3{color:#27ae60;margin-bottom:8px}
+.result-card .result-text{font-family:'Courier New',monospace;background:#fff;padding:12px;border-radius:6px;border:1px solid #ddd;word-break:break-all;font-size:.95rem}
+.result-card .result-type{font-size:.8rem;color:#888;margin-bottom:4px}
+.result-card .result-actions{display:flex;gap:8px;margin-top:12px}
+.drop-zone{border:3px dashed #ccc;border-radius:12px;padding:40px;text-align:center;cursor:pointer;transition:.2s}
+.drop-zone:hover,.drop-zone.dragover{border-color:#FF6B00;background:#fff5ed}
+.drop-zone .big{font-size:3rem;margin-bottom:8px}
+input[type=file]{display:none}
+.history-list{list-style:none;max-height:300px;overflow-y:auto}
+.history-list li{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #f0f0f0;gap:12px}
+.history-list li:last-child{border:none}
+.history-list .text{font-family:'Courier New',monospace;font-size:.85rem;word-break:break-all;flex:1;color:#333}
+.history-list .time{font-size:.75rem;color:#999;white-space:nowrap}
+.history-list button{background:none;border:2px solid #FF6B00;color:#FF6B00;border-radius:6px;padding:3px 10px;cursor:pointer;font-family:inherit;font-weight:600;font-size:.75rem;white-space:nowrap}
+.history-list button:hover{background:#FF6B00;color:#fff}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:.9rem;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>📷 QR Scanner</h1>
+  <a href="/">← Home</a>
+</div>
+<div class="container">
+  <div class="card">
+    <h2>Scan from Camera</h2>
+    <div class="btn-row">
+      <button class="btn" id="startCam" onclick="startCamera()">📷 Start Camera</button>
+      <button class="btn danger" id="stopCam" onclick="stopCamera()" style="display:none">⏹ Stop</button>
+    </div>
+    <div class="video-wrap" id="videoWrap">
+      <video id="video" playsinline autoplay muted></video>
+      <canvas id="overlay"></canvas>
+      <div class="scan-line" id="scanLine"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Scan from Image</h2>
+    <div class="drop-zone" id="dropZone">
+      <div class="big">🖼️</div>
+      <p>Drop a QR code image or click to browse</p>
+    </div>
+    <input type="file" id="fileInput" accept="image/*">
+  </div>
+  <div class="result-card" id="resultCard">
+    <h3>✅ Result</h3>
+    <div class="result-type" id="resultType"></div>
+    <div class="result-text" id="resultText"></div>
+    <div class="result-actions">
+      <button class="btn" onclick="copyResult()" style="padding:6px 14px;font-size:.85rem">📋 Copy</button>
+      <button class="btn secondary" id="openLink" onclick="openResult()" style="display:none;padding:6px 14px;font-size:.85rem">🔗 Open Link</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>History</h2>
+    <ul class="history-list" id="historyList"><li style="color:#999;justify-content:center">No scans yet</li></ul>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+const history=[];
+let scanning=false,videoEl,animId;
+
+function showResult(text,type='QR Code'){
+  document.getElementById('resultCard').style.display='block';
+  document.getElementById('resultText').textContent=text;
+  document.getElementById('resultType').textContent='Type: '+type;
+  const isUrl=text.match(/^https?:\/\//);
+  document.getElementById('openLink').style.display=isUrl?'inline-flex':'none';
+  history.unshift({text,type,time:new Date().toLocaleTimeString()});
+  renderHistory();toast('QR code scanned!');
+}
+
+function copyResult(){navigator.clipboard.writeText(document.getElementById('resultText').textContent).then(()=>toast('Copied!'))}
+function openResult(){const t=document.getElementById('resultText').textContent;if(t.match(/^https?:\/\//))window.open(t,'_blank')}
+
+function renderHistory(){
+  const ul=document.getElementById('historyList');
+  if(!history.length){ul.innerHTML='<li style="color:#999;justify-content:center">No scans yet</li>';return}
+  ul.innerHTML=history.map((h,i)=>`<li><span class="text">${escapeHtml(h.text)}</span><span class="time">${h.time}</span><button onclick="navigator.clipboard.writeText(history[${i}].text).then(()=>toast('Copied!'))">Copy</button></li>`).join('');
+}
+
+function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').substring(0,200)}
+
+async function startCamera(){
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    videoEl=document.getElementById('video');
+    videoEl.srcObject=stream;await videoEl.play();
+    document.getElementById('videoWrap').style.display='block';
+    document.getElementById('scanLine').style.display='block';
+    document.getElementById('startCam').style.display='none';
+    document.getElementById('stopCam').style.display='inline-flex';
+    scanning=true;scanFrame();
+  }catch(e){toast('Camera access denied: '+e.message)}
+}
+
+function stopCamera(){
+  scanning=false;
+  if(videoEl&&videoEl.srcObject)videoEl.srcObject.getTracks().forEach(t=>t.stop());
+  document.getElementById('videoWrap').style.display='none';
+  document.getElementById('scanLine').style.display='none';
+  document.getElementById('startCam').style.display='inline-flex';
+  document.getElementById('stopCam').style.display='none';
+  if(animId)cancelAnimationFrame(animId);
+}
+
+function scanFrame(){
+  if(!scanning)return;
+  const video=document.getElementById('video');
+  const canvas=document.getElementById('overlay');
+  canvas.width=video.videoWidth;canvas.height=video.videoHeight;
+  const ctx=canvas.getContext('2d');
+  ctx.drawImage(video,0,0,canvas.width,canvas.height);
+  const imgData=ctx.getImageData(0,0,canvas.width,canvas.height);
+  const code=jsQR(imgData.data,imgData.width,imgData.height,{inversionAttempts:'dontInvert'});
+  if(code){
+    // Draw highlight
+    ctx.strokeStyle='#FF6B00';ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(code.location.topLeftCorner.x,code.location.topLeftCorner.y);
+    ctx.lineTo(code.location.topRightCorner.x,code.location.topRightCorner.y);
+    ctx.lineTo(code.location.bottomRightCorner.x,code.location.bottomRightCorner.y);
+    ctx.lineTo(code.location.bottomLeftCorner.x,code.location.bottomLeftCorner.y);
+    ctx.closePath();ctx.stroke();
+    scanning=false;showResult(code.data);
+    setTimeout(()=>{scanning=true;scanFrame()},2000);
+  }else{
+    animId=requestAnimationFrame(scanFrame);
+  }
+}
+
+// Image scanning
+const dz=document.getElementById('dropZone'),fi=document.getElementById('fileInput');
+dz.addEventListener('click',()=>fi.click());
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');if(e.dataTransfer.files.length)scanImage(e.dataTransfer.files[0])});
+fi.addEventListener('change',e=>{if(e.target.files.length)scanImage(e.target.files[0])});
+
+function scanImage(file){
+  const r=new FileReader();
+  r.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      const c=document.createElement('canvas');c.width=img.width;c.height=img.height;
+      const ctx=c.getContext('2d');ctx.drawImage(img,0,0);
+      const d=ctx.getImageData(0,0,c.width,c.height);
+      const code=jsQR(d.data,d.width,d.height);
+      if(code)showResult(code.data);
+      else toast('No QR code found in image');
+    };img.src=e.target.result;
+  };r.readAsDataURL(file);
+}
+
+renderHistory();
+</script>
+</body></html>

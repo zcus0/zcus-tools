@@ -1,0 +1,79 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cron Cheatsheet</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}:root{--accent:#FF6B00;--bg:#f8f9fc;--card:#fff;--text:#1a1a2e;--text2:#6b7280;--border:#e5e7eb;--radius:12px}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}.app{max-width:900px;margin:0 auto;padding:20px}
+.header{display:flex;align-items:center;gap:12px;padding:16px 0;border-bottom:2px solid var(--accent);margin-bottom:24px}
+.header h1{font-size:1.5rem;font-weight:700}.header a{color:var(--accent);text-decoration:none;font-size:0.85rem;margin-left:auto}
+.btn{background:var(--accent);color:#fff;border:none;padding:10px 20px;border-radius:var(--radius);font-weight:600;cursor:pointer;font-size:0.9rem}.btn:hover{opacity:.9}.btn-sm{padding:6px 14px;font-size:0.8rem}.btn-outline{background:transparent;color:var(--accent);border:2px solid var(--accent)}
+.card{background:var(--card);border-radius:var(--radius);padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid var(--border)}
+input,textarea,select{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.9rem;background:var(--card);color:var(--text);outline:none}
+input:focus,textarea:focus{border-color:var(--accent)}
+textarea{min-height:120px;font-family:'JetBrains Mono',monospace;font-size:0.85rem}
+pre{background:#1e1e2e;color:#a6e3a1;padding:16px;border-radius:8px;overflow-x:auto;font-size:0.82rem;font-family:'JetBrains Mono',monospace;max-height:400px;overflow-y:auto}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:12px 24px;border-radius:var(--radius);font-size:0.85rem;z-index:9999}
+.info{background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:12px;font-size:0.85rem;color:#9a3412;margin-bottom:16px}
+footer{text-align:center;padding:24px;color:var(--text2);font-size:0.75rem}
+</style>
+<style>table{width:100%;border-collapse:collapse;font-size:0.85rem}th,td{padding:8px 12px;border:1px solid var(--border);text-align:left}th{background:#f1f5f9;font-weight:600}code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:0.82rem}</style>
+</head><body>
+<div class="app">
+  <div class="header"><span style="font-size:1.8rem">📋</span><h1>Cron Cheatsheet</h1><a href="/">Home</a></div>
+  <div class="card"><div style="font-weight:600;margin-bottom:12px">Visual Builder</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px">
+      <div><label style="font-size:0.75rem;font-weight:600;color:var(--text2)">MINUTE (0-59)</label><input type="text" id="min" value="0" oninput="build()"></div>
+      <div><label style="font-size:0.75rem;font-weight:600;color:var(--text2)">HOUR (0-23)</label><input type="text" id="hour" value="*" oninput="build()"></div>
+      <div><label style="font-size:0.75rem;font-weight:600;color:var(--text2)">DAY (1-31)</label><input type="text" id="day" value="*" oninput="build()"></div>
+      <div><label style="font-size:0.75rem;font-weight:600;color:var(--text2)">MONTH (1-12)</label><input type="text" id="month" value="*" oninput="build()"></div>
+      <div><label style="font-size:0.75rem;font-weight:600;color:var(--text2)">WEEKDAY (0-7)</label><input type="text" id="wday" value="*" oninput="build()"></div>
+    </div>
+    <div style="background:#f1f5f9;padding:12px;border-radius:8px;margin-bottom:8px"><code id="cronLine" style="font-size:1rem">0 * * * *</code></div>
+    <div id="desc" style="font-size:0.9rem;color:var(--accent);font-weight:600"></div>
+  </div>
+  <div class="card"><div style="font-weight:600;margin-bottom:12px">Common Patterns</div><table id="patterns"></table></div>
+  <div class="card"><div style="font-weight:600;margin-bottom:12px">Field Reference</div>
+    <table><tr><th>Field</th><th>Allowed</th><th>Special</th></tr>
+    <tr><td>Minute</td><td>0-59</td><td>* , - /</td></tr>
+    <tr><td>Hour</td><td>0-23</td><td>* , - /</td></tr>
+    <tr><td>Day</td><td>1-31</td><td>* , - / L W</td></tr>
+    <tr><td>Month</td><td>1-12</td><td>* , - /</td></tr>
+    <tr><td>Weekday</td><td>0-7 (0=7=Sun)</td><td>* , - /</td></tr></table>
+    <div style="margin-top:12px;font-size:0.82rem;color:var(--text2)"><b>*</b> = every, <b>,</b> = list, <b>-</b> = range, <b>/</b> = step (e.g. */5 = every 5)</div>
+  </div>
+</div><footer>ZCUS Tools - Cron Cheatsheet</footer>
+<script>function toast(m){var t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(function(){t.remove()},2500)}function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+var P=[
+  {cron:'* * * * *',desc:'Every minute'},
+  {cron:'0 * * * *',desc:'Every hour'},
+  {cron:'0 0 * * *',desc:'Every day at midnight'},
+  {cron:'0 0 * * 0',desc:'Every Sunday at midnight'},
+  {cron:'0 0 1 * *',desc:'First of every month'},
+  {cron:'*/5 * * * *',desc:'Every 5 minutes'},
+  {cron:'0 */2 * * *',desc:'Every 2 hours'},
+  {cron:'30 4 * * 1-5',desc:'Weekdays at 4:30 AM'},
+  {cron:'0 9 * * 1',desc:'Every Monday at 9 AM'},
+  {cron:'0 0 * * 1-5',desc:'Weekdays at midnight'},
+  {cron:'0 12 * * *',desc:'Every day at noon'},
+  {cron:'0 18 * * 5',desc:'Every Friday at 6 PM'},
+  {cron:'*/15 * * * *',desc:'Every 15 minutes'},
+  {cron:'0 0 1 1 *',desc:'Jan 1 every year'},
+  {cron:'0 22 * * 1-5',desc:'Weekdays at 10 PM'},
+];
+document.getElementById('patterns').innerHTML='<tr><th>Cron</th><th>Description</th></tr>'+P.map(function(p){return '<tr><td><code>'+p.cron+'</code></td><td>'+p.desc+'</td></tr><tr><td colspan="2"><button class="btn btn-sm btn-outline" onclick="useCron(\''+p.cron+'\')" style="font-size:0.75rem;padding:2px 8px">Use this</button></td></tr>'}).join('');
+function useCron(c){var p=c.split(' ');document.getElementById('min').value=p[0];document.getElementById('hour').value=p[1];document.getElementById('day').value=p[2];document.getElementById('month').value=p[3];document.getElementById('wday').value=p[4];build()}
+function build(){
+  var cron=document.getElementById('min').value+' '+document.getElementById('hour').value+' '+document.getElementById('day').value+' '+document.getElementById('month').value+' '+document.getElementById('wday').value;
+  document.getElementById('cronLine').textContent=cron;
+  document.getElementById('desc').textContent=describeCron(cron);
+}
+function describeCron(c){
+  var p=c.split(' ');var m=p[0],h=p[1],d=p[2],mo=p[3],w=p[4];
+  if(m==='*'&&h==='*'&&d==='*'&&mo==='*'&&w==='*')return 'Every minute';
+  var s='At ';
+  if(m!=='*')s+='minute '+m+' ';else s+='every minute ';
+  if(h!=='*')s+='past hour '+h+' ';else s+='of every hour ';
+  if(d!=='*')s+='on day '+d+' ';if(mo!=='*')s+='of month '+mo+' ';
+  if(w!=='*')s+='on weekday '+w;
+  return s;
+}
+build();
+</script></body></html>

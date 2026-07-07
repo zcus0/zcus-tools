@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Audio Recorder</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;min-height:100vh}
+.header{background:#fff;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #FF6B00;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.header h1{font-size:1.3rem;color:#333;display:flex;align-items:center;gap:8px}
+.header a{color:#FF6B00;text-decoration:none;font-weight:600;font-size:.9rem}
+.container{max-width:800px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.08);padding:24px;margin-bottom:20px}
+.card h2{font-size:1.1rem;color:#333;margin-bottom:16px}
+.controls{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:20px}
+.btn{background:#FF6B00;color:#fff;border:none;border-radius:10px;padding:12px 28px;cursor:pointer;font-family:inherit;font-weight:600;font-size:1rem;transition:.2s;display:flex;align-items:center;gap:6px}
+.btn:hover{background:#e55d00}
+.btn.danger{background:#e74c3c}.btn.danger:hover{background:#c0392b}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.secondary{background:#666}
+#waveform{width:100%;height:120px;background:#1a1a1a;border-radius:8px}
+.recording-indicator{display:none;align-items:center;gap:8px;justify-content:center;margin-bottom:12px;font-weight:600;color:#e74c3c}
+.recording-indicator.active{display:flex}
+.rec-dot{width:12px;height:12px;background:#e74c3c;border-radius:50%;animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.timer{font-size:2rem;text-align:center;color:#333;font-variant-numeric:tabular-nums;margin:12px 0}
+.recordings-list{list-style:none;margin-top:16px}
+.recordings-list li{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee}
+.recordings-list li:last-child{border:none}
+.recordings-list .name{font-weight:600;color:#333}
+.recordings-list .actions{display:flex;gap:8px}
+.recordings-list button{background:none;border:2px solid #FF6B00;color:#FF6B00;border-radius:6px;padding:4px 12px;cursor:pointer;font-family:inherit;font-weight:600;font-size:.8rem}
+.recordings-list button:hover{background:#FF6B00;color:#fff}
+.recordings-list button.del{border-color:#e74c3c;color:#e74c3c}.recordings-list button.del:hover{background:#e74c3c;color:#fff}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:.9rem;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🎙️ Audio Recorder</h1>
+  <a href="/">← Home</a>
+</div>
+<div class="container">
+  <div class="card">
+    <h2>Record Audio</h2>
+    <div class="recording-indicator" id="recInd"><div class="rec-dot"></div>Recording</div>
+    <div class="timer" id="timer">00:00</div>
+    <div class="controls">
+      <button class="btn" id="startBtn" onclick="startRecording()">🔴 Start</button>
+      <button class="btn danger" id="stopBtn" onclick="stopRecording()" disabled>⏹ Stop</button>
+      <button class="btn secondary" id="pauseBtn" onclick="pauseRecording()" disabled>⏸ Pause</button>
+    </div>
+    <canvas id="waveform"></canvas>
+  </div>
+  <div class="card">
+    <h2>Recordings</h2>
+    <ul class="recordings-list" id="recordingsList"><li style="color:#999">No recordings yet</li></ul>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let mediaRecorder,audioChunks=[],analyser,animId,startTime,timerInt,paused=false,pausedTime=0;
+const recordings=[];
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+
+function drawWave(){
+  const cv=document.getElementById('waveform'),cx=cv.getContext('2d');
+  cv.width=cv.offsetWidth;cv.height=cv.offsetHeight;
+  const buf=new Uint8Array(analyser.frequencyBinCount);
+  function draw(){
+    analyser.getByteTimeDomainData(buf);
+    cx.fillStyle='#1a1a1a';cx.fillRect(0,0,cv.width,cv.height);
+    cx.lineWidth=2;cx.strokeStyle='#FF6B00';cx.beginPath();
+    const sl=cv.width/buf.length;let x=0;
+    for(let i=0;i<buf.length;i++){const v=buf[i]/128,y=v*cv.height/2;i===0?cx.moveTo(x,y):cx.lineTo(x,y);x+=sl}
+    cx.stroke();animId=requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+function updateTimer(){
+  const el=document.getElementById('timer');
+  const secs=Math.floor((Date.now()-startTime)/1000);
+  const m=String(Math.floor(secs/60)).padStart(2,'0'),s=String(secs%60).padStart(2,'0');
+  el.textContent=m+':'+s;
+}
+
+async function startRecording(){
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    const source=new AudioContext().createMediaStreamSource(stream);
+    analyser=new AudioContext().createAnalyser();analyser.fftSize=2048;
+    source.connect(analyser);
+    mediaRecorder=new MediaRecorder(stream);audioChunks=[];
+    mediaRecorder.ondataavailable=e=>audioChunks.push(e.data);
+    mediaRecorder.onstop=()=>{
+      stream.getTracks().forEach(t=>t.stop());
+      cancelAnimationFrame(animId);clearInterval(timerInt);
+      const blob=new Blob(audioChunks,{type:'audio/webm'});
+      const name='Recording '+new Date().toLocaleTimeString();
+      recordings.unshift({name,blob,url:URL.createObjectURL(blob)});
+      renderList();toast('Recording saved!');
+    };
+    mediaRecorder.start();startTime=Date.now();paused=false;
+    document.getElementById('startBtn').disabled=true;
+    document.getElementById('stopBtn').disabled=false;
+    document.getElementById('pauseBtn').disabled=false;
+    document.getElementById('recInd').classList.add('active');
+    drawWave();timerInt=setInterval(updateTimer,500);
+    toast('Recording started');
+  }catch(e){toast('Mic access denied')}
+}
+
+function stopRecording(){if(mediaRecorder&&mediaRecorder.state!=='inactive'){mediaRecorder.stop();document.getElementById('startBtn').disabled=false;document.getElementById('stopBtn').disabled=true;document.getElementById('pauseBtn').disabled=true;document.getElementById('recInd').classList.remove('active');document.getElementById('timer').textContent='00:00'}}
+
+function pauseRecording(){
+  if(mediaRecorder&&mediaRecorder.state==='recording'){mediaRecorder.pause();paused=true;document.getElementById('pauseBtn').textContent='▶ Resume';
+  }else if(mediaRecorder&&mediaRecorder.state==='paused'){mediaRecorder.resume();paused=false;document.getElementById('pauseBtn').textContent='⏸ Pause'}
+}
+
+function renderList(){
+  const ul=document.getElementById('recordingsList');
+  if(!recordings.length){ul.innerHTML='<li style="color:#999">No recordings yet</li>';return}
+  ul.innerHTML=recordings.map((r,i)=>`<li><span class="name">${r.name}</span><div class="actions"><button onclick="playRec(${i})">▶ Play</button><button onclick="dlRec(${i})">⬇ DL</button><button class="del" onclick="delRec(${i})">✕</button></div></li>`).join('');
+}
+function playRec(i){new Audio(recordings[i].url).play()}
+function dlRec(i){const a=document.createElement('a');a.href=recordings[i].url;a.download=recordings[i].name+'.webm';a.click()}
+function delRec(i){URL.revokeObjectURL(recordings[i].url);recordings.splice(i,1);renderList();toast('Deleted')}
+</script>
+</body></html>

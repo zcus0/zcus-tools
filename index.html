@@ -1,46 +1,58 @@
 <!DOCTYPE html><html lang="id"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ZCUS Tools — 100+ Developer & Productivity Suite</title>
-<meta name="description" content="100+ free developer tools, productivity apps, and utilities. Browser-based, no signup required.">
+<title>ZCUS Tools — 120+ Developer & Productivity Suite</title>
+<meta name="description" content="120+ free developer tools, productivity apps, and utilities. Browser-based, no signup.">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#FF6B00">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}:root{--accent:#FF6B00;--bg:#f8f9fc;--card:#fff;--text:#1a1a2e;--text2:#6b7280;--border:#e5e7eb;--radius:16px}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-.hero{text-align:center;padding:60px 20px 40px;background:linear-gradient(135deg,#FF6B00 0%,#ff8c33 50%,#ffb366 100%);color:#fff}
-.hero h1{font-size:2.8rem;font-weight:800;margin-bottom:8px}
-.hero p{font-size:1.1rem;opacity:0.9;max-width:500px;margin:0 auto}
-.hero .stats{display:flex;justify-content:center;gap:32px;margin-top:24px;font-size:0.9rem;opacity:0.9}
-.hero .stats span{font-weight:700;font-size:1.4rem}
-.search-wrap{max-width:500px;margin:-24px auto 0;position:relative;padding:0 20px;z-index:1}
-.search{width:100%;padding:14px 20px 14px 44px;border:2px solid var(--border);border-radius:var(--radius);font-size:1rem;font-family:inherit;background:var(--card);box-shadow:0 4px 20px rgba(0,0,0,.08);outline:none}
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--accent:#FF6B00;--bg:#f8f9fc;--card:#fff;--text:#1a1a2e;--text2:#6b7280;--border:#e5e7eb;--radius:16px;--shadow:0 1px 3px rgba(0,0,0,.06)}
+[data-theme="dark"]{--bg:#0c0e1a;--card:#161829;--text:#e2e8f0;--text2:#94a3b8;--border:#1e293b;--shadow:0 1px 3px rgba(0,0,0,.3)}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background .3s,color .3s}
+.hero{text-align:center;padding:50px 20px 36px;background:linear-gradient(135deg,#FF6B00 0%,#ff8c33 50%,#ffb366 100%);color:#fff}
+.hero h1{font-size:2.6rem;font-weight:800;margin-bottom:6px}.hero p{font-size:1rem;opacity:.9;max-width:480px;margin:0 auto}
+.hero .stats{display:flex;justify-content:center;gap:28px;margin-top:20px;font-size:.85rem;opacity:.9}
+.hero .stats span{font-weight:700;font-size:1.3rem}
+.search-wrap{max-width:520px;margin:-22px auto 0;position:relative;padding:0 20px;z-index:1}
+.search{width:100%;padding:13px 20px 13px 44px;border:2px solid var(--border);border-radius:var(--radius);font-size:1rem;font-family:inherit;background:var(--card);box-shadow:0 4px 20px rgba(0,0,0,.08);outline:none;color:var(--text)}
 .search:focus{border-color:var(--accent)}
-.search-icon{position:absolute;left:36px;top:50%;transform:translateY(-50%);font-size:1.1rem;color:var(--text2)}
-.container{max-width:1200px;margin:0 auto;padding:32px 20px}
-.categories{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:32px}
-.cat-btn{padding:8px 16px;border-radius:20px;border:1px solid var(--border);background:var(--card);font-size:0.85rem;font-weight:500;cursor:pointer;transition:all .2s;font-family:inherit;color:var(--text)}
+.search-icon{position:absolute;left:34px;top:50%;transform:translateY(-50%);font-size:1rem;color:var(--text2)}
+.search-hint{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:.7rem;color:var(--text2);background:var(--bg);padding:2px 6px;border-radius:4px;border:1px solid var(--border)}
+.container{max-width:1200px;margin:0 auto;padding:24px 20px}
+.section-title{font-size:.8rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin:20px 0 12px;display:flex;align-items:center;gap:8px}
+.section-title .badge{background:var(--accent);color:#fff;padding:2px 8px;border-radius:10px;font-size:.7rem}
+.categories{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:20px}
+.cat-btn{padding:6px 14px;border-radius:16px;border:1px solid var(--border);background:var(--card);font-size:.8rem;font-weight:500;cursor:pointer;transition:all .2s;font-family:inherit;color:var(--text)}
 .cat-btn:hover,.cat-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
-.app-card{background:var(--card);border-radius:var(--radius);padding:16px;border:1px solid var(--border);text-decoration:none;color:var(--text);transition:all .2s;display:block}
-.app-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.08);transform:translateY(-2px);border-color:var(--accent)}
-.app-icon{font-size:1.6rem;margin-bottom:6px}
-.app-name{font-weight:700;font-size:0.9rem;margin-bottom:3px}
-.app-desc{font-size:0.78rem;color:var(--text2);line-height:1.3}
-.app-tag{display:inline-block;padding:2px 7px;border-radius:12px;font-size:0.65rem;font-weight:600;margin-top:6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.app-card{background:var(--card);border-radius:var(--radius);padding:14px;border:1px solid var(--border);text-decoration:none;color:var(--text);transition:all .2s;display:flex;gap:10px;align-items:flex-start;position:relative}
+.app-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.08);transform:translateY(-1px);border-color:var(--accent)}
+.app-icon{font-size:1.4rem;flex-shrink:0;margin-top:2px}
+.app-body{flex:1;min-width:0}
+.app-name{font-weight:700;font-size:.85rem;margin-bottom:2px}
+.app-desc{font-size:.72rem;color:var(--text2);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.app-tag{display:inline-block;padding:1px 6px;border-radius:10px;font-size:.6rem;font-weight:600;margin-top:4px}
+.app-fav{position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;font-size:.8rem;opacity:.4;transition:opacity .2s;padding:4px}
+.app-fav:hover,.app-fav.active{opacity:1}
 .tag-dev{background:#dbeafe;color:#1d4ed8}.tag-util{background:#dcfce7;color:#166534}.tag-prod{background:#fef3c7;color:#92400e}
 .tag-data{background:#f3e8ff;color:#7c3aed}.tag-design{background:#fce7f3;color:#be185d}
 .tag-devops{background:#d1fae5;color:#065f46}.tag-security{background:#fee2e2;color:#991b1b}
 .tag-ai{background:#ede9fe;color:#5b21b6}.tag-network{background:#cffafe;color:#155e75}
 .tag-writing{background:#fff1f2;color:#9f1239}.tag-finance{background:#ecfdf5;color:#065f46}
-.empty{text-align:center;padding:60px 20px;color:var(--text2)}
-footer{text-align:center;padding:32px;color:var(--text2);font-size:0.8rem;border-top:1px solid var(--border);margin-top:40px}
+.empty{text-align:center;padding:40px 20px;color:var(--text2)}
+.dark-toggle{position:fixed;top:16px;right:16px;width:40px;height:40px;border-radius:50%;background:var(--card);border:1px solid var(--border);cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;z-index:100;box-shadow:var(--shadow);transition:all .2s}
+.dark-toggle:hover{border-color:var(--accent);transform:scale(1.1)}
+footer{text-align:center;padding:28px;color:var(--text2);font-size:.75rem;border-top:1px solid var(--border);margin-top:32px}
 footer a{color:var(--accent);text-decoration:none}
-@media(max-width:640px){.hero h1{font-size:2rem}.hero .stats{flex-direction:column;gap:8px}.grid{grid-template-columns:1fr}}
+@media(max-width:640px){.hero h1{font-size:1.8rem}.hero .stats{flex-wrap:wrap;gap:12px}.grid{grid-template-columns:1fr}.search-hint{display:none}}
 </style></head><body>
+<button class="dark-toggle" onclick="toggleDark()" title="Toggle dark mode" id="darkBtn">🌙</button>
 <div class="hero">
   <h1>⚡ ZCUS Tools</h1>
-  <p>100+ developer tools, productivity apps & utilities. Free, fast, browser-based. No signup.</p>
+  <p>120+ developer tools, productivity apps & utilities. Free, fast, browser-based. No signup.</p>
   <div class="stats">
-    <div><span id="count">103</span><br>Tools</div>
+    <div><span id="count">120</span><br>Tools</div>
     <div><span>100%</span><br>Free</div>
     <div><span>0</span><br>Signups</div>
     <div><span>0</span><br>Tracking</div>
@@ -48,17 +60,26 @@ footer a{color:var(--accent);text-decoration:none}
 </div>
 <div class="search-wrap">
   <span class="search-icon">🔍</span>
-  <input type="text" class="search" id="search" placeholder="Search 100+ tools... (e.g. JSON, password, calculator)" oninput="filter()">
+  <input type="text" class="search" id="search" placeholder="Search 120+ tools... (e.g. JSON, password, calculator)" oninput="filter()" autofocus>
+  <span class="search-hint">⌘K</span>
 </div>
-<div class="container">
+<div class="container" id="main">
+  <div id="favSection" style="display:none">
+    <div class="section-title">⭐ Favorites <span class="badge" id="favCount">0</span></div>
+    <div class="grid" id="favGrid"></div>
+  </div>
+  <div id="recentSection" style="display:none">
+    <div class="section-title">🕐 Recently Used</div>
+    <div class="grid" id="recentGrid"></div>
+  </div>
+  <div class="section-title" id="allTitle">🛠️ All Tools <span class="badge" id="allCount">120</span></div>
   <div class="categories" id="cats"></div>
   <div class="grid" id="grid"></div>
-  <div class="empty" id="empty" style="display:none"><div style="font-size:3rem;margin-bottom:8px">🔍</div><p>No tools match your search.</p></div>
+  <div class="empty" id="empty" style="display:none"><div style="font-size:2.5rem;margin-bottom:8px">🔍</div><p>No tools match your search.</p></div>
 </div>
 <footer>Built with ⚡ by <a href="https://github.com/zcus0">ZCUS</a> · All tools run in your browser · <a href="https://panel.zcus.dev">Panel</a> · <a href="https://github.com/zcus0/zcus-tools">Source</a></footer>
 <script>
 var A=[
-// Developer Tools
 {n:"JSON Formatter",i:"{ }",d:"Format, validate, minify JSON. CSV & YAML export.",p:"/json-formatter/",t:["dev"]},
 {n:"Regex Tester",i:".*",d:"Real-time regex testing with capture groups & flags.",p:"/regex-tester/",t:["dev"]},
 {n:"Base64 Tool",i:"B64",d:"Base64/URL/HTML entity encode & decode.",p:"/base64-tool/",t:["dev"]},
@@ -66,25 +87,32 @@ var A=[
 {n:"Text Transform",i:"Aa",d:"camelCase, snake_case, kebab-case & more.",p:"/text-transform/",t:["dev"]},
 {n:"Markdown Editor",i:"M↓",d:"Live split-pane markdown editor & preview.",p:"/markdown-editor/",t:["dev"]},
 {n:"Markdown → PDF",i:"📄",d:"Convert markdown to PDF/HTML.",p:"/markdown-pdf/",t:["dev"]},
+{n:"Markdown Table",i:"📊",d:"CSV to markdown table converter.",p:"/markdown-table/",t:["dev"]},
 {n:"Timestamp Converter",i:"🕐",d:"Unix ↔ human readable, relative time.",p:"/timestamp-converter/",t:["dev"]},
 {n:"UUID Generator",i:"🆔",d:"UUID v4 batch generation.",p:"/uuid-generator/",t:["dev"]},
 {n:"JWT Decoder",i:"🔑",d:"Decode JWT tokens with expiry check.",p:"/jwt-decoder/",t:["dev"]},
-{n:"JWT Builder",i:"🔨",d:"Build JWT tokens with custom claims.",p:"/jwt-builder/",t:["dev","security"]},
+{n:"JWT Builder",i:"🔨",d:"Build JWT tokens with custom claims.",p:"/jwt-builder/",t:["dev"]},
 {n:"HTML Preview",i:"🌐",d:"Live HTML/CSS/JS editor with preview.",p:"/html-preview/",t:["dev"]},
-{n:"CSS Playground",i:"🎨",d:"Interactive CSS property playground.",p:"/css-playground/",t:["dev","design"]},
+{n:"CSS Playground",i:"🎨",d:"Interactive CSS property playground.",p:"/css-playground/",t:["dev"]},
+{n:"CSS Grid Builder",i:"🔳",d:"Visual CSS Grid layout builder.",p:"/css-grid-gen/",t:["dev","design"]},
 {n:"Text Diff",i:"📝",d:"Line-level text comparison.",p:"/diff-viewer/",t:["dev"]},
 {n:"HTML Entity",i:"&",d:"HTML entity encode/decode & reference.",p:"/html-entity/",t:["dev"]},
+{n:"HTML Escape",i:"\\",d:"HTML escape/unescape tool.",p:"/html-escape/",t:["dev"]},
 {n:"Lorem Generator",i:"📰",d:"Placeholder text in EN/LN/ID.",p:"/lorem-generator/",t:["dev"]},
 {n:"HTML Minifier",i:"🗜️",d:"Minify HTML, remove whitespace.",p:"/html-minifier/",t:["dev"]},
 {n:"CSS Minifier",i:"🗜️",d:"Minify CSS, shorten properties.",p:"/css-minifier/",t:["dev"]},
 {n:"JS Minifier",i:"🗜️",d:"Minify JavaScript code.",p:"/js-minifier/",t:["dev"]},
 {n:"Code Beautifier",i:"✨",d:"Beautify HTML/CSS/JS code.",p:"/code-beautifier/",t:["dev"]},
 {n:"JS Console",i:"▶️",d:"JavaScript REPL / console.",p:"/js-console/",t:["dev"]},
-// Design & SEO
-{n:"SEO Meta Tags",i:"🏷️",d:"OG tags, Twitter cards generator.",p:"/meta-tags/",t:["dev","design"]},
-{n:"Email Template",i:"📧",d:"Email template builder with preview.",p:"/email-template/",t:["design"]},
+{n:"Number Base",i:"🔢",d:"Number base converter (bin/oct/dec/hex).",p:"/number-base/",t:["dev"]},
+{n:"Binary Converter",i:"💻",d:"Binary/text converter.",p:"/binary-converter/",t:["dev"]},
+{n:"Binary Text",i:"💾",d:"Binary ↔ text converter.",p:"/binary-text/",t:["dev"]},
+{n:"JSON Visualizer",i:"🌳",d:"JSON tree viewer with expand/collapse.",p:"/json-visualizer/",t:["dev"]},
 {n:"QR Generator",i:"📱",d:"QR codes with custom colors.",p:"/qr-generator/",t:["util"]},
+{n:"QR Scanner",i:"📷",d:"Scan QR codes from camera.",p:"/qr-scanner/",t:["util"]},
 {n:"Color Palette",i:"🎨",d:"Random color palette generator.",p:"/color-palette/",t:["design"]},
+{n:"Color Converter",i:"🎨",d:"HEX/RGB/HSL/CMYK converter.",p:"/color-convert/",t:["util","design"]},
+{n:"Color Blindness",i:"👁️",d:"Color blindness simulator.",p:"/color-blindness/",t:["design"]},
 {n:"Favicon Generator",i:"⭐",d:"Generate favicons from text/emoji.",p:"/favicon-gen/",t:["design"]},
 {n:"Gradient Generator",i:"🌈",d:"CSS gradient builder.",p:"/gradient-gen/",t:["design"]},
 {n:"Box Shadow",i:"🔲",d:"CSS box-shadow generator.",p:"/box-shadow-gen/",t:["design"]},
@@ -96,18 +124,17 @@ var A=[
 {n:"Font Pair",i:"🔤",d:"Google Fonts pairing generator.",p:"/font-pair/",t:["design"]},
 {n:"Avatar Generator",i:"👤",d:"Profile picture generator.",p:"/avatar-gen/",t:["design"]},
 {n:"Image Placeholder",i:"🖼️",d:"Placeholder image generator.",p:"/image-placeholder/",t:["design"]},
-// Data & Analysis
+{n:"Image Compressor",i:"🖼️",d:"Compress images in-browser.",p:"/image-compressor/",t:["util"]},
 {n:"CSV Viewer",i:"📊",d:"View, sort, filter CSV data.",p:"/csv-viewer/",t:["data"]},
 {n:"JSON Diff",i:"⚡",d:"Compare JSON objects visually.",p:"/json-diff/",t:["data"]},
 {n:"Chart Generator",i:"📈",d:"Bar/line/pie charts from data.",p:"/chart-gen/",t:["data"]},
+{n:"Mock Data Gen",i:"🎲",d:"Generate fake data for testing.",p:"/mock-data-gen/",t:["data"]},
 {n:"Data Cleaner",i:"🧹",d:"Clean messy CSV/JSON data.",p:"/data-cleaner/",t:["data"]},
 {n:"Table Editor",i:"📋",d:"Interactive spreadsheet editor.",p:"/table-editor/",t:["data"]},
-{n:"Mock Data Gen",i:"🎲",d:"Generate fake data for testing.",p:"/mock-data-gen/",t:["data"]},
 {n:"SQL Formatter",i:"💾",d:"Format & beautify SQL queries.",p:"/sql-formatter/",t:["data"]},
 {n:"SQL Editor",i:"💻",d:"SQL editor with syntax highlighting.",p:"/sql-editor/",t:["data"]},
 {n:"Schema Visualizer",i:"📐",d:"Database ER diagram generator.",p:"/schema-visualizer/",t:["data"]},
 {n:"Query Builder",i:"🔧",d:"Visual SQL query builder.",p:"/query-builder/",t:["data"]},
-// Network & DevOps
 {n:"DNS Lookup",i:"🌍",d:"DNS record lookup via DoH.",p:"/dns-lookup/",t:["network"]},
 {n:"DNS Propagation",i:"📡",d:"Check DNS across servers.",p:"/dns-propagation/",t:["network"]},
 {n:"API Health",i:"🏥",d:"Monitor API endpoints.",p:"/api-health/",t:["network","util"]},
@@ -125,31 +152,26 @@ var A=[
 {n:"Curl Builder",i:"🔧",d:"Build cURL commands visually.",p:"/curl-builder/",t:["devops"]},
 {n:"SSH Config Gen",i:"🔑",d:"SSH config file generator.",p:"/ssh-gen/",t:["devops"]},
 {n:"Cron Builder",i:"⏰",d:"Visual cron expression builder.",p:"/cron-builder/",t:["devops"]},
+{n:"Cron Cheatsheet",i:"📋",d:"Cron expressions reference & builder.",p:"/cron-cheatsheet/",t:["devops"]},
 {n:"Systemd Gen",i:"⚙️",d:"Systemd unit file generator.",p:"/systemd-gen/",t:["devops"]},
 {n:"Nginx Gen",i:"🌐",d:"Nginx config generator.",p:"/nginx-gen/",t:["devops"]},
 {n:"Docker Compose",i:"🐳",d:"Docker Compose YAML generator.",p:"/docker-compose-gen/",t:["devops"]},
 {n:"K8s Generator",i:"☸️",d:"Kubernetes YAML generator.",p:"/k8s-gen/",t:["devops"]},
 {n:"iptables Builder",i:"🔥",d:"iptables rule builder.",p:"/iptables-gen/",t:["devops"]},
 {n:"UFW Builder",i:"🛡️",d:"UFW firewall rule builder.",p:"/ufw-gen/",t:["devops"]},
-// Security
 {n:"Password Generator",i:"🔐",d:"Secure passwords with strength meter.",p:"/password-gen/",t:["util","security"]},
 {n:"Password Strength",i:"💪",d:"Password strength analyzer.",p:"/password-strength/",t:["security"]},
 {n:"Encryption Tool",i:"🔒",d:"AES encrypt/decrypt text.",p:"/encryption-tool/",t:["security"]},
 {n:"XSS Tester",i:"⚠️",d:"XSS payload reference & tester.",p:"/xss-tester/",t:["security"]},
 {n:"ROT13",i:"🔄",d:"ROT13/ROT47 encoder/decoder.",p:"/rot13/",t:["security","dev"]},
 {n:"Caesar Cipher",i:"🏛️",d:"Caesar cipher with brute force.",p:"/caesar-cipher/",t:["security","dev"]},
-{n:"Binary Converter",i:"💻",d:"Binary/text converter.",p:"/binary-converter/",t:["dev"]},
-{n:"Number Base",i:"🔢",d:"Number base converter.",p:"/number-base/",t:["dev"]},
 {n:"ASCII Table",i:"📜",d:"ASCII character reference.",p:"/ascii-table/",t:["dev"]},
 {n:"Unicode Table",i:"📜",d:"Unicode character reference.",p:"/unicode-table/",t:["dev"]},
 {n:"URL Encode",i:"🔗",d:"URL encoder/decoder.",p:"/url-encode/",t:["dev"]},
-{n:"HTML Escape",i:"&",d:"HTML escape/unescape.",p:"/html-escape/",t:["dev"]},
-// AI & LLM
 {n:"Prompt Builder",i:"🤖",d:"LLM prompt templates & builder.",p:"/prompt-builder/",t:["ai"]},
 {n:"Chat Playground",i:"💬",d:"LLM chat playground.",p:"/chat-playground/",t:["ai"]},
 {n:"Model Compare",i:"⚖️",d:"Compare LLM models side-by-side.",p:"/model-compare/",t:["ai"]},
 {n:"AI Cost Calculator",i:"💰",d:"AI API cost calculator.",p:"/ai-cost-calc/",t:["ai"]},
-// Writing & Social
 {n:"Word Counter",i:"📝",d:"Advanced word/character counter.",p:"/word-counter/",t:["writing"]},
 {n:"Sentence Case",i:"Aa",d:"Text case converter.",p:"/sentence-case/",t:["writing"]},
 {n:"Text Statistics",i:"📊",d:"Text analysis & readability.",p:"/text-stats/",t:["writing"]},
@@ -158,8 +180,7 @@ var A=[
 {n:"Morse Code",i:"📡",d:"Morse code translator with audio.",p:"/morse-code/",t:["writing"]},
 {n:"Pig Latin",i:"🐷",d:"Pig Latin translator.",p:"/pig-latin/",t:["writing"]},
 {n:"Emoji Translate",i:"😀",d:"Text to emoji translator.",p:"/emoji-translate/",t:["writing"]},
-{n:"Binary Text",i:"💾",d:"Binary ↔ text converter.",p:"/binary-text/",t:["writing","dev"]},
-// Productivity
+{n:"Keyboard Shortcuts",i:"⌨️",d:"Keyboard shortcuts reference.",p:"/keyboard-shortcuts/",t:["util"]},
 {n:"Expense Tracker",i:"💰",d:"Income/expense tracking & charts.",p:"/expense-tracker/",t:["prod"]},
 {n:"Todo Kanban",i:"📋",d:"Kanban board with drag & drop.",p:"/todo-kanban/",t:["prod"]},
 {n:"Notes App",i:"📝",d:"Rich text notes with search.",p:"/notes-app/",t:["prod"]},
@@ -182,21 +203,53 @@ var A=[
 {n:"BMI Calculator",i:"⚖️",d:"Body mass index calculator.",p:"/bmi-calc/",t:["util"]},
 {n:"Age Calculator",i:"🎂",d:"Exact age calculator.",p:"/age-calc/",t:["util"]},
 {n:"Date Difference",i:"📆",d:"Date difference calculator.",p:"/date-diff/",t:["util"]},
-{n:"Image Compressor",i:"🖼️",d:"Compress images in-browser.",p:"/image-compressor/",t:["util"]},
-{n:"Color Converter",i:"🎨",d:"HEX/RGB/HSL/CMYK converter.",p:"/color-convert/",t:["util","design"]},
+{n:"PDF Viewer",i:"📕",d:"Upload & view PDF files.",p:"/pdf-viewer/",t:["util"]},
+{n:"Audio Recorder",i:"🎤",d:"Record audio with waveform.",p:"/audio-recorder/",t:["util"]},
+{n:"Responsive Tester",i:"📱",d:"Multi viewport preview.",p:"/responsive-tester/",t:["util"]},
 ];
 var activeCat='all';
+// Dark mode
+function getDark(){return localStorage.getItem('zcus_dark')==='true'}
+function setDark(v){localStorage.setItem('zcus_dark',v);applyDark()}
+function toggleDark(){setDark(!getDark())}
+function applyDark(){var d=getDark();document.documentElement.setAttribute('data-theme',d?'dark':'light');document.getElementById('darkBtn').textContent=d?'☀️':'🌙'}
+applyDark();
+// Favorites
+function getFavs(){try{return JSON.parse(localStorage.getItem('zcus_favs')||'[]')}catch{return[]}}
+function toggleFav(p,e){
+  e&&e.stopPropagation();e&&e.preventDefault();
+  var favs=getFavs();var idx=favs.indexOf(p);
+  if(idx>=0)favs.splice(idx,1);else favs.push(p);
+  localStorage.setItem('zcus_favs',JSON.stringify(favs));render();
+}
+// Recently used
+function addRecent(p){var r=getRecent();r=r.filter(function(x){return x!==p});r.unshift(p);if(r.length>12)r.pop();localStorage.setItem('zcus_recent',JSON.stringify(r))}
+function getRecent(){try{return JSON.parse(localStorage.getItem('zcus_recent')||'[]')}catch{return[]}}
+function renderCard(a){
+  var favs=getFavs();var isFav=favs.indexOf(a.p)>=0;
+  return '<a class="app-card" href="'+a.p+'" onclick="addRecent(\\''+a.p+'\\')"><div class="app-icon">'+a.i+'</div><div class="app-body"><div class="app-name">'+a.n+'</div><div class="app-desc">'+a.d+'</div>'+a.t.map(function(t){return '<span class="app-tag tag-'+t+'">'+t.toUpperCase()+'</span>'}).join(' ')+'</div><button class="app-fav '+(isFav?'active':'')+'" onclick="toggleFav(\\''+a.p+'\\',event)" title="Toggle favorite">'+(isFav?'⭐':'☆')+'</button></a>';
+}
 function filter(){
   var q=document.getElementById('search').value.toLowerCase();
-  var f=A.filter(function(a){
+  var favs=getFavs();var recent=getRecent();
+  var allFav=A.filter(function(a){return favs.indexOf(a.p)>=0});
+  var allRecent=A.filter(function(a){return recent.indexOf(a.p)>=0});
+  var filtered=A.filter(function(a){
     var ms=!q||a.n.toLowerCase().indexOf(q)>=0||a.d.toLowerCase().indexOf(q)>=0||a.t.some(function(t){return t.indexOf(q)>=0});
     var mc=activeCat==='all'||a.t.indexOf(activeCat)>=0;
     return ms&&mc;
   });
-  document.getElementById('grid').innerHTML=f.map(function(a){
-    return '<a class="app-card" href="'+a.p+'"><div class="app-icon">'+a.i+'</div><div class="app-name">'+a.n+'</div><div class="app-desc">'+a.d+'</div>'+a.t.map(function(t){return '<span class="app-tag tag-'+t+'">'+t.toUpperCase()+'</span>'}).join(' ')+'</a>';
-  }).join('');
-  document.getElementById('empty').style.display=f.length?'none':'block';
+  // Fav section
+  var favSection=document.getElementById('favSection');
+  if(favs.length&&!q&&activeCat==='all'){favSection.style.display='block';document.getElementById('favGrid').innerHTML=allFav.map(renderCard).join('');document.getElementById('favCount').textContent=allFav.length}else favSection.style.display='none';
+  // Recent section
+  var recSection=document.getElementById('recentSection');
+  if(recent.length&&!q&&activeCat==='all'){recSection.style.display='block';document.getElementById('recentGrid').innerHTML=allRecent.slice(0,6).map(renderCard).join('')}else recSection.style.display='none';
+  // All
+  document.getElementById('grid').innerHTML=filtered.map(renderCard).join('');
+  document.getElementById('allCount').textContent=filtered.length;
+  document.getElementById('empty').style.display=filtered.length?'none':'block';
+  document.getElementById('allTitle').style.display=(q||activeCat!=='all')?'flex':'none';
 }
 var cats={all:'All',dev:'Developer',design:'Design',data:'Data',network:'Network',devops:'DevOps',security:'Security',ai:'AI/LLM',writing:'Writing',prod:'Productivity',util:'Utility',finance:'Finance'};
 Object.keys(cats).forEach(function(c){
@@ -206,4 +259,6 @@ Object.keys(cats).forEach(function(c){
 });
 document.getElementById('count').textContent=A.length;
 filter();
+// Keyboard shortcut: Cmd/Ctrl+K to focus search
+document.addEventListener('keydown',function(e){if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();document.getElementById('search').focus()}if(e.key==='Escape')document.getElementById('search').blur()});
 </script></body></html>

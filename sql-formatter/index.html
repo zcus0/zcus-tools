@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL Formatter</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #e0e0e0;padding:16px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header .icon{font-size:24px}
+.header h1{font-size:18px;font-weight:600;flex:1}
+.container{max-width:1100px;margin:0 auto;padding:24px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:24px;margin-bottom:20px}
+.card h2{font-size:16px;font-weight:600;margin-bottom:16px}
+.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;transition:all .2s}
+.btn-primary{background:#FF6B00;color:#fff}.btn-primary:hover{background:#e55a00}
+.btn-outline{background:transparent;border:1px solid #ddd;color:#555}.btn-outline:hover{border-color:#FF6B00;color:#FF6B00}
+.btn-sm{padding:5px 10px;font-size:12px}
+textarea{font-family:'Fira Code','Courier New',monospace;font-size:13px;padding:12px;border:1px solid #ddd;border-radius:8px;width:100%;resize:vertical;outline:none;transition:border .2s;min-height:150px;tab-size:2;line-height:1.6}
+textarea:focus{border-color:#FF6B00}
+label{display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#555}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+.output{background:#1e1e1e;color:#d4d4d4;padding:16px;border-radius:8px;font-family:'Fira Code',monospace;font-size:13px;line-height:1.6;overflow-x:auto;white-space:pre-wrap;max-height:500px;overflow-y:auto;min-height:150px}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;align-items:center}
+.keyword{color:#FF6B00;font-weight:600}
+.string{color:#ce9178}
+.number{color:#b5cea8}
+.comment{color:#6a9955;font-style:italic}
+.function-name{color:#dcdcaa}
+.operator{color:#d4d4d4}
+.identifier{color:#9cdcfe}
+.paren{color:#ffd700}
+.stats{font-size:12px;color:#888;margin-top:8px}
+.indent-select{display:flex;gap:8px;margin-bottom:12px}
+.indent-opt{padding:4px 12px;border:1px solid #eee;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;transition:all .2s}
+.indent-opt.active{border-color:#FF6B00;color:#FF6B00;background:#fff5f0}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/">← Home</a>
+  <span class="icon">🗃️</span>
+  <h1>SQL Formatter</h1>
+</div>
+<div class="container">
+  <div class="card">
+    <h2>Input SQL</h2>
+    <textarea id="input" placeholder="Paste your SQL query here...">SELECT u.id, u.name, u.email, p.title AS post_title, p.created_at FROM users u INNER JOIN posts p ON u.id = p.user_id WHERE u.active = 1 AND p.created_at > '2024-01-01' ORDER BY p.created_at DESC LIMIT 10;</textarea>
+    <div class="controls">
+      <button class="btn btn-primary" onclick="formatSQL()">✨ Format</button>
+      <button class="btn btn-outline" onclick="minifySQL()">📦 Minify</button>
+      <button class="btn btn-outline" onclick="upperKeywords()">🔠 Uppercase Keywords</button>
+      <button class="btn btn-outline" onclick="lowerKeywords()">🔡 Lowercase Keywords</button>
+      <button class="btn btn-outline" onclick="copyOutput()">📋 Copy</button>
+      <button class="btn btn-outline" onclick="loadSample()">📝 Sample</button>
+    </div>
+    <div class="indent-select">
+      <span style="font-size:12px;color:#888;line-height:26px">Indent:</span>
+      <div class="indent-opt active" onclick="setIndent('  ',this)">2 Spaces</div>
+      <div class="indent-opt" onclick="setIndent('    ',this)">4 Spaces</div>
+      <div class="indent-opt" onclick="setIndent('\t',this)">Tab</div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Formatted SQL</h2>
+    <div class="output" id="output"></div>
+    <div class="stats" id="stats"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let indent='  ';
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function setIndent(i,el){indent=i;document.querySelectorAll('.indent-opt').forEach(e=>e.classList.remove('active'));el.classList.add('active');formatSQL()}
+const KEYWORDS=['SELECT','FROM','WHERE','AND','OR','NOT','IN','ON','JOIN','INNER','LEFT','RIGHT','OUTER','CROSS','GROUP','BY','ORDER','ASC','DESC','HAVING','LIMIT','OFFSET','INSERT','INTO','VALUES','UPDATE','SET','DELETE','CREATE','TABLE','ALTER','DROP','INDEX','VIEW','AS','DISTINCT','ALL','UNION','INTERSECT','EXCEPT','CASE','WHEN','THEN','ELSE','END','EXISTS','BETWEEN','LIKE','IS','NULL','TRUE','FALSE','AGGREGATE','COUNT','SUM','AVG','MIN','MAX','COALESCE','IF','IFNULL','CAST','CONVERT','SUBSTRING','CONCAT','LENGTH','TRIM','UPPER','LOWER','REPLACE','ROUND','ABS','NOW','CURRENT_DATE','CURRENT_TIMESTAMP','DATE','TIME','TIMESTAMP','EXTRACT','DATE_FORMAT','GROUP_CONCAT','WITH','OVER','PARTITION','ROW_NUMBER','RANK','DENSE_RANK','LEAD','LAG','FIRST_VALUE','LAST_VALUE','NTH_VALUE','FETCH','NEXT','ROWS','ONLY','UNBOUNDED','PRECEDING','FOLLOWING','CURRENT','ROW','RECURSIVE'];
+const FUNCTIONS=['COUNT','SUM','AVG','MIN','MAX','COALESCE','IFNULL','CAST','CONVERT','SUBSTRING','CONCAT','LENGTH','TRIM','UPPER','LOWER','REPLACE','ROUND','ABS','NOW','CURRENT_DATE','CURRENT_TIMESTAMP','DATE','TIME','EXTRACT','DATE_FORMAT','GROUP_CONCAT','ROW_NUMBER','RANK','DENSE_RANK','LEAD','LAG','FIRST_VALUE','LAST_VALUE','NTH_VALUE'];
+function formatSQL(){
+  let sql=document.getElementById('input').value.trim();
+  if(!sql){document.getElementById('output').textContent='';return}
+  // Basic formatting
+  sql=sql.replace(/\s+/g,' ').trim();
+  // Add newlines before major keywords
+  const majorKeywords=['SELECT','FROM','WHERE','GROUP BY','ORDER BY','HAVING','LIMIT','OFFSET','INSERT INTO','VALUES','UPDATE','SET','DELETE FROM','INNER JOIN','LEFT JOIN','RIGHT JOIN','JOIN','LEFT OUTER JOIN','RIGHT OUTER JOIN','CROSS JOIN','ON','UNION','INTERSECT','EXCEPT','WITH','FETCH NEXT','ROWS ONLY'];
+  majorKeywords.forEach(kw=>{
+    const regex=new RegExp('\\b'+kw.replace(/ /g,'\\s+')+'\\b','gi');
+    sql=sql.replace(regex,'\n'+kw);
+  });
+  // Indent sub-clauses
+  let lines=sql.split('\n').filter(l=>l.trim());
+  let level=0;
+  const formatted=[];
+  const openWords=['SELECT','FROM','WHERE','GROUP BY','ORDER BY','HAVING','VALUES','SET','ON','CASE'];
+  const closeWords=[];
+  for(let line of lines){
+    line=line.trim();
+    if(!line)continue;
+    const upper=line.toUpperCase();
+    // Decrease indent for certain keywords
+    if(upper.match(/^(AND|OR|WHEN|ELSE|THEN)/))level=Math.max(0,level-1);
+    formatted.push(indent.repeat(level)+line);
+    // Increase indent after certain keywords
+    if(upper.match(/^(SELECT|FROM|WHERE|GROUP BY|ORDER BY|HAVING|VALUES|SET)$/))level++;
+    if(upper.match(/^(AND|OR)$/))level++;
+    if(upper.includes('CASE'))level++;
+    if(upper.match(/^END\b/))level=Math.max(0,level-1);
+    if(upper.match(/^(LEFT|RIGHT|INNER|OUTER|CROSS)\s+JOIN/)||upper==='JOIN')level++;
+  }
+  const result=formatted.join('\n');
+  renderHighlighted(result);
+  const lines2=result.split('\n');
+  document.getElementById('stats').textContent=`${lines2.length} lines, ${result.length} chars, ${result.split(/\s+/).length} tokens`;
+}
+function renderHighlighted(sql){
+  const keywords=KEYWORDS.join('|');
+  const funcs=FUNCTIONS.join('|');
+  const highlighted=sql
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/('(?:[^'\\]|\\.)*')/g,'<span class="string">$1</span>')
+    .replace(/\b(\d+(?:\.\d+)?)\b/g,'<span class="number">$1</span>')
+    .replace(/(--[^\n]*)/g,'<span class="comment">$1</span>')
+    .replace(new RegExp(`\\b(${funcs})\\b`,'gi'),'<span class="function-name">$1</span>')
+    .replace(new RegExp(`\\b(${keywords})\\b`,'gi'),'<span class="keyword">$1</span>')
+    .replace(/(=|<>|!=|>=|<=|>|<|\+|-|\*|\/|%)/g,'<span class="operator">$1</span>')
+    .replace(/([()])/g,'<span class="paren">$1</span>');
+  document.getElementById('output').innerHTML=highlighted;
+}
+function minifySQL(){
+  let sql=document.getElementById('input').value.trim();
+  sql=sql.replace(/\s+/g,' ').replace(/\s*([(),;])\s*/g,'$1').trim();
+  document.getElementById('input').value=sql;
+  document.getElementById('output').textContent=sql;
+  document.getElementById('stats').textContent=`Minified: ${sql.length} chars`;
+  toast('SQL minified!');
+}
+function upperKeywords(){
+  let sql=document.getElementById('input').value;
+  KEYWORDS.forEach(kw=>{
+    const regex=new RegExp('\\b'+kw+'\\b','gi');
+    sql=sql.replace(regex,kw);
+  });
+  document.getElementById('input').value=sql;formatSQL();
+}
+function lowerKeywords(){
+  let sql=document.getElementById('input').value;
+  KEYWORDS.forEach(kw=>{
+    const regex=new RegExp('\\b'+kw+'\\b','gi');
+    sql=sql.replace(regex,kw.toLowerCase());
+  });
+  document.getElementById('input').value=sql;formatSQL();
+}
+function copyOutput(){navigator.clipboard.writeText(document.getElementById('output').textContent);toast('SQL copied!')}
+function loadSample(){
+  document.getElementById('input').value=`SELECT u.id,u.name,u.email,p.title AS post_title,p.body,p.created_at,COUNT(c.id) AS comment_count FROM users u LEFT JOIN posts p ON u.id = p.user_id LEFT JOIN comments c ON p.id = c.post_id WHERE u.active = 1 AND p.created_at > CURRENT_DATE - INTERVAL '30 days' GROUP BY u.id,u.name,u.email,p.id,p.title,p.body,p.created_at HAVING COUNT(c.id) > 5 ORDER BY comment_count DESC LIMIT 10;`;
+  formatSQL();
+}
+formatSQL();
+</script>
+</body>
+</html>

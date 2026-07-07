@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pig Latin Translator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #e0e0e0;padding:16px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header .icon{font-size:24px}
+.header h1{font-size:18px;font-weight:600;flex:1}
+.container{max-width:900px;margin:0 auto;padding:24px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:24px;margin-bottom:20px}
+.card h2{font-size:16px;font-weight:600;margin-bottom:16px}
+.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;transition:all .2s}
+.btn-primary{background:#FF6B00;color:#fff}.btn-primary:hover{background:#e55a00}
+.btn-outline{background:transparent;border:1px solid #ddd;color:#555}.btn-outline:hover{border-color:#FF6B00;color:#FF6B00}
+.btn-sm{padding:5px 10px;font-size:12px}
+textarea{font-family:'Inter',sans-serif;font-size:14px;padding:12px;border:1px solid #ddd;border-radius:8px;width:100%;resize:vertical;outline:none;transition:border .2s;min-height:100px}
+textarea:focus{border-color:#FF6B00}
+label{display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#555}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+.word-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.word-tag{padding:8px 14px;border-radius:8px;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.word-tag .original{font-size:11px;color:#888;text-decoration:line-through}
+.word-tag .translated{font-weight:600;color:#FF6B00}
+.word-tag.vowel{background:#fff5f0;border:1px solid #ffe0cc}
+.word-tag.consonant{background:#f0f7ff;border:1px solid #cce0ff}
+.word-tag.punct{background:#f5f5f5;border:1px solid #eee}
+.rules{font-size:13px;color:#666;line-height:1.6}
+.rules li{margin-bottom:4px}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.direction-toggle{display:flex;border:2px solid #eee;border-radius:8px;overflow:hidden}
+.direction-toggle .btn{border-radius:0;border:none}
+.direction-toggle .btn.active{background:#FF6B00;color:#fff}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/">← Home</a>
+  <span class="icon">🐷</span>
+  <h1>Pig Latin Translator</h1>
+</div>
+<div class="container">
+  <div class="card">
+    <h2>Translator</h2>
+    <div class="direction-toggle">
+      <button class="btn btn-primary" onclick="setDir('toPL',this)">English → Pig Latin</button>
+      <button class="btn btn-outline" onclick="setDir('fromPL',this)">Pig Latin → English</button>
+    </div>
+    <div style="margin-top:12px"><textarea id="input" placeholder="Enter text to translate..." oninput="translate()"></textarea></div>
+    <div class="controls">
+      <button class="btn btn-primary btn-sm" onclick="translate()">🔄 Translate</button>
+      <button class="btn btn-outline btn-sm" onclick="copyResult()">📋 Copy</button>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('input').value='The quick brown fox jumps over the lazy dog';translate()">Sample Text</button>
+    </div>
+    <div style="padding:12px;background:#f9f9f9;border-radius:8px;font-size:15px;line-height:1.6;min-height:50px" id="output"></div>
+  </div>
+  <div class="card">
+    <h2>Word Breakdown</h2>
+    <div class="word-grid" id="word-grid"></div>
+  </div>
+  <div class="card">
+    <h2>Pig Latin Rules</h2>
+    <ol class="rules">
+      <li>If a word begins with a <strong>vowel</strong> (a, e, i, o, u), add "way" (or "yay") to the end: <em>apple → appleway</em></li>
+      <li>If a word begins with a <strong>consonant</strong>, move consonants to the end and add "ay": <em>hello → ellohay</em></li>
+      <li>For consonant clusters, move all consonants before the first vowel: <em>string → ingstray</em></li>
+      <li>Capitalize words maintain their capitalization: <em>Hello → Ellohay</em></li>
+      <li>Punctuation is preserved after the word</li>
+    </ol>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let dir='toPL';
+const VOWELS='aeiouAEIOU';
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function setDir(d,btn){dir=d;document.querySelectorAll('.direction-toggle .btn').forEach(b=>{b.classList.remove('active');b.classList.add('btn-outline')});btn.classList.remove('btn-outline');btn.classList.add('active','btn-primary');translate()}
+function toPigLatin(word){
+  if(!word||!/[a-zA-Z]/.test(word))return{translated:word,type:'punct'};
+  const wasUpper=word[0]===word[0].toUpperCase();
+  const lower=word.toLowerCase();
+  const isVowel=VOWELS.includes(lower[0]);
+  let translated;
+  if(isVowel){translated=lower+'way'}
+  else{
+    let i=0;while(i<lower.length&&!VOWELS.includes(lower[i]))i++;
+    translated=lower.slice(i)+lower.slice(0,i)+'ay';
+  }
+  if(wasUpper)translated=translated[0].toUpperCase()+translated.slice(1);
+  return{translated,type:isVowel?'vowel':'consonant'};
+}
+function fromPigLatin(word){
+  if(!word||!/[a-zA-Z]/.test(word))return{translated:word,type:'punct'};
+  const wasUpper=word[0]===word[0].toUpperCase();
+  const lower=word.toLowerCase();
+  let translated;
+  if(lower.endsWith('way')){
+    translated=lower.slice(0,-3);
+  }else if(lower.endsWith('ay')){
+    const base=lower.slice(0,-2);
+    const vowels=['a','e','i','o','u'];
+    let i=base.length-1;while(i>0&&!vowels.includes(base[i]))i--;
+    if(i>0){translated=base.slice(i)+base.slice(0,i)}
+    else{translated=base}
+  }else{translated=lower}
+  if(wasUpper&&translated)translated=translated[0].toUpperCase()+translated.slice(1);
+  return{translated,type:VOWELS.includes(translated[0])?'vowel':'consonant'};
+}
+function translate(){
+  const text=document.getElementById('input').value;
+  if(!text){document.getElementById('output').textContent='';document.getElementById('word-grid').innerHTML='';return}
+  const words=text.split(/(\s+)/);
+  const results=[];const grid=[];
+  const output=words.map(w=>{
+    if(w.trim()===' '||w==='')return w;
+    const result=dir==='toPL'?toPigLatin(w):fromPigLatin(w);
+    results.push({...result,original:w});
+    grid.push(result);
+    return result.translated;
+  }).join('');
+  document.getElementById('output').textContent=output;
+  document.getElementById('word-grid').innerHTML=grid.map((r,i)=>`
+    <div class="word-tag ${r.type}">
+      <span class="original">${results[i].original}</span>
+      <span class="translated">${r.translated}</span>
+    </div>
+  `).join('');
+}
+function copyResult(){navigator.clipboard.writeText(document.getElementById('output').textContent);toast('Copied!')}
+translate();
+</script>
+</body>
+</html>

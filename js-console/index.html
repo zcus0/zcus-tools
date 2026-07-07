@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JavaScript Console - ZCUs Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
+.header{background:#1a1d27;border-bottom:1px solid #2a2d3a;padding:16px 24px;display:flex;align-items:center;gap:16px}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header h1{font-size:20px;font-weight:700;color:#fff}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#1a1d27;border:1px solid #2a2d3a;border-radius:12px;padding:24px;margin-bottom:20px}
+.card h2{font-size:18px;font-weight:600;color:#fff;margin-bottom:16px}
+.editor-wrap{background:#0a0c10;border:1px solid #3a3d4a;border-radius:8px;overflow:hidden}
+.editor-header{background:#1a1d27;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #3a3d4a}
+.editor-title{font-size:12px;color:#aaa}
+.editor-area{display:flex;min-height:200px}
+.line-numbers{background:#0f1117;padding:12px 8px;color:#555;font-family:monospace;font-size:13px;line-height:1.6;min-width:40px;text-align:right;user-select:none;border-right:1px solid #1a1d27}
+.code-input{flex:1;background:transparent;border:none;color:#e0e0e0;font-family:monospace;font-size:13px;line-height:1.6;padding:12px;resize:none;outline:none;tab-size:2;white-space:pre;overflow:auto}
+.btn-row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+button{background:#FF6B00;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+button:hover{opacity:.85}
+.btn-secondary{background:#2a2d3a;color:#e0e0e0;border:1px solid #3a3d4a}
+.output-area{background:#0a0c10;border:1px solid #3a3d4a;border-radius:8px;padding:12px;min-height:100px;max-height:300px;overflow-y:auto;font-family:monospace;font-size:13px;margin-top:12px}
+.output-line{padding:2px 0;border-bottom:1px solid #0f1117}
+.output-line.log{color:#e0e0e0}
+.output-line.error{color:#ff9999}
+.output-line.warn{color:#f0e68c}
+.output-line.info{color:#88bbee}
+.output-line.result{color:#8ae6a0}
+.history-item{background:#0f1117;border:1px solid #2a2d3a;border-radius:6px;padding:10px;margin-bottom:8px;cursor:pointer;transition:border-color .2s}
+.history-item:hover{border-color:#FF6B00}
+.history-code{font-family:monospace;font-size:12px;color:#FF6B00;margin-bottom:4px;white-space:pre-wrap;word-break:break-all}
+.history-result{font-family:monospace;font-size:11px;color:#8ae6a0;white-space:pre-wrap;word-break:break-all}
+.history-time{font-size:10px;color:#666}
+.preset-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.preset-btn{background:#2a2d3a;color:#e0e0e0;border:1px solid #3a3d4a;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif}
+.preset-btn:hover{border-color:#FF6B00;color:#FF6B00}
+iframe#sandbox{display:none}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">▶️</span><h1>JavaScript Console / REPL</h1></div>
+<div class="container">
+<div class="card">
+<h2>Quick Examples</h2>
+<div class="preset-row">
+<button class="preset-btn" onclick="loadExample('hello')">Hello World</button>
+<button class="preset-btn" onclick="loadExample('fetch')">Fetch API</button>
+<button class="preset-btn" onclick="loadExample('async')">Async/Await</button>
+<button class="preset-btn" onclick="loadExample('dom')">DOM Manipulation</button>
+<button class="preset-btn" onclick="loadExample('math')">Math Operations</button>
+<button class="preset-btn" onclick="loadExample('array')">Array Methods</button>
+<button class="preset-btn" onclick="loadExample('json')">JSON Parse</button>
+<button class="preset-btn" onclick="loadExample('regex')">Regex</button>
+</div>
+</div>
+<div class="card">
+<h2>Code Editor</h2>
+<div class="editor-wrap">
+<div class="editor-header">
+<span class="editor-title">JavaScript</span>
+<span style="font-size:11px;color:#666" id="lineCount">1 line</span>
+</div>
+<div class="editor-area">
+<div class="line-numbers" id="lineNums">1</div>
+<textarea class="code-input" id="code" spellcheck="false" oninput="updateLines()" onkeydown="handleKey(event)">console.log("Hello, World!");
+console.log("Current time:", new Date().toISOString());
+console.log("You are running JavaScript in a sandboxed iframe.");
+console.log("Try the examples above for more demos!");
+return "Welcome to the JS Console!";</textarea>
+</div>
+</div>
+<div class="btn-row">
+<button onclick="executeCode()">▶ Run (Ctrl+Enter)</button>
+<button class="btn-secondary" onclick="clearOutput()">🗑️ Clear Output</button>
+<button class="btn-secondary" onclick="clearAll()">Reset All</button>
+<button class="btn-secondary" onclick="exportCode()">📋 Copy Code</button>
+</div>
+</div>
+<div class="card">
+<h2>Output</h2>
+<div class="output-area" id="output">
+<div class="output-line info">ℹ️ Ready. Type code and press Run or Ctrl+Enter.</div>
+</div>
+</div>
+<div class="card">
+<h2>Command History</h2>
+<div id="history"></div>
+</div>
+</div>
+<iframe id="sandbox" sandbox="allow-scripts"></iframe>
+<script>
+function toast(msg){const t=document.createElement('div');t.textContent=msg;Object.assign(t.style,{position:'fixed',bottom:'20px',right:'20px',background:'#FF6B00',color:'#fff',padding:'12px 20px',borderRadius:'8px',fontFamily:'Inter',sans-serif',fontSize:'14px',zIndex:'9999',transition:'opacity .3s'});document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},2500)}
+
+const examples={
+hello:`console.log("Hello, World!");
+console.log("Date:", new Date().toISOString());
+console.log("Navigator:", navigator.userAgent.slice(0,50));
+return "Done!";`,
+fetch:`// Fetch and display info
+const res = await fetch("https://httpbin.org/get");
+const data = await res.json();
+console.log("Origin:", data.origin);
+console.log("URL:", data.url);
+console.log("Headers:", JSON.stringify(data.headers, null, 2));
+return data;`,
+async:`// Async/Await demo
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+console.log("Starting async demo...");
+console.log("Waiting 1 second...");
+await sleep(1000);
+console.log("Done waiting!");
+
+const results = await Promise.all([
+  Promise.resolve("Task 1 done"),
+  Promise.resolve("Task 2 done"),
+  Promise.resolve("Task 3 done")
+]);
+console.log("All tasks:", results);
+return results;`,
+dom:`// DOM Manipulation (runs in iframe sandbox)
+document.title = "Modified Title";
+document.body.innerHTML = '<h1 style="color:#FF6B00;padding:20px">DOM Modified!</h1>';
+document.body.style.background = "#0f1117";
+document.body.style.color = "#e0e0e0";
+console.log("Title changed to:", document.title);
+return "DOM manipulation complete";`,
+math:`// Math operations
+console.log("Math.PI:", Math.PI);
+console.log("Random 0-1:", Math.random());
+console.log("Random 1-100:", Math.floor(Math.random()*100)+1);
+console.log("sqrt(144):", Math.sqrt(144));
+console.log("log2(1024):", Math.log2(1024));
+console.log("2^10:", Math.pow(2, 10));
+const primes = [2,3,5,7,11,13,17,19,23];
+console.log("Primes sum:", primes.reduce((a,b)=>a+b, 0));
+return { PI: Math.PI, e: Math.E, sqrt144: 12 };`,
+array:`// Array methods
+const nums = [1,2,3,4,5,6,7,8,9,10];
+console.log("Original:", nums);
+console.log("Doubled:", nums.map(n => n * 2));
+console.log("Evens:", nums.filter(n => n % 2 === 0));
+console.log("Sum:", nums.reduce((a,b) => a+b, 0));
+console.log("Reversed:", [...nums].reverse());
+console.log("Sorted desc:", [...nums].sort((a,b) => b-a));
+console.log("Chained (evens doubled):", nums.filter(n=>n%2===0).map(n=>n*2));
+return nums.filter(n=>n%2===0).map(n=>n*2);`,
+json:`// JSON operations
+const obj = {
+  name: "DevOps Tool",
+  version: "2.0",
+  features: ["cron", "docker", "k8s"],
+  config: { debug: false, port: 8080 }
+};
+const json = JSON.stringify(obj, null, 2);
+console.log("Formatted:\\n" + json);
+const parsed = JSON.parse(json);
+console.log("Parsed name:", parsed.name);
+console.log("Features:", parsed.features.join(", "));
+console.log("Size:", json.length, "bytes");
+return parsed;`,
+regex:`// Regex examples
+const email = "user@example.com";
+const ip = "192.168.1.100";
+const url = "https://example.com:8080/path?q=1#hash";
+
+const emailRe = /^[\\w.-]+@[\\w.-]+\\.\\w+$/;
+const ipRe = /^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}$/;
+const urlRe = /^(https?):\\/\\/([^/]+)(:\\d+)?(\\/[^?#]*)?(\\?[^#]*)?(#.*)?$/;
+
+console.log(email, "→", emailRe.test(email) ? "✅ Valid email" : "❌ Invalid");
+console.log(ip, "→", ipRe.test(ip) ? "✅ Valid IP" : "❌ Invalid");
+console.log(url, "→", urlRe.test(url) ? "✅ Valid URL" : "❌ Invalid");
+
+const match = url.match(urlRe);
+console.log("URL parts:", { protocol: match[1], host: match[2], port: match[3] });
+return { emailValid: true, ipValid: true, urlValid: true };`
+};
+
+function loadExample(name){document.getElementById('code').value=examples[name]||'';updateLines()}
+
+function updateLines(){
+const code=document.getElementById('code').value;
+const lines=code.split('\n').length;
+document.getElementById('lineNums').innerHTML=Array.from({length:lines},(_,i)=>i+1).join('\n');
+document.getElementById('lineCount').textContent=lines+' line'+(lines!==1?'s':'');
+}
+
+function handleKey(e){
+if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();executeCode()}
+if(e.key==='Tab'){e.preventDefault();const s=e.target;const start=s.selectionStart;s.value=s.value.substring(0,start)+'  '+s.value.substring(s.selectionEnd);s.selectionStart=s.selectionEnd=start+2}
+}
+
+function executeCode(){
+const code=document.getElementById('code').value.trim();
+if(!code)return;
+addOutput('info','▸ Running...');
+const sandbox=document.getElementById('sandbox');
+const wrappedCode=`
+<script>
+(function(){
+  const __logs=[];
+  const __origLog=console.log;
+  console.log=function(...args){
+    __logs.push({type:'log',msg:args.map(a=>typeof a==='object'?JSON.stringify(a,null,2):String(a)).join(' ')});
+  };
+  console.error=function(...args){__logs.push({type:'error',msg:args.join(' ')})};
+  console.warn=function(...args){__logs.push({type:'warn',msg:args.join(' ')})};
+  console.info=function(...args){__logs.push({type:'info',msg:args.join(' ')})};
+  (async function(){
+    try{
+      const __result=await (async function(){${code}})();
+      __logs.push({type:'result',msg:'=> '+(__result===undefined?'undefined':typeof __result==='object'?JSON.stringify(__result,null,2):String(__result))});
+    }catch(e){__logs.push({type:'error',msg:e.toString()})}
+    parent.postMessage({type:'js-output',logs:__logs},'*');
+  })();
+})();
+<\\/script>`;
+sandbox.srcdoc='<!DOCTYPE html><html><body>'+wrappedCode+'</html>';
+window.__pendingResult=true;
+// Fallback: if no message received
+setTimeout(()=>{
+if(window.__pendingResult){
+addOutput('info','⚠️ Execution timeout or sandbox issue');
+window.__pendingResult=false;
+}
+},5000);
+}
+
+window.addEventListener('message',e=>{
+if(e.data&&e.data.type==='js-output'){
+window.__pendingResult=false;
+e.data.logs.forEach(l=>addOutput(l.type,l.msg));
+addOutput('info','▸ Execution complete');
+}
+});
+
+function addOutput(type,msg){
+const output=document.getElementById('output');
+const div=document.createElement('div');
+div.className='output-line '+type;
+div.textContent=msg;
+output.appendChild(div);
+output.scrollTop=output.scrollHeight;
+}
+
+function clearOutput(){document.getElementById('output').innerHTML=''}
+function clearAll(){clearOutput();document.getElementById('history').innerHTML='';toast('Reset')}
+
+let historyCount=0;
+function exportCode(){
+navigator.clipboard.writeText(document.getElementById('code').value);
+toast('Code copied!');
+}
+
+updateLines();
+</script>
+</body>
+</html>

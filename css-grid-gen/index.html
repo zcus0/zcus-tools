@@ -1,0 +1,47 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CSS Grid Builder</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}:root{--accent:#FF6B00;--bg:#f8f9fc;--card:#fff;--text:#1a1a2e;--text2:#6b7280;--border:#e5e7eb;--radius:12px}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}.app{max-width:900px;margin:0 auto;padding:20px}
+.header{display:flex;align-items:center;gap:12px;padding:16px 0;border-bottom:2px solid var(--accent);margin-bottom:24px}
+.header h1{font-size:1.5rem;font-weight:700}.header a{color:var(--accent);text-decoration:none;font-size:0.85rem;margin-left:auto}
+.btn{background:var(--accent);color:#fff;border:none;padding:10px 20px;border-radius:var(--radius);font-weight:600;cursor:pointer;font-size:0.9rem}.btn:hover{opacity:.9}.btn-sm{padding:6px 14px;font-size:0.8rem}.btn-outline{background:transparent;color:var(--accent);border:2px solid var(--accent)}
+.card{background:var(--card);border-radius:var(--radius);padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid var(--border)}
+input,textarea,select{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.9rem;background:var(--card);color:var(--text);outline:none}
+input:focus,textarea:focus{border-color:var(--accent)}
+textarea{min-height:120px;font-family:'JetBrains Mono',monospace;font-size:0.85rem}
+pre{background:#1e1e2e;color:#a6e3a1;padding:16px;border-radius:8px;overflow-x:auto;font-size:0.82rem;font-family:'JetBrains Mono',monospace;max-height:400px;overflow-y:auto}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:12px 24px;border-radius:var(--radius);font-size:0.85rem;z-index:9999}
+.info{background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:12px;font-size:0.85rem;color:#9a3412;margin-bottom:16px}
+footer{text-align:center;padding:24px;color:var(--text2);font-size:0.75rem}
+</style></head><body>
+<div class="app">
+  <div class="header"><span style="font-size:1.8rem">🔳</span><h1>CSS Grid Builder</h1><a href="/">Home</a></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div>
+      <div class="card"><div style="font-weight:600;margin-bottom:12px">Grid Settings</div>
+        <div style="display:grid;gap:8px">
+          <div><label style="font-size:0.8rem;font-weight:600">Columns</label><input type="number" id="cols" value="3" min="1" max="12" oninput="update()"></div>
+          <div><label style="font-size:0.8rem;font-weight:600">Rows</label><input type="number" id="rows" value="3" min="1" max="12" oninput="update()"></div>
+          <div><label style="font-size:0.8rem;font-weight:600">Gap (px)</label><input type="number" id="gap" value="12" min="0" max="50" oninput="update()"></div>
+          <div><label style="font-size:0.8rem;font-weight:600">Column Size</label><select id="colSize" onchange="update()"><option value="1fr">1fr (equal)</option><option value="auto">auto</option><option value="200px">200px fixed</option><option value="minmax(200px,1fr)">minmax</option></select></div>
+        </div>
+      </div>
+      <div class="card"><div style="font-weight:600;margin-bottom:8px">Generated CSS</div><pre id="cssOut"></pre>
+        <button class="btn btn-sm btn-outline" onclick="navigator.clipboard.writeText(document.getElementById('cssOut').textContent);toast('Copied!')" style="margin-top:8px">Copy CSS</button>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="min-height:300px"><div style="font-weight:600;margin-bottom:8px">Preview</div><div id="preview" style="background:#f1f5f9;border-radius:8px;padding:12px;min-height:250px"></div></div>
+    </div>
+  </div>
+</div><footer>ZCUS Tools - CSS Grid Builder</footer>
+<script>function toast(m){var t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(function(){t.remove()},2500)}function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function update(){
+  var c=document.getElementById('cols').value,r=document.getElementById('rows').value,g=document.getElementById('gap').value,cs=document.getElementById('colSize').value;
+  var css='.grid {\n  display: grid;\n  grid-template-columns: repeat('+c+', '+cs+');\n  grid-template-rows: repeat('+r+', auto);\n  gap: '+g+'px;\n}';
+  document.getElementById('cssOut').textContent=css;
+  var html='';for(var i=0;i<c*r;i++)html+='<div style="background:linear-gradient(135deg,#FF6B00,#ff8c33);color:#fff;padding:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:0.85rem">'+(i+1)+'</div>';
+  var pg=document.getElementById('preview');pg.innerHTML='';pg.style.cssText='display:grid;grid-template-columns:repeat('+c+','+cs+');grid-template-rows:repeat('+r+',auto);gap:'+g+'px;background:#f1f5f9;border-radius:8px;padding:12px;min-height:250px';pg.innerHTML=html;
+}
+update();
+</script></body></html>

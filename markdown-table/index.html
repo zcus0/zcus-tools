@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Markdown Table Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;min-height:100vh}
+.header{background:#fff;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #FF6B00;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.header h1{font-size:1.3rem;color:#333;display:flex;align-items:center;gap:8px}
+.header a{color:#FF6B00;text-decoration:none;font-weight:600;font-size:.9rem}
+.container{max-width:1000px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.08);padding:24px;margin-bottom:20px}
+.card h2{font-size:1.1rem;color:#333;margin-bottom:12px}
+textarea{width:100%;min-height:200px;border:2px solid #ddd;border-radius:8px;padding:12px;font-family:'Courier New',monospace;font-size:.9rem;resize:vertical}
+textarea:focus{outline:none;border-color:#FF6B00}
+.btn-row{display:flex;gap:10px;margin:12px 0;flex-wrap:wrap}
+.btn{background:#FF6B00;color:#fff;border:none;border-radius:8px;padding:10px 20px;cursor:pointer;font-family:inherit;font-weight:600;font-size:.9rem;transition:.2s}
+.btn:hover{background:#e55d00}
+.btn.secondary{background:#666}
+.output{background:#f9f9f9;border:1px solid #eee;border-radius:8px;padding:16px;min-height:80px;font-family:'Courier New',monospace;font-size:.85rem;white-space:pre-wrap;overflow-x:auto;line-height:1.6}
+.preview-table{width:100%;border-collapse:collapse;margin-top:12px}
+.preview-table th,.preview-table td{border:1px solid #ddd;padding:8px 12px;text-align:left;font-size:.85rem}
+.preview-table th{background:#FF6B00;color:#fff;font-weight:600}
+.preview-table tr:nth-child(even){background:#f9f9f9}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:.9rem;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>📊 Markdown Table Generator</h1>
+  <a href="/">← Home</a>
+</div>
+<div class="container">
+  <div class="card">
+    <h2>Input (CSV or tab-separated)</h2>
+    <textarea id="csvInput" placeholder="Name, Age, City&#10;Alice, 30, New York&#10;Bob, 25, London&#10;Charlie, 35, Paris"></textarea>
+    <div class="btn-row">
+      <button class="btn" onclick="generate()">Generate Table</button>
+      <button class="btn secondary" onclick="copyOutput()">📋 Copy Markdown</button>
+      <button class="btn secondary" onclick="copyHTML()">📋 Copy HTML</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Markdown Output</h2>
+    <div class="output" id="mdOutput">Enter CSV data and click Generate</div>
+  </div>
+  <div class="card">
+    <h2>HTML Preview</h2>
+    <div id="htmlPreview"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+
+function parseCSV(text){
+  return text.trim().split('\n').map(row=>row.split(/[,\t]/).map(c=>c.trim()));
+}
+
+function generate(){
+  const raw=document.getElementById('csvInput').value.trim();
+  if(!raw){toast('Enter some CSV data first');return}
+  const rows=parseCSV(raw);
+  const cols=rows[0].length;
+  const widths=Array(cols).fill(0);
+  rows.forEach(r=>r.forEach((c,i)=>{if(i<cols)widths[i]=Math.max(widths[i],c.length)}));
+
+  // Markdown
+  let md='';
+  rows.forEach((r,ri)=>{
+    md+='| '+r.map((c,i)=>c.padEnd(widths[i])).join(' | ')+' |\n';
+    if(ri===0)md+='| '+widths.map(w=>'-'.repeat(w)).join(' | ')+' |\n';
+  });
+  document.getElementById('mdOutput').textContent=md;
+
+  // HTML preview
+  let html='<table class="preview-table"><thead><tr>';
+  rows[0].forEach(h=>html+=`<th>${h}</th>`);
+  html+='</tr></thead><tbody>';
+  rows.slice(1).forEach(r=>{html+='<tr>';r.forEach(c=>html+=`<td>${c}</td>`);html+='</tr>'});
+  html+='</tbody></table>';
+  document.getElementById('htmlPreview').innerHTML=html;
+  toast('Table generated!');
+}
+
+function copyOutput(){
+  navigator.clipboard.writeText(document.getElementById('mdOutput').textContent).then(()=>toast('Markdown copied!'));
+}
+function copyHTML(){
+  const html=document.getElementById('htmlPreview').innerHTML;
+  navigator.clipboard.writeText(html).then(()=>toast('HTML copied!'));
+}
+</script>
+</body></html>

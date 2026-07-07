@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Color Blindness Simulator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;min-height:100vh}
+.header{background:#fff;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #FF6B00;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.header h1{font-size:1.3rem;color:#333;display:flex;align-items:center;gap:8px}
+.header a{color:#FF6B00;text-decoration:none;font-weight:600;font-size:.9rem}
+.container{max-width:1100px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.08);padding:24px;margin-bottom:20px}
+.card h2{font-size:1.1rem;color:#333;margin-bottom:12px}
+.drop-zone{border:3px dashed #ccc;border-radius:12px;padding:40px;text-align:center;cursor:pointer;transition:.2s}
+.drop-zone:hover,.drop-zone.dragover{border-color:#FF6B00;background:#fff5ed}
+input[type=file]{display:none}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:16px}
+.sim-card{background:#fff;border:2px solid #eee;border-radius:10px;overflow:hidden;transition:.2s}
+.sim-card:hover{border-color:#FF6B00;box-shadow:0 4px 16px rgba(255,107,0,.15)}
+.sim-card h3{padding:10px 14px;font-size:.9rem;color:#333;background:#f9f9f9;border-bottom:1px solid #eee}
+.sim-card canvas{width:100%;display:block}
+.custom-row{display:flex;gap:12px;margin:12px 0;flex-wrap:wrap;align-items:center}
+.color-input{display:flex;align-items:center;gap:6px;font-size:.85rem;color:#555}
+.color-input input[type=color]{width:40px;height:32px;border:none;border-radius:6px;cursor:pointer}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:.9rem;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>👁️ Color Blindness Simulator</h1>
+  <a href="/">← Home</a>
+</div>
+<div class="container">
+  <div class="card">
+    <h2>Upload an Image</h2>
+    <div class="drop-zone" id="dropZone">
+      <p>📂 Drop image here or click to browse</p>
+    </div>
+    <input type="file" id="fileInput" accept="image/*">
+    <div class="custom-row" id="colorPicker" style="display:none">
+      <span style="font-weight:600;color:#333">Custom Colors:</span>
+      <div class="color-input">Foreground: <input type="color" id="fgColor" value="#ff0000"></div>
+      <div class="color-input">Background: <input type="color" id="bgColor" value="#0000ff"></div>
+      <button class="btn" onclick="applyCustomColors()" style="background:#FF6B00;color:#fff;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-family:inherit;font-weight:600">Apply</button>
+    </div>
+  </div>
+  <div class="grid" id="simGrid"></div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+const types=[
+  {name:'Normal Vision',matrix:[1,0,0,0,1,0,0,0,1]},
+  {name:'Protanopia (No Red)',matrix:[0.567,0.433,0,0.558,0.442,0,0,0.242,0.758]},
+  {name:'Deuteranopia (No Green)',matrix:[0.625,0.375,0,0.7,0.3,0,0,0.3,0.7]},
+  {name:'Tritanopia (No Blue)',matrix:[0.95,0.05,0,0,0.433,0.567,0,0.475,0.525]},
+  {name:'Achromatopsia (No Color)',matrix:[0.299,0.587,0.114,0.299,0.587,0.114,0.299,0.587,0.114]},
+  {name:'Protanomaly (Weak Red)',matrix:[0.817,0.183,0,0.333,0.667,0,0,0.125,0.875]},
+  {name:'Deuteranomaly (Weak Green)',matrix:[0.8,0.2,0,0.258,0.742,0,0,0.142,0.858]},
+  {name:'Tritanomaly (Weak Blue)',matrix:[0.967,0.033,0,0,0.733,0.267,0,0.183,0.817]}
+];
+let img=null;
+
+function applyMatrix(src,m){
+  const c=document.createElement('canvas');c.width=src.width;c.height=src.height;
+  const ctx=c.getContext('2d');ctx.drawImage(src,0,0);
+  const d=ctx.getImageData(0,0,c.width,c.height);
+  for(let i=0;i<d.data.length;i+=4){
+    const r=d.data[i],g=d.data[i+1],b=d.data[i+2];
+    d.data[i]=Math.min(255,r*m[0]+g*m[1]+b*m[2]);
+    d.data[i+1]=Math.min(255,r*m[3]+g*m[4]+b*m[5]);
+    d.data[i+2]=Math.min(255,r*m[6]+g*m[7]+b*m[8]);
+  }
+  ctx.putImageData(d,0,0);return c;
+}
+
+function renderSimulations(){
+  const grid=document.getElementById('simGrid');grid.innerHTML='';
+  types.forEach(t=>{
+    const card=document.createElement('div');card.className='sim-card';
+    const cv=document.createElement('canvas');cv.width=img.width;cv.height=img.height;
+    const result=applyMatrix(img,t.matrix);cv.getContext('2d').drawImage(result,0,0);
+    card.innerHTML=`<h3>${t.name}</h3>`;
+    card.appendChild(cv);grid.appendChild(card);
+  });
+  toast('Simulations rendered');
+}
+
+function applyCustomColors(){
+  const c=document.createElement('canvas');c.width=200;c.height=200;
+  const ctx=c.getContext('2d');
+  ctx.fillStyle=document.getElementById('bgColor').value;ctx.fillRect(0,0,200,200);
+  ctx.fillStyle=document.getElementById('fgColor').value;
+  ctx.fillRect(20,20,70,70);ctx.fillRect(110,110,70,70);
+  img=c;renderSimulations();
+}
+
+const dz=document.getElementById('dropZone'),fi=document.getElementById('fileInput');
+dz.addEventListener('click',()=>fi.click());
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');if(e.dataTransfer.files.length)loadImg(e.dataTransfer.files[0])});
+fi.addEventListener('change',e=>{if(e.target.files.length)loadImg(e.target.files[0])});
+
+function loadImg(file){
+  const r=new FileReader();
+  r.onload=e=>{
+    const im=new Image();im.onload=()=>{img=im;renderSimulations();document.getElementById('colorPicker').style.display='flex'};
+    im.src=e.target.result;
+  };r.readAsDataURL(file);
+}
+</script>
+</body></html>

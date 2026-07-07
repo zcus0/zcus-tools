@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HTML Minifier - ZCUs Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
+.header{background:#1a1d27;border-bottom:1px solid #2a2d3a;padding:16px 24px;display:flex;align-items:center;gap:16px}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header h1{font-size:20px;font-weight:700;color:#fff}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#1a1d27;border:1px solid #2a2d3a;border-radius:12px;padding:24px;margin-bottom:20px}
+.card h2{font-size:18px;font-weight:600;color:#fff;margin-bottom:16px}
+.form-group{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.form-group label{font-size:12px;font-weight:500;color:#aaa;text-transform:uppercase;letter-spacing:.5px}
+textarea{background:#0f1117;border:1px solid #3a3d4a;border-radius:8px;padding:10px 12px;color:#e0e0e0;font-family:monospace;font-size:12px;width:100%;min-height:200px;resize:vertical}
+textarea:focus{outline:none;border-color:#FF6B00}
+button{background:#FF6B00;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+button:hover{opacity:.85}
+.btn-secondary{background:#2a2d3a;color:#e0e0e0;border:1px solid #3a3d4a}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:16px 0}
+.result-item{background:#0f1117;border-radius:8px;padding:14px;text-align:center}
+.result-label{font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.result-value{font-size:22px;font-weight:700;color:#FF6B00}
+.result-sub{font-size:11px;color:#8ae6a0;margin-top:2px}
+.checkbox-row{display:flex;align-items:center;gap:8px;margin:6px 0}
+.checkbox-row input[type=checkbox]{width:auto;accent-color:#FF6B00}
+.checkbox-row label{font-size:13px;color:#ccc;text-transform:none;letter-spacing:0}
+.output-box{background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;padding:16px;font-family:monospace;font-size:12px;color:#8ae6a0;white-space:pre-wrap;max-height:400px;overflow-y:auto}
+.preset-btn{background:#2a2d3a;color:#e0e0e0;border:1px solid #3a3d4a;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:8px}
+.preset-btn:hover{border-color:#FF6B00;color:#FF6B00}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">📦</span><h1>HTML Minifier</h1></div>
+<div class="container">
+<div class="card">
+<h2>Input HTML</h2>
+<div style="margin-bottom:8px">
+<button class="preset-btn" onclick="loadSample()">Load Sample HTML</button>
+</div>
+<div class="form-group">
+<label>HTML Code</label>
+<textarea id="input" placeholder="Paste your HTML here..."></textarea>
+</div>
+<div style="margin-bottom:8px">
+<div class="checkbox-row"><input type="checkbox" id="optComments" checked><label>Remove comments</label></div>
+<div class="checkbox-row"><input type="checkbox" id="optWhitespace" checked><label>Collapse whitespace</label></div>
+<div class="checkbox-row"><input type="checkbox" id="optQuotes" checked><label>Remove optional quotes</label></div>
+<div class="checkbox-row"><input type="checkbox" id="optBool" checked><label>Remove boolean attribute values</label></div>
+<div class="checkbox-row"><input type="checkbox" id="optOptional" checked><label>Remove optional tags</label></div>
+<div class="checkbox-row"><input type="checkbox" id="optEmpty" checked><label>Remove empty attributes</label></div>
+<div class="checkbox-row"><input type="checkbox" id="optScripts"><label>Minify inline scripts</label></div>
+</div>
+<button onclick="minify()">⚡ Minify HTML</button>
+</div>
+<div class="card">
+<h2>Minification Stats</h2>
+<div class="result-grid" id="stats" style="display:none">
+<div class="result-item"><div class="result-label">Original Size</div><div class="result-value" id="origSize">0</div><div class="result-sub" id="origLines">0 lines</div></div>
+<div class="result-item"><div class="result-label">Minified Size</div><div class="result-value" id="minSize">0</div><div class="result-sub" id="minLines">0 lines</div></div>
+<div class="result-item"><div class="result-label">Saved</div><div class="result-value" id="saved">0%</div><div class="result-sub" id="savedBytes">0 bytes</div></div>
+</div>
+</div>
+<div class="card" id="outputCard" style="display:none">
+<h2>Minified Output</h2>
+<div class="output-box" id="output"></div>
+<div class="btn-row">
+<button onclick="copyOutput()">📋 Copy</button>
+<button class="btn-secondary" onclick="downloadOutput()">⬇️ Download .html</button>
+<button class="btn-secondary" onclick="beautifyOutput()">✨ Beautify</button>
+</div>
+</div>
+</div>
+<script>
+function toast(msg){const t=document.createElement('div');t.textContent=msg;Object.assign(t.style,{position:'fixed',bottom:'20px',right:'20px',background:'#FF6B00',color:'#fff',padding:'12px 20px',borderRadius:'8px',fontFamily:'Inter',sans-serif',fontSize:'14px',zIndex:'9999',transition:'opacity .3s'});document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},2500)}
+
+function loadSample(){
+document.getElementById('input').value=`<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Meta tags -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Page title -->
+    <title>My Website</title>
+    
+    <!-- Stylesheet -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        
+        .button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <!-- Main content -->
+    <div class="container">
+        <h1>Welcome to My Website</h1>
+        
+        <!-- Description -->
+        <p>This is a sample HTML document used to demonstrate the HTML minifier tool.</p>
+        
+        <!-- Navigation -->
+        <nav>
+            <a href="/home" class="button">Home</a>
+            <a href="/about" class="button">About</a>
+            <a href="/contact" class="button">Contact</a>
+        </nav>
+        
+        <!-- Features list -->
+        <ul>
+            <li>Fast loading</li>
+            <li>Responsive design</li>
+            <li>SEO friendly</li>
+            <li>Accessible</li>
+        </ul>
+        
+        <!-- Footer -->
+        <footer>
+            <p>&copy; 2024 My Website. All rights reserved.</p>
+        </footer>
+    </div>
+    
+    <!-- Scripts -->
+    <script>
+        console.log("Page loaded");
+        document.querySelectorAll('.button').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                console.log('Button clicked:', e.target.textContent);
+            });
+        });
+    </script>
+</body>
+</html>`;
+toast('Sample loaded');
+}
+
+function minifyHTML(html,opts){
+let result=html;
+if(opts.comments){
+result=result.replace(/<!--[\s\S]*?-->/g,'');
+result=result.replace(/\/\*[\s\S]*?\*\//g,'');
+}
+if(opts.whitespace){
+result=result.replace(/>\s+</g,'><');
+result=result.replace(/\s{2,}/g,' ');
+result=result.trim();
+}
+if(opts.quotes){
+result=result.replace(/=""/g,'');
+}
+if(opts.bool){
+result=result.replace(/\s+(checked|disabled|readonly|required|selected|multiple|autofocus|autoplay|controls|loop|muted|hidden|async|defer|formnovalidate|novalidate)\b/gi,' $1');
+// Actually remove the values not the attrs
+result=result.replace(/(checked|disabled|readonly|required|selected|multiple|autofocus|autoplay|controls|loop|muted|hidden|async|defer)="[^"]*"/gi,'$1');
+}
+if(opts.empty){
+result=result.replace(/\s+(?:class|style|id|title|alt|lang|dir|accesskey|tabindex|data-\w+)=""\b/gi,'');
+}
+if(opts.optional){
+// Remove optional end tags
+result=result.replace(/<\/li>/gi,'');
+result=result.replace(/<\/td>/gi,'');
+result=result.replace(/<\/tr>/gi,'');
+result=result.replace(/<\/th>/gi,'');
+result=result.replace(/<\/p>/gi,'');
+result=result.replace(/<\/dt>/gi,'');
+result=result.replace(/<\/dd>/gi,'');
+result=result.replace(/<\/option>/gi,'');
+}
+return result.trim();
+}
+
+function beautifyHTML(html){
+let result=html;
+let indent=0;
+const lines=result.replace(/>\s*</g,'>\n<').split('\n');
+const result2=[];
+const selfClosing=/^(meta|link|br|hr|img|input|area|base|col|embed|source|track|wbr)/i;
+const openTags=/^(div|span|p|a|ul|ol|li|table|tr|td|th|thead|tbody|tfoot|section|article|nav|header|footer|main|aside|figure|figcaption|form|fieldset|label|select|option|textarea|button|h[1-6]|pre|code|blockquote|dl|dt|dd|details|summary)/i;
+const closeTags=/^(\/div|\/span|\/p|\/a|\/ul|\/ol|\/li|\/table|\/tr|\/td|\/th|\/thead|\/tbody|\/tfoot|\/section|\/article|\/nav|\/header|\/footer|\/main|\/aside|\/figure|\/figcaption|\/form|\/fieldset|\/label|\/select|\/option|\/textarea|\/button|\/h[1-6]|\/pre|\/code|\/blockquote|\/dl|\/dt|\/dd|\/details|\/summary)/i;
+lines.forEach(line=>{
+const trimmed=line.trim();
+if(!trimmed)return;
+if(closeTags.test(trimmed))indent=Math.max(0,indent-1);
+result2.push('  '.repeat(indent)+trimmed);
+if(openTags.test(trimmed)&&!selfClosing.test(trimmed)&&!trimmed.startsWith('/'))indent++;
+});
+return result2.join('\n');
+}
+
+let lastMinified='';
+function minify(){
+const input=document.getElementById('input').value;
+if(!input){toast('Enter HTML first');return}
+const opts={
+comments:document.getElementById('optComments').checked,
+whitespace:document.getElementById('optWhitespace').checked,
+quotes:document.getElementById('optQuotes').checked,
+bool:document.getElementById('optBool').checked,
+optional:document.getElementById('optOptional').checked,
+empty:document.getElementById('optEmpty').checked,
+scripts:document.getElementById('optScripts').checked,
+};
+const result=minifyHTML(input,opts);
+lastMinified=result;
+const origLen=new Blob([input]).size;
+const minLen=new Blob([result]).size;
+const saved=origLen?(((origLen-minLen)/origLen)*100):0;
+document.getElementById('origSize').textContent=origLen.toLocaleString()+' bytes';
+document.getElementById('origLines').textContent=input.split('\n').length+' lines';
+document.getElementById('minSize').textContent=minLen.toLocaleString()+' bytes';
+document.getElementById('minLines').textContent=result.split('\n').length+' lines';
+document.getElementById('saved').textContent=saved.toFixed(1)+'%';
+document.getElementById('savedBytes').textContent=(origLen-minLen).toLocaleString()+' bytes';
+document.getElementById('stats').style.display='';
+document.getElementById('outputCard').style.display='';
+document.getElementById('output').textContent=result;
+toast('Minified! Saved '+saved.toFixed(1)+'%');
+}
+
+function copyOutput(){navigator.clipboard.writeText(lastMinified);toast('Copied!')}
+function downloadOutput(){const b=new Blob([lastMinified],{type:'text/html'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='minified.html';a.click();toast('Downloaded!')}
+function beautifyOutput(){document.getElementById('output').textContent=beautifyHTML(lastMinified);toast('Beautified')}
+</script>
+</body>
+</html>

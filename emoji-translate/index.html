@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emoji Translator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#333;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #e0e0e0;padding:16px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header .icon{font-size:24px}
+.header h1{font-size:18px;font-weight:600;flex:1}
+.container{max-width:900px;margin:0 auto;padding:24px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:24px;margin-bottom:20px}
+.card h2{font-size:16px;font-weight:600;margin-bottom:16px}
+.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;transition:all .2s}
+.btn-primary{background:#FF6B00;color:#fff}.btn-primary:hover{background:#e55a00}
+.btn-outline{background:transparent;border:1px solid #ddd;color:#555}.btn-outline:hover{border-color:#FF6B00;color:#FF6B00}
+.btn-sm{padding:5px 10px;font-size:12px}
+textarea{font-family:'Inter',sans-serif;font-size:14px;padding:12px;border:1px solid #ddd;border-radius:8px;width:100%;resize:vertical;outline:none;transition:border .2s;min-height:100px}
+textarea:focus{border-color:#FF6B00}
+input[type=text]{font-family:'Inter',sans-serif;font-size:14px;padding:10px 12px;border:1px solid #ddd;border-radius:8px;width:100%;outline:none}
+input:focus{border-color:#FF6B00}
+label{display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#555}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+.emoji-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:4px;max-height:200px;overflow-y:auto;padding:8px;background:#fafafa;border:1px solid #eee;border-radius:8px}
+.emoji-btn{width:100%;aspect-ratio:1;border:1px solid transparent;border-radius:6px;background:none;cursor:pointer;font-size:20px;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.emoji-btn:hover{background:#FF6B00;color:#fff;border-color:#FF6B00;transform:scale(1.1)}
+.emoji-btn.selected{background:#fff5f0;border-color:#FF6B00}
+.output{font-size:24px;line-height:1.8;padding:16px;background:#f9f9f9;border-radius:8px;min-height:60px;word-break:break-word;border:1px solid #eee}
+.word-match{display:inline;padding:2px 4px;border-radius:4px;transition:background .2s}
+.word-match.highlight{background:#fff5f0}
+.category-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px}
+.cat-tab{padding:4px 10px;border:1px solid #eee;border-radius:20px;cursor:pointer;font-size:11px;font-weight:500;transition:all .2s;background:#f9f9f9}
+.cat-tab.active{background:#FF6B00;color:#fff;border-color:#FF6B00}
+.cat-tab:hover{border-color:#FF6B00}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/">← Home</a>
+  <span class="icon">😀</span>
+  <h1>Emoji Translator</h1>
+</div>
+<div class="container">
+  <div class="card">
+    <h2>Text → Emoji</h2>
+    <textarea id="text-input" placeholder="Enter text to translate to emoji..." oninput="translate()"></textarea>
+    <button class="btn btn-outline btn-sm" onclick="document.getElementById('text-input').value='I love cats and dogs. The sun is beautiful today. I am eating pizza and drinking coffee.';translate()" style="margin-top:8px">Sample</button>
+  </div>
+  <div class="card">
+    <h2>Translated</h2>
+    <div class="output" id="output">Emoji output will appear here...</div>
+    <div style="margin-top:8px;display:flex;gap:8px">
+      <button class="btn btn-outline btn-sm" onclick="copyResult()">📋 Copy</button>
+      <button class="btn btn-outline btn-sm" onclick="copyEmojiOnly()">📋 Emoji Only</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Emoji Search</h2>
+    <input type="text" id="search" placeholder="Search emojis by name..." oninput="filterEmoji()">
+    <div class="category-tabs" id="cat-tabs"></div>
+    <div class="emoji-grid" id="emoji-grid"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const emojiMap={
+  'smile':'😀','happy':'😊','sad':'😢','angry':'😠','love':'❤️','heart':'❤️','fire':'🔥','star':'⭐','sun':'☀️','moon':'🌙','cloud':'☁️','rain':'🌧️','snow':'❄️','wind':'💨',
+  'cat':'🐱','dog':'🐶','fish':'🐟','bird':'🐦','bear':'🐻','lion':'🦁','tiger':'🐯','rabbit':'🐰','horse':'🐴','cow':'🐮','pig':'🐷','frog':'🐸','bee':'🐝','snake':'🐍',
+  'apple':'🍎','banana':'🍌','orange':'🍊','grape':'🍇','pizza':'🍕','burger':'🍔','cake':'🎂','coffee':'☕','beer':'🍺','wine':'🍷','water':'💧','milk':'🥛','bread':'🍞','taco':'🌮',
+  'house':'🏠','car':'🚗','plane':'✈️','train':'🚂','ship':'🚀','bike':'🚲','bus':'🚌','book':'📖','phone':'📱','computer':'💻','laptop':'💻','camera':'📷','key':'🔑','lock':'🔒',
+  'music':'🎵','guitar':'🎸','drum':'🥁','paint':'🎨','dance':'💃','sing':'🎤','movie':'🎬','game':'🎮','ball':'⚽','trophy':'🏆','medal':'🏅','race':'🏁',
+  'sun':'☀️','flower':'🌸','tree':'🌳','leaf':'🍃','mountain':'⛰️','wave':'🌊','beach':'🏖️','island':'🏝️','earth':'🌍','moon':'🌙','rainbow':'🌈','lightning':'⚡',
+  'money':'💰','dollar':'💵','gift':'🎁','party':'🎉','balloon':'🎈','confetti':'🎊','crown':'👑','gem':'💎','rocket':'🚀','airplane':'✈️','clock':'⏰','hourglass':'⏳',
+  'thumbs':'👍','clap':'👏','wave':'👋','fist':'✊','peace':'✌️','pray':'🙏','point':'👆','hand':'✋','muscle':'💪','brain':'🧠','eye':'👁️','ear':'👂','nose':'👃','mouth':'👄',
+  'red':'🔴','blue':'🔵','green':'🟢','yellow':'🟡','purple':'🟣','orange':'🟠','black':'⚫','white':'⚪','pink':'🩷','brown':'🟤',
+  'one':'1️⃣','two':'2️⃣','three':'3️⃣','four':'4️⃣','five':'5️⃣','zero':'0️⃣',
+  'check':'✅','cross':'❌','warning':'⚠️','info':'ℹ️','question':'❓','exclamation':'❗','bang':'❗','idea':'💡','sparkle':'✨','magic':'🪄',
+  'food':'🍕','eat':'🍽️','drink':'🥤','sleep':'😴','work':'💼','run':'🏃','walk':'🚶','swim':'🏊','fly':'🦅','jump':'🦘','sit':'🪑','stand':'🧍',
+  'earth':'🌍','world':'🌎','space':'🚀','alien':'👽','ufo':'🛸','star':'⭐','galaxy':'🌌','comet':'☄️','planet':'🪐','telescope':'🔭',
+  'man':'👨','woman':'👩','boy':'👦','girl':'👩','baby':'👶','family':'👨‍👩‍👧‍👦','people':'👥','teacher':'👩‍🏫','doctor':'👨‍⚕️','artist':'👩‍🎨','cook':'👨‍🍳',
+  'today':'📅','tomorrow':'⏭️','yesterday':'⏮️','time':'⏰','morning':'🌅','night':'🌙','afternoon':'☀️',
+  'hello':'👋','hi':'👋','bye':'👋','welcome':'🎉','thanks':'🙏','sorry':'😔','please':'🙏',
+  'cool':'😎','awesome':'🤩','amazing':'😲','wow':'😮','oh':'😮','lol':'😂','cry':'😭','laugh':'🤣',
+  'fast':'⚡','slow':'🐢','big':'🐘','small':'🐜','hot':'🔥','cold':'🥶','new':'🆕','old':'👴','good':'👍','bad':'👎',
+};
+const categories=[
+  {name:'All',emojis:Object.values(emojiMap)},
+  {name:'Smileys',emoji:'😀😂😊🤣😍😎🤔😢😠🥳🤩😍🙄😴🤔🤫🤗😏🙄🤯😭😭😍🥰😘🤗🙄😴🤣😍🧐🤔😏😭'},
+  {name:'Hearts',emoji:'❤️💕💖💗💘💝💞🥰😍💋💑👩‍❤️‍👨💕❤️‍🔥💔❣️💞💕'},
+  {name:'Animals',emoji:'🐱🐶🐦🐟🐻🦁🐰🦊🐸🐵🙈🙉🙊🐧🐢🐍🐛🦋🐝🐌🐞'},
+  {name:'Food',emoji:'🍕🍔🌮🍟🌭🍿🧀🥚🍳🥓🥞🧇🥓🍗🥩🍖🥗🥙🧆🍝🍜'},
+  {name:'Nature',emoji:'🌸🌺🌻🌹🌷🌱🌲🌳🌴🌵🍃🍂🍁🌀🌊🔥❄️☀️🌙⭐🌈⚡'},
+  {name:'Objects',emoji:'📱💻⌨️🖥️🖨️📷📹🎥🔭🔬💡🔦🔋🕯️🔑🗝️🚪🪑🛏️'},
+  {name:'Symbols',emoji:'✅❌⚠️❗❓💡✨🎵🎶🔴🟠🟡🟢🔵🟣⚫⚪💯'},
+];
+let selectedCat=0;
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function renderEmojiGrid(){
+  const grid=document.getElementById('emoji-grid');
+  const emojis=categories[selectedCat].emoji||[];
+  const unique=[...new Set(emojis)];
+  grid.innerHTML=unique.map(e=>`<button class="emoji-btn" onclick="insertEmoji('${e}')">${e}</button>`).join('');
+}
+function renderCategories(){
+  document.getElementById('cat-tabs').innerHTML=categories.map((c,i)=>`<span class="cat-tab${i===selectedCat?' active':''}" onclick="selectedCat=${i};renderCategories();renderEmojiGrid()">${c.name}</span>`).join('');
+}
+function insertEmoji(e){const ta=document.getElementById('text-input');const pos=ta.selectionStart;ta.value=ta.value.slice(0,pos)+e+ta.value.slice(pos);ta.focus();ta.selectionStart=ta.selectionEnd=pos+e.length;translate()}
+function translate(){
+  const text=document.getElementById('text-input').value;
+  if(!text){document.getElementById('output').textContent='Emoji output will appear here...';return}
+  const result=text.split(/(\s+)/).map(word=>{
+    if(!word.trim())return word;
+    const clean=word.toLowerCase().replace(/[^a-z]/g,'');
+    if(emojiMap[clean])return word.replace(/./g,(c)=>/[a-zA-Z]/.test(c)?emojiMap[clean]:'');
+    return word;
+  }).join('');
+  document.getElementById('output').textContent=result;
+}
+function filterEmoji(){
+  const q=document.getElementById('search').value.toLowerCase();
+  if(!q){renderEmojiGrid();return}
+  const grid=document.getElementById('emoji-grid');
+  const allEmojis=new Set();
+  for(const[k,v]of Object.entries(emojiMap)){if(k.includes(q))allEmojis.add(v)}
+  grid.innerHTML=[...allEmojis].map(e=>`<button class="emoji-btn" onclick="insertEmoji('${e}')">${e}</button>`).join('');
+}
+function copyResult(){navigator.clipboard.writeText(document.getElementById('output').textContent);toast('Copied!')}
+function copyEmojiOnly(){
+  const text=document.getElementById('output').textContent;
+  const emojis=text.replace(/[^\p{Emoji_Presentation}\p{Extended_Pictographic}\uFE0F\u200D]/gu,'');
+  navigator.clipboard.writeText(emojis);toast('Emojis only copied!');
+}
+renderCategories();renderEmojiGrid();
+</script>
+</body>
+</html>

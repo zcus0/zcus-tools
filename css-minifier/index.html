@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSS Minifier / Beautifier - ZCUs Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
+.header{background:#1a1d27;border-bottom:1px solid #2a2d3a;padding:16px 24px;display:flex;align-items:center;gap:16px}
+.header a{color:#FF6B00;text-decoration:none;font-weight:500;font-size:14px}
+.header h1{font-size:20px;font-weight:700;color:#fff}
+.header .icon{font-size:24px}
+.container{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#1a1d27;border:1px solid #2a2d3a;border-radius:12px;padding:24px;margin-bottom:20px}
+.card h2{font-size:18px;font-weight:600;color:#fff;margin-bottom:16px}
+.form-group{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.form-group label{font-size:12px;font-weight:500;color:#aaa;text-transform:uppercase;letter-spacing:.5px}
+textarea{background:#0f1117;border:1px solid #3a3d4a;border-radius:8px;padding:10px 12px;color:#e0e0e0;font-family:monospace;font-size:12px;width:100%;min-height:200px;resize:vertical}
+textarea:focus{outline:none;border-color:#FF6B00}
+button{background:#FF6B00;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+button:hover{opacity:.85}
+.btn-secondary{background:#2a2d3a;color:#e0e0e0;border:1px solid #3a3d4a}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:16px 0}
+.result-item{background:#0f1117;border-radius:8px;padding:14px;text-align:center}
+.result-label{font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.result-value{font-size:22px;font-weight:700;color:#FF6B00}
+.result-sub{font-size:11px;color:#8ae6a0;margin-top:2px}
+.checkbox-row{display:flex;align-items:center;gap:8px;margin:6px 0}
+.checkbox-row input[type=checkbox]{width:auto;accent-color:#FF6B00}
+.checkbox-row label{font-size:13px;color:#ccc;text-transform:none;letter-spacing:0}
+.output-box{background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;padding:16px;font-family:monospace;font-size:12px;color:#8ae6a0;white-space:pre-wrap;max-height:400px;overflow-y:auto}
+.preset-btn{background:#2a2d3a;color:#e0e0e0;border:1px solid #3a3d4a;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:8px}
+.preset-btn:hover{border-color:#FF6B00;color:#FF6B00}
+.mode-tabs{display:flex;gap:8px;margin-bottom:16px}
+.mode-tab{background:#2a2d3a;color:#e0e0e0;border:1px solid #3a3d4a;border-radius:6px;padding:8px 16px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif}
+.mode-tab.active{background:#FF6B00;color:#fff;border-color:#FF6B00}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Home</a><span class="icon">🎨</span><h1>CSS Minifier / Beautifier</h1></div>
+<div class="container">
+<div class="card">
+<h2>Input CSS</h2>
+<div style="margin-bottom:8px">
+<button class="preset-btn" onclick="loadSample()">Load Sample CSS</button>
+</div>
+<div class="form-group">
+<label>CSS Code</label>
+<textarea id="input" placeholder="Paste your CSS here..."></textarea>
+</div>
+<div style="margin-bottom:8px">
+<div class="checkbox-row"><input type="checkbox" id="optComments" checked><label>Remove comments</label></div>
+<div class="checkbox-row"><input type="checkbox" id="optWhitespace" checked><label>Collapse whitespace</label></div>
+<div class="checkbox-row"><input type="checkbox" id="optColors" checked><label>Shorten color codes</label></div>
+<div class="checkbox-row"><input type="checkbox" id="optZero" checked><label>Remove zero units</label></div>
+<div class="checkbox-row"><input type="checkbox" id="optSemi" checked><label>Remove last semicolons</label></div>
+<div class="checkbox-row"><input type="checkbox" id="optShorthand" checked><label>Shorten shorthand</label></div>
+<div class="checkbox-row"><input type="checkbox" id="optEmpty"><label>Remove empty rules</label></div>
+</div>
+<div class="mode-tabs">
+<button class="mode-tab active" onclick="setMode('minify',this)">Minify</button>
+<button class="mode-tab" onclick="setMode('beautify',this)">Beautify</button>
+</div>
+<button onclick="process()">⚡ Process CSS</button>
+</div>
+<div class="card">
+<h2>Stats</h2>
+<div class="result-grid" id="stats" style="display:none">
+<div class="result-item"><div class="result-label">Original Size</div><div class="result-value" id="origSize">0</div><div class="result-sub" id="origLines">0 lines</div></div>
+<div class="result-item"><div class="result-label">Output Size</div><div class="result-value" id="minSize">0</div><div class="result-sub" id="minLines">0 lines</div></div>
+<div class="result-item"><div class="result-label">Saved</div><div class="result-value" id="saved">0%</div><div class="result-sub" id="savedBytes">0 bytes</div></div>
+</div>
+</div>
+<div class="card" id="outputCard" style="display:none">
+<h2>Output</h2>
+<div class="output-box" id="output"></div>
+<div class="btn-row">
+<button onclick="copyOutput()">📋 Copy</button>
+<button class="btn-secondary" onclick="downloadOutput()">⬇️ Download .css</button>
+</div>
+</div>
+</div>
+<script>
+function toast(msg){const t=document.createElement('div');t.textContent=msg;Object.assign(t.style,{position:'fixed',bottom:'20px',right:'20px',background:'#FF6B00',color:'#fff',padding:'12px 20px',borderRadius:'8px',fontFamily:'Inter',sans-serif',fontSize:'14px',zIndex:'9999',transition:'opacity .3s'});document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},2500)}
+
+let currentMode='minify';
+let lastOutput='';
+
+function setMode(mode,el){
+currentMode=mode;
+document.querySelectorAll('.mode-tab').forEach(b=>b.classList.remove('active'));
+el.classList.add('active');
+}
+
+function loadSample(){
+document.getElementById('input').value=`/* Main Stylesheet */
+/* Reset and base styles */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    color: #333333;
+    background-color: #ffffff;
+    margin: 0px;
+    padding: 0px;
+}
+
+/* Container */
+.container {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 20px;
+}
+
+/* Typography */
+h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: #000000;
+    margin-bottom: 20px;
+    line-height: 1.2;
+}
+
+h2 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333333;
+    margin-bottom: 16px;
+}
+
+p {
+    margin-bottom: 16px;
+    color: #666666;
+}
+
+/* Links */
+a {
+    color: #007bff;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+/* Button styles */
+.button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: #ffffff;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.button:hover {
+    background-color: #0056b3;
+    transform: translateY(-1px);
+}
+
+.button:active {
+    transform: translateY(0px);
+}
+
+/* Grid layout */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+/* Card component */
+.card {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .grid {
+        grid-template-columns: repeat(1, 1fr);
+    }
+    
+    .container {
+        padding: 10px;
+    }
+    
+    h1 {
+        font-size: 24px;
+    }
+}
+
+/* Colors */
+.primary { color: #ff0000; }
+.secondary { color: #0000ff; }
+.success { color: #00ff00; }
+.warning { color: #000000; }
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0.0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1.0;
+        transform: translateY(0px);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease forwards;
+}
+
+/* Empty rule to test removal */
+.empty-rule {
+}
+
+.another-empty {
+}`;
+toast('Sample loaded');
+}
+
+function minifyCSS(css,opts){
+let result=css;
+if(opts.comments){
+result=result.replace(/\/\*[\s\S]*?\*\//g,'');
+}
+if(opts.whitespace){
+result=result.replace(/\s+/g,' ');
+result=result.replace(/\s*{\s*/g,'{');
+result=result.replace(/\s*}\s*/g,'}');
+result=result.replace(/\s*;\s*/g,';');
+result=result.replace(/\s*:\s*/g,':');
+result=result.replace(/\s*,\s*/g,',');
+}
+if(opts.colors){
+// Shorten 6-digit hex to 3-digit when possible
+result=result.replace(/#([0-9a-fA-F])\1([0-9a-fA-F])\2([0-9a-fA-F])\3/g,'#$1$2$3');
+// rgb(x,x,x) to hex where possible
+// Shorten rgb(0,0,0) to #000 etc
+const colorMap={'rgb(0,0,0)':'#000','rgb(255,255,255)':'#fff','rgb(255,0,0)':'#f00','rgb(0,255,0)':'#0f0','rgb(0,0,255)':'#00f'};
+Object.entries(colorMap).forEach(([k,v])=>{result=result.replace(new RegExp(k.replace(/[()]/g,'\\$&'),'g'),v)});
+// Shorten color keywords
+const kw={'transparent':'transparent','white':'#fff','black':'#000','red':'#f00','green':'#0f0','blue':'#00f'};
+}
+if(opts.zero){
+result=result.replace(/(\s|:)(\d+\.\d+)?0(px|em|rem|%|pt|cm|mm|in|pc)/g,'$1$2');
+result=result.replace(/(\d+\.\d+?)0+(?=;|}|,|\s)/g,'$1');
+}
+if(opts.semi){
+result=result.replace(/;}/g,'}');
+}
+if(opts.shorthand){
+// margin: 10px 10px 10px 10px → margin: 10px
+result=result.replace(/(\b(?:margin|padding)):\s*(\d+(?:px|em|rem|%|vh|vw))\s+\2\s+\2\s+\2/g,'$1:$2');
+// margin: 10px 20px 10px 20px → margin: 10px 20px
+result=result.replace(/(\b(?:margin|padding)):\s*(\d+(?:px|em|rem|%))\s+(\d+(?:px|em|rem|%))\s+\2\s+\3/g,'$1:$2 $3');
+}
+if(opts.empty){
+result=result.replace(/[^{}]*\{\s*\}/g,'');
+}
+result=result.trim();
+return result;
+}
+
+function beautifyCSS(css){
+let result=css;
+// Add newlines after { and }
+result=result.replace(/\{/g,' {\n');
+result=result.replace(/\}/g,'\n}\n');
+result=result.replace(/;\s*/g,';\n');
+// Indent
+const lines=result.split('\n');
+let indent=0;
+const output=[];
+lines.forEach(line=>{
+const trimmed=line.trim();
+if(!trimmed){output.push('');return}
+if(trimmed==='}'){indent=Math.max(0,indent-1)}
+output.push('  '.repeat(indent)+trimmed);
+if(trimmed.endsWith('{'))indent++;
+});
+return output.join('\n').trim();
+}
+
+function process(){
+const input=document.getElementById('input').value;
+if(!input){toast('Enter CSS first');return}
+const opts={
+comments:document.getElementById('optComments').checked,
+whitespace:document.getElementById('optWhitespace').checked,
+colors:document.getElementById('optColors').checked,
+zero:document.getElementById('optZero').checked,
+semi:document.getElementById('optSemi').checked,
+shorthand:document.getElementById('optShorthand').checked,
+empty:document.getElementById('optEmpty').checked,
+};
+let result;
+if(currentMode==='minify'){
+result=minifyCSS(input,opts);
+}else{
+result=beautifyCSS(input);
+}
+lastOutput=result;
+const origLen=new Blob([input]).size;
+const outLen=new Blob([result]).size;
+const saved=origLen?(((origLen-outLen)/origLen)*100):0;
+document.getElementById('origSize').textContent=origLen.toLocaleString()+' bytes';
+document.getElementById('origLines').textContent=input.split('\n').length+' lines';
+document.getElementById('minSize').textContent=outLen.toLocaleString()+' bytes';
+document.getElementById('minLines').textContent=result.split('\n').length+' lines';
+document.getElementById('saved').textContent=(saved>0?'+':'')+saved.toFixed(1)+'%';
+document.getElementById('savedBytes').textContent=(origLen-outLen).toLocaleString()+' bytes';
+document.getElementById('stats').style.display='';
+document.getElementById('outputCard').style.display='';
+document.getElementById('output').textContent=result;
+toast(currentMode==='minify'?`Minified! Saved ${saved.toFixed(1)}%`:'Beautified!');
+}
+
+function copyOutput(){navigator.clipboard.writeText(lastOutput);toast('Copied!')}
+function downloadOutput(){const b=new Blob([lastOutput],{type:'text/css'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='output.css';a.click();toast('Downloaded!')}
+</script>
+</body>
+</html>
